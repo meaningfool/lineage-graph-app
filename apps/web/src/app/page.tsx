@@ -18,7 +18,7 @@ export default function Home() {
   const edges: Edge[] = nodeData.edges
   
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-2">
+    <div className="w-full h-full">
       <LineageGraph nodes={nodes} edges={edges} />
     </div>
   )
