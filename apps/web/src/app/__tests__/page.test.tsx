@@ -22,20 +22,11 @@ jest.mock('@tanstack/react-query', () => ({
 }))
 
 describe('Home Page', () => {
-  it('should display the application title when user visits the page', async () => {
+  it('should display a single node with title "Revenue Growth" when user visits the page', async () => {
     // Arrange & Act
     render(<Home />)
     
-    // Assert - look for the ASCII art content that's actually displayed
-    expect(screen.getByText(/██████╗/)).toBeInTheDocument()
-    expect(screen.getByText(/██╔══██╗/)).toBeInTheDocument()
-  })
-
-  it('should display API status section when user visits the page', async () => {
-    // Arrange & Act
-    render(<Home />)
-    
-    // Assert
-    expect(screen.getByText('API Status')).toBeInTheDocument()
+    // Assert - user sees the node title
+    expect(screen.getByText('Revenue Growth')).toBeInTheDocument()
   })
 }) 
