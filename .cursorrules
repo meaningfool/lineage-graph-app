@@ -1,17 +1,21 @@
 # Data Lineage App - Cursor Rules
 
+## Communication Protocol
+- **ALWAYS** explain what I'm going to do before doing it
+- Wait for user validation before proceeding with any changes
+- Discuss test behavior and expectations before writing tests
+
+## TDD Workflow
+- **Test Discussion First**: Always discuss the test behavior and expectations before writing any test
+- **Red Phase**: Ensure tests fail initially before implementing
+- **Validation Required**: Get user approval before making tests pass
+- **Separate Commits**: Structure changes and feature changes must be in separate commits
+
 ## Git Workflow
-- **ALWAYS** work with git at the root level (`data-lineage-app/`)
+- **ALWAYS** work with git at the root level
 - **NEVER** initialize git repositories in subdirectories
 - **ALWAYS** commit changes at the root level
-- The project structure uses regular directories for different applications (my-better-t-app, etc.)
-- All files are tracked directly in the root repository
-
-## Project Structure
-- Root: `/Users/josselinperrus/Projects/data-lineage-app/`
-- Applications: `my-better-t-app/`, `other-apps/`, etc.
-- Each application is a complete app with its own package.json
-- Use pnpm workspace commands from the root: `pnpm --filter <app-name> <command>`
+- **Structure vs Feature**: Separate structure commits from feature commits
 
 ## Development Commands
 - Start development: `pnpm dev` (runs all apps)
@@ -29,7 +33,6 @@
 - Before initializing git, check current directory with `pwd`
 - Verify you're in the root directory before running git commands
 - Use `git status` to confirm you're working at the right level
-- When in doubt, navigate to root: `cd /Users/josselinperrus/Projects/data-lineage-app`
 
 ## Best Practices
 - Always check the current working directory before making changes
