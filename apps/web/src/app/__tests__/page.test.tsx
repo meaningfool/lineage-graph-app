@@ -29,4 +29,15 @@ describe('Home Page', () => {
     // Assert - user sees the node title
     expect(screen.getByText('Revenue Growth')).toBeInTheDocument()
   })
+
+  it('should display the "Number of New Paid Users" node with its description when user visits the page', async () => {
+    // Arrange & Act
+    render(<Home />)
+    
+    // Assert - user sees the node title
+    expect(screen.getByText('Number of New Paid Users')).toBeInTheDocument()
+    
+    // Assert - user sees the description from the data file
+    expect(screen.getByText('Calculated number of new paid users')).toBeInTheDocument()
+  })
 }) 
