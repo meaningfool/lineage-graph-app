@@ -1,5 +1,5 @@
 {
-  "name": "my-better-t-app",
+  "name": "data-lineage-app",
   "private": true,
   "workspaces": [
     "apps/*",
