@@ -1,0 +1,38 @@
+# Data Lineage App - Cursor Rules
+
+## Git Workflow
+- **ALWAYS** work with git at the root level (`data-lineage-app/`)
+- **NEVER** initialize git repositories in subdirectories
+- **ALWAYS** commit changes at the root level
+- The project structure uses regular directories for different applications (my-better-t-app, etc.)
+- All files are tracked directly in the root repository
+
+## Project Structure
+- Root: `/Users/josselinperrus/Projects/data-lineage-app/`
+- Applications: `my-better-t-app/`, `other-apps/`, etc.
+- Each application is a complete app with its own package.json
+- Use pnpm workspace commands from the root: `pnpm --filter <app-name> <command>`
+
+## Development Commands
+- Start development: `pnpm dev` (runs all apps)
+- Start specific app: `pnpm --filter <app-name> dev`
+- Build all: `pnpm build` (builds all apps)
+- Install dependencies: `pnpm install` (from root)
+
+## Code Organization
+- Keep submodules self-contained
+- Shared utilities should be in packages/ directory
+- Each app should have its own environment configuration
+- Use workspace-aware commands for cross-app operations
+
+## Error Prevention
+- Before initializing git, check current directory with `pwd`
+- Verify you're in the root directory before running git commands
+- Use `git status` to confirm you're working at the right level
+- When in doubt, navigate to root: `cd /Users/josselinperrus/Projects/data-lineage-app`
+
+## Best Practices
+- Always check the current working directory before making changes
+- Use relative paths from root when referencing files
+- Commit meaningful changes with descriptive messages
+- Test changes in the context of the full workspace 
