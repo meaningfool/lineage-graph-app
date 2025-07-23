@@ -9,7 +9,10 @@ export default function Home() {
     id: node.id,
     type: 'default',
     position: node.position,
-    data: { label: node.label }
+    data: { 
+      label: node.label,
+      properties: node.properties
+    }
   }))
   
   const edges: Edge[] = nodeData.edges

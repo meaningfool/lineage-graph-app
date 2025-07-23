@@ -22,12 +22,12 @@ jest.mock('@tanstack/react-query', () => ({
 }))
 
 describe('Home Page', () => {
-  it('should display a single node with title "Revenue Growth" when user visits the page', async () => {
+  it('should display a single node with title "Number of New Paid Users" when user visits the page', async () => {
     // Arrange & Act
     render(<Home />)
     
     // Assert - user sees the node title
-    expect(screen.getByText('Revenue Growth')).toBeInTheDocument()
+    expect(screen.getByText('Number of New Paid Users')).toBeInTheDocument()
   })
 
   it('should display the "Number of New Paid Users" node with its description when user visits the page', async () => {

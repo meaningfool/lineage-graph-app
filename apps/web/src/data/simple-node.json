@@ -1,9 +1,12 @@
 {
   "nodes": [
     {
-      "id": "1",
-      "label": "Revenue Growth",
-      "position": { "x": 250, "y": 100 }
+      "id": "new-paid-users",
+      "label": "Number of New Paid Users",
+      "position": { "x": 250, "y": 100 },
+      "properties": {
+        "description": "Calculated number of new paid users"
+      }
     }
   ],
   "edges": []
