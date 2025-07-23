@@ -3,8 +3,15 @@ import { LineageGraph } from "@/components/lineage-graph"
 import { Node, Edge } from 'reactflow'
 
 export default function Home() {
-  // Static data for now - will be replaced with actual node data
-  const nodes: Node[] = []
+  // Single node with title "Revenue Growth"
+  const nodes: Node[] = [
+    {
+      id: '1',
+      type: 'default',
+      position: { x: 250, y: 100 },
+      data: { label: 'Revenue Growth' }
+    }
+  ]
   const edges: Edge[] = []
   
   return (
