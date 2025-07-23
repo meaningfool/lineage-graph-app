@@ -5,7 +5,10 @@
       "label": "Number of New Paid Users",
       "position": { "x": 250, "y": 100 },
       "properties": {
-        "description": "Calculated number of new paid users"
+        "description": "Calculated number of new paid users",
+        "dataType": "Integer",
+        "lastUpdated": "2024-01-15",
+        "formula": "New Users × Paid User %"
       }
     }
   ],

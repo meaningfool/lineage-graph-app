@@ -6,20 +6,30 @@ import 'reactflow/dist/style.css'
 interface NodeData {
   label: string
   properties?: {
-    description?: string
     [key: string]: any
   }
 }
 
-// Custom node component that can display label and properties
+// Custom node component that displays label and all properties
 function CustomNode({ data }: { data: NodeData }) {
   return (
-    <div className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-stone-400">
+    <div className="px-4 py-3 shadow-lg rounded-lg bg-white border-2 border-gray-300 min-w-[200px]">
       <Handle type="target" position={Position.Top} className="w-2 h-2" />
-      <div className="flex flex-col">
-        <div className="text-lg font-bold">{data.label}</div>
-        {data.properties?.description && (
-          <div className="text-sm text-gray-600 mt-1">{data.properties.description}</div>
+      <div className="flex flex-col gap-2">
+        <div className="text-lg font-bold text-gray-900 border-b border-gray-200 pb-2">
+          {data.label}
+        </div>
+        {data.properties && (
+          <div className="space-y-1">
+            {Object.entries(data.properties).map(([key, value]) => (
+              <div key={key} className="text-sm">
+                <span className="font-medium text-gray-700 capitalize">
+                  {key.replace(/([A-Z])/g, ' $1').trim()}:
+                </span>
+                <span className="ml-1 text-gray-600">{value}</span>
+              </div>
+            ))}
+          </div>
         )}
       </div>
       <Handle type="source" position={Position.Bottom} className="w-2 h-2" />
