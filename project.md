@@ -1,5 +1,16 @@
 # Data Lineage Application
 
+## Development Approach
+
+We follow **Test-Driven Development (TDD)** principles with a focus on behavioral testing from the user perspective. Our development workflow emphasizes:
+
+- **End-to-end behavioral tests** that serve as living specifications
+- **Frugality principle**: Only implement what is strictly necessary
+- **Clear separation** between structure commits and feature commits
+- **Red-Green-Refactor cycle** for iterative development
+
+For detailed TDD guidelines and workflow, see [`tdd.md`](./tdd.md).
+
 ## Project Overview
 
 This application is designed to help users trace the lineage of data through a directed acyclic graph (DAG) structure. The system enables users to understand how data flows from source data through computed values to final metrics, providing transparency and traceability in data processing pipelines.
