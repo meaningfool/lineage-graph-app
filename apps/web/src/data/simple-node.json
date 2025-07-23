@@ -1,0 +1,10 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "label": "Revenue Growth",
+      "position": { "x": 250, "y": 100 }
+    }
+  ],
+  "edges": []
+} 

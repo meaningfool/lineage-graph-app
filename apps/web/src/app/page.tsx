@@ -1,18 +1,18 @@
 "use client"
 import { LineageGraph } from "@/components/lineage-graph"
 import { Node, Edge } from 'reactflow'
+import nodeData from '@/data/simple-node.json'
 
 export default function Home() {
-  // Single node with title "Revenue Growth"
-  const nodes: Node[] = [
-    {
-      id: '1',
-      type: 'default',
-      position: { x: 250, y: 100 },
-      data: { label: 'Revenue Growth' }
-    }
-  ]
-  const edges: Edge[] = []
+  // Load node data from file
+  const nodes: Node[] = nodeData.nodes.map(node => ({
+    id: node.id,
+    type: 'default',
+    position: node.position,
+    data: { label: node.label }
+  }))
+  
+  const edges: Edge[] = nodeData.edges
   
   return (
     <div className="container mx-auto max-w-6xl px-4 py-2">
