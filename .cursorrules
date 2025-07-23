@@ -1,5 +1,10 @@
 # Data Lineage App - Cursor Rules
 
+## 🚨 CRITICAL: ALWAYS CHECK BEFORE ACTING
+- **BEFORE ANY CHANGE**: Ask "Does this need test discussion first?"
+- **BEFORE ANY COMMIT**: Ask "Are structure and feature changes separated?"
+- **BEFORE ANY IMPLEMENTATION**: Get user validation
+
 ## Communication Protocol
 - **ALWAYS** explain what I'm going to do before doing it
 - Wait for user validation before proceeding with any changes
@@ -10,6 +15,21 @@
 - **Red Phase**: Ensure tests fail initially before implementing
 - **Validation Required**: Get user approval before making tests pass
 - **Separate Commits**: Structure changes and feature changes must be in separate commits
+
+## Commit Type Guidelines
+- **feat**: New functionality that adds behavior (requires tests)
+- **refactor**: Code changes that don't add new behavior (styling, restructuring, optimization)
+- **fix**: Bug fixes
+- **docs**: Documentation changes
+- **style**: Code style changes (formatting, etc.)
+- **test**: Adding or modifying tests
+- **chore**: Maintenance tasks
+
+## Important: Styling Changes Are Refactors
+- **UI/UX improvements** = `refactor` (not `feat`)
+- **Layout changes** = `refactor` (not `feat`)
+- **Styling updates** = `refactor` (not `feat`)
+- **Only new functionality** = `feat` (requires tests)
 
 ## Git Workflow
 - **ALWAYS** work with git at the root level
