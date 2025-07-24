@@ -14,7 +14,7 @@ interface NodeData {
 function CustomNode({ data }: { data: NodeData }) {
   return (
     <div className="px-2 py-1.5 shadow-sm rounded-sm bg-white border border-gray-200 min-w-[120px] max-w-[150px]">
-      <Handle type="target" position={Position.Top} className="w-1.5 h-1.5" />
+      <Handle type="target" position={Position.Left} className="w-1.5 h-1.5 opacity-0" />
       <div className="flex flex-col gap-0.5">
         <div className="text-xs font-medium text-gray-900 border-b border-gray-100 pb-0.5">
           {data.label}
@@ -32,7 +32,7 @@ function CustomNode({ data }: { data: NodeData }) {
           </div>
         )}
       </div>
-      <Handle type="source" position={Position.Bottom} className="w-1.5 h-1.5" />
+      <Handle type="source" position={Position.Right} className="w-1.5 h-1.5 opacity-0" />
     </div>
   )
 }
@@ -53,11 +53,25 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
     type: 'custom'
   }))
 
+  // Update edges to use plain arrow style without dots
+  const customEdges = edges.map(edge => ({
+    ...edge,
+    type: 'smoothstep',
+    animated: false, // Remove animation
+    style: { stroke: '#6b7280', strokeWidth: 2 }, // Plain line style
+    markerEnd: {
+      type: 'arrow',
+      width: 20,
+      height: 20,
+      color: '#6b7280',
+    },
+  }))
+
   return (
     <div className="w-full h-full">
       <ReactFlow
         nodes={customNodes}
-        edges={edges}
+        edges={customEdges}
         nodeTypes={nodeTypes}
         fitView
         fitViewOptions={{ padding: 0.1 }}
