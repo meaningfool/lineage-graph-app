@@ -1,9 +1,18 @@
 {
   "nodes": [
     {
+      "id": "new-users",
+      "label": "New Users",
+      "properties": {
+        "description": "Total number of new users",
+        "dataType": "Integer",
+        "lastUpdated": "2024-01-15",
+        "formula": "Count of new registrations"
+      }
+    },
+    {
       "id": "new-paid-users",
       "label": "Number of New Paid Users",
-      "position": { "x": 250, "y": 100 },
       "properties": {
         "description": "Calculated number of new paid users",
         "dataType": "Integer",
@@ -12,5 +21,11 @@
       }
     }
   ],
-  "edges": []
+  "edges": [
+    {
+      "id": "edge-1",
+      "source": "new-users",
+      "target": "new-paid-users"
+    }
+  ]
 } 
