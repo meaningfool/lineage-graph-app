@@ -6,7 +6,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
     globals: true,
-    css: false, // Disable CSS processing for tests
+    css: false, // Completely disable CSS processing for tests
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     exclude: [
       '**/node_modules/**',
@@ -27,5 +27,8 @@ export default defineConfig({
   define: {
     'process.env.NODE_ENV': '"test"',
   },
-  css: false, // Disable CSS processing entirely
+  // Completely disable CSS processing to avoid PostCSS conflicts
+  css: false,
+  // Disable PostCSS processing entirely
+  plugins: [],
 }) 

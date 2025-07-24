@@ -7,10 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "./scripts/test-setup.sh vitest",
-    "test:ui": "./scripts/test-setup.sh vitest --ui",
-    "test:run": "./scripts/test-setup.sh vitest run",
-    "test:coverage": "./scripts/test-setup.sh vitest run --coverage"
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@tanstack/react-form": "^1.12.3",
