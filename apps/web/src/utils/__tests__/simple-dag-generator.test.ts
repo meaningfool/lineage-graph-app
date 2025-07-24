@@ -1,5 +1,6 @@
 import { generateSimpleDAG } from '../simple-dag-generator';
 import type { DAGData, DAGNode, DAGEdge } from '../simple-dag-generator';
+import { describe, test, expect } from 'vitest';
 
 // COMMENTED OUT FOR REVIEW - Simple DAG Generator Tests
 /*

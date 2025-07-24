@@ -1,10 +1,10 @@
 import { render, screen, within } from '@testing-library/react'
-import '@testing-library/jest-dom'
+import { describe, it, expect, vi } from 'vitest'
 import Home from '../page'
 import nodeData from '@/data/target-lineage.json'
 
 // Mock ReactFlow to avoid canvas rendering issues in tests
-jest.mock('reactflow', () => ({
+vi.mock('reactflow', () => ({
   __esModule: true,
   default: ({ nodes, edges }: any) => (
     <div data-testid="react-flow">
@@ -55,13 +55,13 @@ jest.mock('reactflow', () => ({
 }))
 
 // Mock the trpc utility
-jest.mock('@/utils/trpc', () => ({
-  api: {
-    useQuery: jest.fn(() => ({
-      data: null,
-      isLoading: false,
-    })),
-  },
+vi.mock('@/utils/trpc', () => ({
+      api: {
+      useQuery: vi.fn(() => ({
+        data: null,
+        isLoading: false,
+      })),
+    },
 }))
 
 describe('Home Page', () => {
