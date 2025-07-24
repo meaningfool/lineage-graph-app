@@ -53,10 +53,10 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
     type: 'custom'
   }))
 
-  // Update edges to use plain arrow style without dots
+  // Update edges to use smoothstep for balanced routing and flow
   const customEdges = edges.map(edge => ({
     ...edge,
-    type: 'straight', // Use straight edge for cleaner arrow
+    type: 'smoothstep', // Use smoothstep for balanced structure and flow
     animated: false, // Remove animation
     style: { stroke: '#6b7280', strokeWidth: 2 }, // Plain line style
     markerEnd: {
