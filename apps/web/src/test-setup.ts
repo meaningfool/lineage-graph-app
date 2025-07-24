@@ -7,7 +7,5 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
   disconnect: vi.fn(),
 }))
 
-// Mock CSS imports to avoid PostCSS issues
-vi.mock('*.css', () => ({}))
-vi.mock('*.scss', () => ({}))
-vi.mock('*.sass', () => ({})) 
+// Mock only ReactFlow CSS imports (the problematic ones)
+vi.mock('reactflow/dist/style.css', () => ({})) 

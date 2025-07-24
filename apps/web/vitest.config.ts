@@ -6,7 +6,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
     globals: true,
-    css: false, // Completely disable CSS processing for tests
+    css: true, // Enable CSS processing for tests that might need it
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     exclude: [
       '**/node_modules/**',
@@ -14,9 +14,6 @@ export default defineConfig({
       '**/cypress/**',
       '**/.{idea,git,cache,output,temp}/**',
       '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*',
-      '**/*.css',
-      '**/*.scss',
-      '**/*.sass'
     ],
   },
   resolve: {
@@ -27,8 +24,13 @@ export default defineConfig({
   define: {
     'process.env.NODE_ENV': '"test"',
   },
-  // Completely disable CSS processing to avoid PostCSS conflicts
-  css: false,
-  // Disable PostCSS processing entirely
-  plugins: [],
+  // Configure CSS processing with proper PostCSS setup
+  css: {
+    postcss: {
+      plugins: [
+        // Use require() instead of string reference for Tailwind CSS v4
+        require('@tailwindcss/postcss'),
+      ],
+    },
+  },
 }) 
