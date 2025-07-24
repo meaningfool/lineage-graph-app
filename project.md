@@ -9,7 +9,7 @@ We follow **Test-Driven Development (TDD)** principles with a focus on behaviora
 - **Clear separation** between structure commits and feature commits
 - **Red-Green-Refactor cycle** for iterative development
 
-For detailed TDD guidelines and workflow, see [`tdd.md`](./tdd.md).
+**For detailed TDD workflow and rules, see `.cursorrules` and `tdd.md`.**
 
 ## Project Overview
 

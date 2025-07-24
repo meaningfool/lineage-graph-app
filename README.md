@@ -6,6 +6,8 @@ A modern web application for tracing data lineage through directed acyclic graph
 
 This application helps users understand how data flows from source data through computed values to final metrics, providing transparency and traceability in data processing pipelines.
 
+**For development workflow and TDD rules, see `.cursorrules` and `tdd.md`.**
+
 ## 📁 Project Structure
 
 ```

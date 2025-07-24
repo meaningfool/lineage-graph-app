@@ -13,7 +13,7 @@ interface NodeData {
 // Custom node component that displays label and all properties
 function CustomNode({ data }: { data: NodeData }) {
   return (
-    <div className="px-2 py-1.5 shadow-sm rounded-sm bg-white border border-gray-200 min-w-[120px] max-w-[150px]">
+    <div className="px-3 py-2 shadow-sm rounded-sm bg-white border border-gray-200 min-w-[150px] max-w-[200px]">
       <Handle type="target" position={Position.Left} className="w-1.5 h-1.5 opacity-0" />
       <div className="flex flex-col gap-0.5">
         <div className="text-xs font-medium text-gray-900 border-b border-gray-100 pb-0.5">
@@ -56,16 +56,19 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
   // Update edges to use plain arrow style without dots
   const customEdges = edges.map(edge => ({
     ...edge,
-    type: 'smoothstep',
+    type: 'straight', // Use straight edge for cleaner arrow
     animated: false, // Remove animation
     style: { stroke: '#6b7280', strokeWidth: 2 }, // Plain line style
     markerEnd: {
-      type: 'arrow',
-      width: 20,
-      height: 20,
+      type: 'arrowclosed', // Use closed arrow for solid triangle
+      width: 12,
+      height: 12,
       color: '#6b7280',
     },
   }))
+
+  console.log('LineageGraph nodes:', customNodes)
+  console.log('LineageGraph edges:', customEdges)
 
   return (
     <div className="w-full h-full">
@@ -74,7 +77,7 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
         edges={customEdges}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.1 }}
+        fitViewOptions={{ padding: 0.2 }}
         minZoom={0.1}
         maxZoom={2}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}

@@ -10,11 +10,47 @@
 - Wait for user validation before proceeding with any changes
 - Discuss test behavior and expectations before writing tests
 
-## TDD Workflow
+## 🚨 CRITICAL TDD WORKFLOW RULES
+
+### **BEFORE ANY TEST WRITING:**
+1. **Identify the specific feature** you're implementing
+2. **Write ONLY tests for that specific feature** - do not modify unrelated tests
+3. **Run tests immediately** after writing them to verify they fail (Red phase)
+4. **If tests don't fail** - the tests are useless or testing the wrong thing
+5. **If tests pass** - you're testing against mocked data instead of real implementation
+
+### **TDD WORKFLOW (MANDATORY):**
+1. **Red Phase**: Write tests for the specific feature → Run tests → Verify they FAIL
+2. **Green Phase**: Implement the minimal solution → Run tests → Verify they PASS  
+3. **Refactor Phase**: Clean up code while keeping tests passing
+
+### **WORKFLOW PRINCIPLES:**
 - **Test Discussion First**: Always discuss the test behavior and expectations before writing any test
 - **Red Phase**: Ensure tests fail initially before implementing
 - **Validation Required**: Get user approval before making tests pass
 - **Separate Commits**: Structure changes and feature changes must be in separate commits
+
+### **TEST VALIDATION CHECKLIST:**
+- [ ] Tests are written for the specific feature only
+- [ ] Tests run and FAIL before implementation
+- [ ] Tests are testing real behavior, not mocked data
+- [ ] Tests verify user-visible behavior
+- [ ] No unrelated tests were modified
+
+### **COMMON TDD MISTAKES TO AVOID:**
+- ❌ Writing tests that pass immediately (testing mocked data)
+- ❌ Modifying unrelated tests during feature development
+- ❌ Implementing before verifying tests fail
+- ❌ Testing implementation details instead of user behavior
+
+### **TDD PRINCIPLES (See tdd.md for details):**
+- **Behavioral Testing Focus**: Tests describe user behavior and expected outcomes
+- **Frugality Principle**: Only implement what is strictly necessary
+- **Red-Green-Refactor Cycle**: Write failing test → Make it pass → Refactor
+- **Structure vs Feature Separation**: Separate infrastructure changes from feature implementation
+- **Commit Strategy**: "Make the change easy, then make the easy change" (Kent Beck)
+- **Development Process**: Identify iterations, write tests first, implement minimally, refactor when needed
+
 
 ## Commit Type Guidelines
 - **feat**: New functionality that adds behavior (requires tests)
