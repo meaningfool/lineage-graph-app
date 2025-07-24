@@ -19,6 +19,16 @@
         "lastUpdated": "2024-01-15",
         "formula": "New Users × Paid User %"
       }
+    },
+    {
+      "id": "avg-revenue-per-user",
+      "label": "Average Revenue Per User",
+      "properties": {
+        "description": "Average monthly revenue generated per paid user",
+        "dataType": "Currency",
+        "lastUpdated": "2024-01-15",
+        "source": "Billing system"
+      }
     }
   ],
   "edges": [

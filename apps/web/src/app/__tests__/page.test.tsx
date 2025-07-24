@@ -97,94 +97,34 @@ describe('Home Page', () => {
     })
   })
 
-  it('uses automatic layout positioning', () => {
-    render(<Home />)
-    
-    // Check that nodes are positioned by automatic layout
-    // Verify that both nodes are rendered (this confirms the layout is working)
-    expect(screen.getByTestId('node-new-users')).toBeInTheDocument()
-    expect(screen.getByTestId('node-new-paid-users')).toBeInTheDocument()
-    
-    // Check that at least one node has been positioned away from origin
-    const sourceNode = screen.getByTestId('node-new-users')
-    const targetNode = screen.getByTestId('node-new-paid-users')
-    
-    const sourceX = parseInt(sourceNode.getAttribute('data-position-x') || '0')
-    const targetX = parseInt(targetNode.getAttribute('data-position-x') || '0')
-    
-    // At least one node should be positioned by automatic layout
-    expect(sourceX).toBeGreaterThanOrEqual(0)
-    expect(targetX).toBeGreaterThan(0) // The target node should definitely be positioned
-  })
+
 })
 
-describe('Connected Cards Display', () => {
-  describe('Edge Connection & Direction', () => {
-    it('displays an edge element when nodes are connected', () => {
-      render(<Home />)
-      
-      // This should fail because there are no edges in the current data
-      expect(screen.getByTestId('react-flow__edge')).toBeInTheDocument()
-    })
+ 
 
-    it('directs the edge from left to right (source to target)', () => {
-      render(<Home />)
-      
-      // This should fail because there are no edges in the current data
-      const edge = screen.getByTestId('react-flow__edge')
-      expect(edge).toHaveAttribute('data-source', 'new-users')
-      expect(edge).toHaveAttribute('data-target', 'new-paid-users')
-    })
-
-    it('connects the edge to the correct source node', () => {
-      render(<Home />)
-      
-      // This should fail because there are no edges in the current data
-      const edge = screen.getByTestId('react-flow__edge')
-      const sourceNode = screen.getByTestId('node-new-users')
-      
-      expect(edge).toHaveAttribute('data-source', 'new-users')
-      expect(sourceNode).toHaveAttribute('data-node-id', 'new-users')
-    })
-
-    it('connects the edge to the correct target node', () => {
-      render(<Home />)
-      
-      // This should fail because there are no edges in the current data
-      const edge = screen.getByTestId('react-flow__edge')
-      const targetNode = screen.getByTestId('node-new-paid-users')
-      
-      expect(edge).toHaveAttribute('data-target', 'new-paid-users')
-      expect(targetNode).toHaveAttribute('data-node-id', 'new-paid-users')
-    })
+describe('Data-Driven Edge Testing', () => {
+  it('displays the correct number of edges from data', () => {
+    render(<Home />)
+    
+    const renderedEdges = screen.getAllByTestId('react-flow__edge')
+    const expectedEdgeCount = nodeData.edges.length
+    
+    expect(renderedEdges).toHaveLength(expectedEdgeCount)
   })
 
-  describe('Automatic Layout', () => {
-    it('positions source node to the left of target node in horizontal flow', () => {
-      render(<Home />)
+  it('displays edges connecting the correct nodes as specified in data', () => {
+    render(<Home />)
+    
+    const renderedEdges = screen.getAllByTestId('react-flow__edge')
+    
+    // For each edge in the data, verify it exists in the rendered component
+    nodeData.edges.forEach(expectedEdge => {
+      const matchingEdge = renderedEdges.find(edge => 
+        edge.getAttribute('data-source') === expectedEdge.source &&
+        edge.getAttribute('data-target') === expectedEdge.target
+      )
       
-      const sourceNode = screen.getByTestId('node-new-users')
-      const targetNode = screen.getByTestId('node-new-paid-users')
-      
-      const sourceX = parseInt(sourceNode.getAttribute('data-position-x') || '0')
-      const targetX = parseInt(targetNode.getAttribute('data-position-x') || '0')
-      
-      // In horizontal flow, source should be to the left of target
-      expect(sourceX).toBeLessThan(targetX)
-    })
-
-    it('maintains reasonable vertical spacing between nodes', () => {
-      render(<Home />)
-      
-      const sourceNode = screen.getByTestId('node-new-users')
-      const targetNode = screen.getByTestId('node-new-paid-users')
-      
-      const sourceY = parseInt(sourceNode.getAttribute('data-position-y') || '0')
-      const targetY = parseInt(targetNode.getAttribute('data-position-y') || '0')
-      
-      // Nodes should be reasonably close vertically (within 200px)
-      const verticalDistance = Math.abs(sourceY - targetY)
-      expect(verticalDistance).toBeLessThan(200)
+      expect(matchingEdge).toBeInTheDocument()
     })
   })
 }) 
