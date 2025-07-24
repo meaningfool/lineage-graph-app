@@ -6,7 +6,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
     globals: true,
-    css: true,
+    css: false, // Disable CSS processing for tests
   },
   resolve: {
     alias: {
