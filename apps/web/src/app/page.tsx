@@ -1,4 +1,5 @@
 "use client"
+import React from 'react'
 import { LineageGraph } from "@/components/lineage-graph"
 import { Node, Edge } from 'reactflow'
 import dagre from 'dagre'

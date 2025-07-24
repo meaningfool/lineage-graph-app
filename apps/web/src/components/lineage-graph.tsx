@@ -1,6 +1,8 @@
 "use client"
 
-import ReactFlow, { Node, Edge, Handle, Position, Background } from 'reactflow'
+import React from 'react'
+import ReactFlow, { Handle, Position, Background } from 'reactflow'
+import type { Node, Edge } from 'reactflow'
 import 'reactflow/dist/style.css'
 
 interface NodeData {
@@ -60,7 +62,7 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
     animated: false, // Remove animation
     style: { stroke: '#6b7280', strokeWidth: 2 }, // Plain line style
     markerEnd: {
-      type: 'arrowclosed', // Use closed arrow for solid triangle
+      type: 'arrowclosed' as const, // Use closed arrow for solid triangle
       width: 12,
       height: 12,
       color: '#6b7280',
@@ -84,7 +86,7 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
         proOptions={{ hideAttribution: true }}
       >
         <Background 
-          variant="dots" 
+          variant="dots" as const
           gap={20} 
           size={1.5} 
           color="#9ca3af"
