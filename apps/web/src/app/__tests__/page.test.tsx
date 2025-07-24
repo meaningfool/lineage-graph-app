@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import Home from '../page'
-import nodeData from '@/data/simple-node.json'
+import nodeData from '@/data/current-lineage.json'
 
 // Mock ReactFlow to avoid canvas rendering issues in tests
 jest.mock('reactflow', () => ({

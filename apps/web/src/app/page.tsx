@@ -2,7 +2,7 @@
 import { LineageGraph } from "@/components/lineage-graph"
 import { Node, Edge } from 'reactflow'
 import dagre from 'dagre'
-import nodeData from '@/data/simple-node.json'
+import nodeData from '@/data/current-lineage.json'
 
 // Layout utility function using dagre
 const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'LR') => {
