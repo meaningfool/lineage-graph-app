@@ -27,4 +27,5 @@ export default defineConfig({
   define: {
     'process.env.NODE_ENV': '"test"',
   },
+  css: false, // Disable CSS processing entirely
 }) 
