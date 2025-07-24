@@ -5,10 +5,25 @@
 - **BEFORE ANY COMMIT**: Ask "Are structure and feature changes separated?"
 - **BEFORE ANY IMPLEMENTATION**: Get user validation
 
+## 🚨 CRITICAL: QUESTIONS vs ACTIONS
+- **WHEN USER ASKS A QUESTION**: Answer the question only - do NOT implement, code, or act based on the answer
+- **WHEN USER ASKS TO ACT**: Only then proceed with implementation, coding, or actions
+- **NEVER ASSUME**: Don't assume the user wants you to proceed after answering a question
+
+## 🚨 CRITICAL: SPECIFIC REQUESTS
+- **WHEN USER ASKS FOR SOMETHING SPECIFIC**: Do exactly that thing, nothing else
+- **IF CAN'T FIND/DO THE SPECIFIC THING**: Tell the user you couldn't do it and ask for alternatives
+- **DON'T TAKE INITIATIVE**: Don't substitute with something else without asking
+- **BE HONEST**: If you can't find digraph-js, say "I couldn't find digraph-js" - don't look at graphology instead
+
 ## Communication Protocol
 - **ALWAYS** explain what I'm going to do before doing it
 - Wait for user validation before proceeding with any changes
 - Discuss test behavior and expectations before writing tests
+- **QUESTIONS**: Answer thoroughly but don't act
+- **EXPLORATION**: Provide analysis and insights but don't implement
+- **RESEARCH**: Share findings but don't create files or run commands
+- **ACTIONS**: Only when explicitly requested with action words like "implement", "create", "add", "do", etc.
 
 ## 🚨 CRITICAL TDD WORKFLOW RULES
 
@@ -94,4 +109,9 @@
 - Always check the current working directory before making changes
 - Use relative paths from root when referencing files
 - Commit meaningful changes with descriptive messages
-- Test changes in the context of the full workspace 
+- Test changes in the context of the full workspace
+
+## Cursor Rules Management
+- **WHEN USER ASKS TO ADD A RULE**: Add the rule to `.cursorrules` file immediately
+- **RULE ADDITION**: Use `search_replace` to add new rules to the appropriate section
+- **RULE ORGANIZATION**: Place rules in logical sections (CRITICAL, Communication, etc.) 
