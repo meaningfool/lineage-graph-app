@@ -45,32 +45,30 @@ export class LineageGraph {
    * Add a node with specified role (hybrid approach - generic method)
    */
   addNode(key: string, role: NodeRole, attributes?: any): string {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+    const nodeData = { role, ...attributes };
+    this.graph.addNode(key, nodeData);
+    return key;
   }
 
   /**
    * Add an output node (convenience method)
    */
   addOutput(key: string, attributes?: any): string {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+    return this.addNode(key, NodeRole.OUTPUT, attributes);
   }
 
   /**
    * Add a step node (convenience method)
    */
   addStep(key: string, attributes?: any): string {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+    return this.addNode(key, NodeRole.STEP, attributes);
   }
 
   /**
    * Add an input node (convenience method)
    */
   addInput(key: string, attributes?: any): string {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+    return this.addNode(key, NodeRole.INPUT, attributes);
   }
 
   /**
@@ -85,16 +83,28 @@ export class LineageGraph {
    * Get all root nodes (outputs - nodes with no incoming edges)
    */
   getRootNodes(): string[] {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+    const rootNodes: string[] = [];
+    this.graph.forEachNode((node, attributes) => {
+      // For lineage graphs, root nodes are outputs with no incoming edges
+      if (this.graph.inDegree(node) === 0 && attributes.role === NodeRole.OUTPUT) {
+        rootNodes.push(node);
+      }
+    });
+    return rootNodes;
   }
 
   /**
    * Get all leaf nodes (inputs - nodes with no outgoing edges)
    */
   getLeafNodes(): string[] {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+    const leafNodes: string[] = [];
+    this.graph.forEachNode((node, attributes) => {
+      // For lineage graphs, leaf nodes are inputs with no outgoing edges
+      if (this.graph.outDegree(node) === 0 && attributes.role === NodeRole.INPUT) {
+        leafNodes.push(node);
+      }
+    });
+    return leafNodes;
   }
 
   /**
