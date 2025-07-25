@@ -27,6 +27,14 @@
 
 ## 🚨 CRITICAL TDD WORKFLOW RULES
 
+### **MANDATORY TDD PHASE CONTROL:**
+1. **RED PHASE**: Write tests → Run tests → Verify they FAIL → **STOP AND WAIT FOR USER APPROVAL**
+2. **Only commit tests** after user explicitly approves them
+3. **GREEN PHASE**: Only start when user explicitly requests it
+4. **GREEN PHASE**: Implement minimal solution → Run tests → Verify they PASS → **STOP AND WAIT FOR USER APPROVAL**
+5. **Only commit implementation** after user explicitly approves it
+6. **NEVER proceed to next phase** without explicit user permission
+
 ### **BEFORE ANY TEST WRITING:**
 1. **Identify the specific feature** you're implementing
 2. **Write ONLY tests for that specific feature** - do not modify unrelated tests
@@ -35,14 +43,14 @@
 5. **If tests pass** - you're testing against mocked data instead of real implementation
 
 ### **TDD WORKFLOW (MANDATORY):**
-1. **Red Phase**: Write tests for the specific feature → Run tests → Verify they FAIL
-2. **Green Phase**: Implement the minimal solution → Run tests → Verify they PASS  
+1. **Red Phase**: Write tests for the specific feature → Run tests → Verify they FAIL → **STOP**
+2. **Green Phase**: Implement the minimal solution → Run tests → Verify they PASS → **STOP**
 3. **Refactor Phase**: Clean up code while keeping tests passing
 
 ### **WORKFLOW PRINCIPLES:**
 - **Test Discussion First**: Always discuss the test behavior and expectations before writing any test
 - **Red Phase**: Ensure tests fail initially before implementing
-- **Validation Required**: Get user approval before making tests pass
+- **USER APPROVAL REQUIRED**: Get explicit user approval before committing or proceeding to next phase
 - **Separate Commits**: Structure changes and feature changes must be in separate commits
 
 ### **TEST VALIDATION CHECKLIST:**
