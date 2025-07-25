@@ -262,4 +262,263 @@ describe('LineageGraph - Edge Operations & Dependencies', () => {
       }).toThrow('Cannot add outgoing edge from INPUT node');
     });
   });
+});
+
+describe('LineageGraph - Graph Validation', () => {
+  describe('isAcyclic', () => {
+    test('should return true for simple linear graph', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: OUTPUT -> STEP -> INPUT (no cycles)
+      lineage.addOutput('output1');
+      lineage.addStep('step1');
+      lineage.addInput('input1');
+      lineage.addEdge('output1', 'step1');
+      lineage.addEdge('step1', 'input1');
+      
+      expect(lineage.isAcyclic()).toBe(true);
+    });
+
+    test('should return false for simple cycle', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: STEP1 -> STEP2 -> STEP3 -> STEP1 cycle
+      lineage.addStep('step1');
+      lineage.addStep('step2'); 
+      lineage.addStep('step3');
+      lineage.addEdge('step1', 'step2');
+      lineage.addEdge('step2', 'step3');
+      lineage.addEdge('step3', 'step1');
+      
+      expect(lineage.isAcyclic()).toBe(false);
+    });
+
+    test('should return true for complex DAG', () => {
+      const lineage = new LineageGraph();
+      
+      // Diamond pattern: OUTPUT -> STEP1 -> INPUT
+      //                        -> STEP2 -> /
+      lineage.addOutput('output1');
+      lineage.addStep('step1');
+      lineage.addStep('step2');
+      lineage.addInput('input1');
+      lineage.addEdge('output1', 'step1');
+      lineage.addEdge('output1', 'step2');
+      lineage.addEdge('step1', 'input1');
+      lineage.addEdge('step2', 'input1');
+      
+      expect(lineage.isAcyclic()).toBe(true);
+    });
+  });
+
+  describe('hasValidFlow', () => {
+    test('should return true for direct OUTPUT -> INPUT', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: OUTPUT -> INPUT (simplest valid flow)
+      lineage.addOutput('output1');
+      lineage.addInput('input1');
+      lineage.addEdge('output1', 'input1');
+      
+      expect(lineage.hasValidFlow()).toBe(true);
+    });
+
+    test('should return true for OUTPUT -> STEP -> INPUT', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: OUTPUT -> STEP -> INPUT (standard lineage pattern)
+      lineage.addOutput('output1');
+      lineage.addStep('step1');
+      lineage.addInput('input1');
+      lineage.addEdge('output1', 'step1');
+      lineage.addEdge('step1', 'input1');
+      
+      expect(lineage.hasValidFlow()).toBe(true);
+    });
+
+    test('should return true for multi-level: OUTPUT -> STEP1 -> STEP2 -> INPUT', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: OUTPUT -> STEP1 -> STEP2 -> INPUT (complex transformation chain)
+      lineage.addOutput('output1');
+      lineage.addStep('step1');
+      lineage.addStep('step2');
+      lineage.addInput('input1');
+      lineage.addEdge('output1', 'step1');
+      lineage.addEdge('step1', 'step2');
+      lineage.addEdge('step2', 'input1');
+      
+      expect(lineage.hasValidFlow()).toBe(true);
+    });
+
+    test('should return true for branching: OUTPUT -> [STEP1, STEP2] -> INPUT', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: OUTPUT -> STEP1 -> INPUT
+      //         OUTPUT -> STEP2 -> INPUT (both branches complete)
+      lineage.addOutput('output1');
+      lineage.addStep('step1');
+      lineage.addStep('step2');
+      lineage.addInput('input1');
+      lineage.addEdge('output1', 'step1');
+      lineage.addEdge('output1', 'step2');
+      lineage.addEdge('step1', 'input1');
+      lineage.addEdge('step2', 'input1');
+      
+      expect(lineage.hasValidFlow()).toBe(true);
+    });
+
+    test('should return false for dangling STEP in branching pattern', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: OUTPUT -> STEP1 -> INPUT
+      //         OUTPUT -> STEP2 (dangling - no outgoing edge)
+      lineage.addOutput('output1');
+      lineage.addStep('step1');
+      lineage.addStep('step2');
+      lineage.addInput('input1');
+      lineage.addEdge('output1', 'step1');
+      lineage.addEdge('output1', 'step2');
+      lineage.addEdge('step1', 'input1');
+      // Note: step2 has no outgoing edge, making it invalid
+      
+      expect(lineage.hasValidFlow()).toBe(false);
+    });
+
+    test('should return true for disconnected components', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: OUTPUT1 -> INPUT1, OUTPUT2 -> INPUT2 (separate valid chains)
+      lineage.addOutput('output1');
+      lineage.addInput('input1');
+      lineage.addOutput('output2');
+      lineage.addInput('input2');
+      lineage.addEdge('output1', 'input1');
+      lineage.addEdge('output2', 'input2');
+      
+      expect(lineage.hasValidFlow()).toBe(true);
+    });
+
+    test('should return false for empty graph', () => {
+      const lineage = new LineageGraph();
+      
+      // Empty graph - no nodes at all
+      
+      expect(lineage.hasValidFlow()).toBe(false);
+    });
+
+    test('should return false for orphaned OUTPUT nodes', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: OUTPUT1 -> INPUT1 (valid), OUTPUT2 (orphaned - no outgoing edges)
+      lineage.addOutput('output1');
+      lineage.addInput('input1');
+      lineage.addOutput('output2');
+      lineage.addEdge('output1', 'input1');
+      // Note: output2 has no outgoing edges, making it orphaned
+      
+      expect(lineage.hasValidFlow()).toBe(false);
+    });
+
+    test('should return false for orphaned INPUT nodes', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: OUTPUT1 -> INPUT1 (valid), INPUT2 (orphaned - no incoming edges)
+      lineage.addOutput('output1');
+      lineage.addInput('input1');
+      lineage.addInput('input2');
+      lineage.addEdge('output1', 'input1');
+      // Note: input2 has no incoming edges, making it orphaned
+      
+      expect(lineage.hasValidFlow()).toBe(false);
+    });
+
+    test('should return false for orphaned STEP nodes', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: OUTPUT1 -> INPUT1 (valid), STEP1 (orphaned - no connections)
+      lineage.addOutput('output1');
+      lineage.addInput('input1');
+      lineage.addStep('step1');
+      lineage.addEdge('output1', 'input1');
+      // Note: step1 has no incoming or outgoing edges, making it orphaned
+      
+      expect(lineage.hasValidFlow()).toBe(false);
+    });
+
+    test('should return false for STEP with only incoming edges', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: OUTPUT1 -> STEP1 (dangling - no outgoing edge), OUTPUT2 -> INPUT1 (valid)
+      lineage.addOutput('output1');
+      lineage.addOutput('output2');
+      lineage.addStep('step1');
+      lineage.addInput('input1');
+      lineage.addEdge('output1', 'step1');
+      lineage.addEdge('output2', 'input1');
+      // Note: step1 has incoming edge but no outgoing edge
+      
+      expect(lineage.hasValidFlow()).toBe(false);
+    });
+
+    test('should return false for STEP with only outgoing edges', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: STEP1 -> INPUT1 (dangling - no incoming edge), OUTPUT1 -> INPUT2 (valid)
+      lineage.addOutput('output1');
+      lineage.addStep('step1');
+      lineage.addInput('input1');
+      lineage.addInput('input2');
+      lineage.addEdge('step1', 'input1');
+      lineage.addEdge('output1', 'input2');
+      // Note: step1 has outgoing edge but no incoming edge
+      
+      expect(lineage.hasValidFlow()).toBe(false);
+    });
+  });
+
+  describe('isValid', () => {
+    test('should return true when both acyclic and has valid flow', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: OUTPUT -> STEP -> INPUT (both acyclic and valid flow)
+      lineage.addOutput('output1');
+      lineage.addStep('step1');
+      lineage.addInput('input1');
+      lineage.addEdge('output1', 'step1');
+      lineage.addEdge('step1', 'input1');
+      
+      expect(lineage.isValid()).toBe(true);
+    });
+
+    test('should return false when acyclic but invalid flow', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: OUTPUT1 -> INPUT1 (valid), OUTPUT2 (orphaned - invalid flow but acyclic)
+      lineage.addOutput('output1');
+      lineage.addInput('input1');
+      lineage.addOutput('output2');
+      lineage.addEdge('output1', 'input1');
+      // Note: output2 orphaned makes invalid flow, but graph is still acyclic
+      
+      expect(lineage.isValid()).toBe(false);
+    });
+
+    test('should return false when valid flow but has cycles', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: OUTPUT -> STEP1 -> STEP2 -> STEP1 (cycle) -> INPUT
+      // This would have valid flow pattern but contains a cycle
+      lineage.addOutput('output1');
+      lineage.addStep('step1');
+      lineage.addStep('step2');
+      lineage.addInput('input1');
+      lineage.addEdge('output1', 'step1');
+      lineage.addEdge('step1', 'step2');
+      lineage.addEdge('step2', 'step1'); // Creates cycle
+      lineage.addEdge('step2', 'input1');
+      
+      expect(lineage.isValid()).toBe(false);
+    });
+  });
 }); 

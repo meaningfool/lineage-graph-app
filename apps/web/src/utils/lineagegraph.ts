@@ -159,6 +159,46 @@ export class LineageGraph {
   }
 
   /**
+   * Check if the lineage graph is valid (acyclic + valid flow patterns)
+   */
+  isValid(): boolean {
+    // TODO: Implementation
+    throw new Error('Not implemented yet');
+  }
+
+  /**
+   * Check if the graph is acyclic (DAG requirement)
+   */
+  isAcyclic(): boolean {
+    // TODO: Implementation  
+    throw new Error('Not implemented yet');
+  }
+
+  /**
+   * Check if the graph has valid lineage flow patterns
+   * (OUTPUT nodes connect to INPUT nodes through valid paths)
+   */
+  hasValidFlow(): boolean {
+    // TODO: Implementation
+    throw new Error('Not implemented yet');
+  }
+
+  /**
+   * Get dependencies for a specific node, returning a subgraph containing:
+   * - For OUTPUT nodes: all downstream dependencies (what this output derives from)
+   * - For INPUT nodes: all upstream dependencies (what outputs depend on this input)  
+   * - For STEP nodes: complete flow graph passing through this node (both upstream and downstream)
+   */
+  getDependencies(nodeKey: string): LineageGraph {
+    if (!this.graph.hasNode(nodeKey)) {
+      throw new Error(`Node not found: ${nodeKey}`);
+    }
+    
+    // TODO: Implementation
+    throw new Error('Not implemented yet');
+  }
+
+  /**
    * Get the underlying graphology graph instance for advanced operations
    */
   getGraph(): DirectedGraph {
