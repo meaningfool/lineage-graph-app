@@ -75,8 +75,23 @@ export class LineageGraph {
    * Add a single edge to the graph (source derives from target)
    */
   addEdge(source: string, target: string, attributes?: any): string {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+    // Get node attributes to check roles
+    const sourceAttributes = this.graph.getNodeAttributes(source);
+    const targetAttributes = this.graph.getNodeAttributes(target);
+    
+    // Validate edge based on node roles
+    // INPUT nodes cannot have outgoing edges (they are sinks)
+    if (sourceAttributes.role === NodeRole.INPUT) {
+      throw new Error('Cannot add outgoing edge from INPUT node');
+    }
+    
+    // OUTPUT nodes cannot have incoming edges (they are sources)
+    if (targetAttributes.role === NodeRole.OUTPUT) {
+      throw new Error('Cannot add incoming edge to OUTPUT node');
+    }
+    
+    // If validation passes, add the edge
+    return this.graph.addEdge(source, target, attributes);
   }
 
   /**
