@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom'
+import { vi } from 'vitest'
 
 // Mock ResizeObserver for React Flow
 global.ResizeObserver = vi.fn().mockImplementation(() => ({

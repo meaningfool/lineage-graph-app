@@ -1,7 +1,7 @@
 "use client"
 import React from 'react'
 import { LineageGraph } from "@/components/lineage-graph"
-import { Node, Edge } from 'reactflow'
+import type { Node, Edge } from 'reactflow'
 import dagre from 'dagre'
 import nodeData from '@/data/target-lineage.json'
 
