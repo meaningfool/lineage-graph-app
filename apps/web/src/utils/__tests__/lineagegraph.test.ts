@@ -671,4 +671,176 @@ describe('LineageGraph - Dependency Analysis', () => {
       expect(result.equals(expected)).toBe(true);
     });
   });
+
+  describe('Factory Methods', () => {
+    describe('static from(data)', () => {
+      describe('Equivalence Tests', () => {
+        test('should create simple direct LineageGraph equivalent to manual construction', () => {
+          // Test creating the simplest valid lineage graph: OUTPUT -> INPUT
+          const data = {
+            nodes: [
+              { key: 'output1', role: NodeRole.OUTPUT, attributes: { source: 'sales' } },
+              { key: 'input1', role: NodeRole.INPUT, attributes: { target: 'warehouse' } }
+            ],
+            edges: [
+              { source: 'output1', target: 'input1', attributes: { confidence: 0.9 } }
+            ]
+          };
+          
+          const fromResult = LineageGraph.from(data);
+          
+          // Manually construct equivalent graph
+          const manualResult = new LineageGraph();
+          manualResult.addOutput('output1', { source: 'sales' });
+          manualResult.addInput('input1', { target: 'warehouse' });
+          manualResult.addEdge('output1', 'input1', { confidence: 0.9 });
+          
+          // Should be equivalent
+          expect(fromResult.equals(manualResult)).toBe(true);
+          expect(fromResult.isValid()).toBe(true);
+        });
+
+        test('should create complex branching LineageGraph equivalent to manual construction', () => {
+          // Test creating a complex graph with branching, multiple node types, and custom attributes
+          const data = {
+            nodes: [
+              { key: 'output1', role: NodeRole.OUTPUT, attributes: { label: 'Sales Data', version: '1.0' } },
+              { key: 'step1', role: NodeRole.STEP, attributes: { transform: 'aggregation', priority: 1 } },
+              { key: 'step2', role: NodeRole.STEP, attributes: { transform: 'filter', priority: 2 } },
+              { key: 'input1', role: NodeRole.INPUT, attributes: { source: 'database', table: 'transactions' } },
+              { key: 'input2', role: NodeRole.INPUT, attributes: { source: 'api', endpoint: '/users' } }
+            ],
+            edges: [
+              { source: 'output1', target: 'step1', attributes: { weight: 0.8, type: 'primary' } },
+              { source: 'output1', target: 'step2', attributes: { weight: 0.6, type: 'secondary' } },
+              { source: 'step1', target: 'input1', attributes: { confidence: 0.95 } },
+              { source: 'step2', target: 'input2', attributes: { confidence: 0.87 } }
+            ]
+          };
+          
+          const fromResult = LineageGraph.from(data);
+          
+          // Manually construct equivalent graph
+          const manualResult = new LineageGraph();
+          manualResult.addOutput('output1', { label: 'Sales Data', version: '1.0' });
+          manualResult.addStep('step1', { transform: 'aggregation', priority: 1 });
+          manualResult.addStep('step2', { transform: 'filter', priority: 2 });
+          manualResult.addInput('input1', { source: 'database', table: 'transactions' });
+          manualResult.addInput('input2', { source: 'api', endpoint: '/users' });
+          
+          manualResult.addEdge('output1', 'step1', { weight: 0.8, type: 'primary' });
+          manualResult.addEdge('output1', 'step2', { weight: 0.6, type: 'secondary' });
+          manualResult.addEdge('step1', 'input1', { confidence: 0.95 });
+          manualResult.addEdge('step2', 'input2', { confidence: 0.87 });
+          
+          // Should be equivalent (this tests attribute preservation automatically)
+          expect(fromResult.equals(manualResult)).toBe(true);
+          expect(fromResult.isValid()).toBe(true);
+        });
+      });
+
+      describe('Error Cases', () => {
+        test('should throw error for empty data (invalid graph)', () => {
+          // Test that empty data is rejected since empty graphs are invalid
+          const data = { nodes: [], edges: [] };
+          
+          expect(() => {
+            LineageGraph.from(data);
+          }).toThrow(/empty.*invalid|invalid.*empty|validation.*failed/i);
+        });
+
+        test('should throw error for edges referencing non-existent nodes', () => {
+          // Test error handling when edges reference nodes that don't exist in the nodes array
+          const data = {
+            nodes: [
+              { key: 'output1', role: NodeRole.OUTPUT },
+              { key: 'input1', role: NodeRole.INPUT }
+            ],
+            edges: [
+              { source: 'output1', target: 'missing-node' } // Non-existent target
+            ]
+          };
+          
+          expect(() => {
+            LineageGraph.from(data);
+          }).toThrow(/missing-node/); // Should mention the missing node
+        });
+
+        test('should throw error for invalid role-based edge connections', () => {
+          // Test that role-based edge validation is enforced during creation
+          const data = {
+            nodes: [
+              { key: 'output1', role: NodeRole.OUTPUT },
+              { key: 'input1', role: NodeRole.INPUT }
+            ],
+            edges: [
+              { source: 'input1', target: 'output1' } // Invalid: INPUT -> OUTPUT
+            ]
+          };
+          
+          expect(() => {
+            LineageGraph.from(data);
+          }).toThrow(/cannot add outgoing edge from INPUT node|outgoing.*INPUT/i);
+        });
+
+        test('should throw error for invalid node roles', () => {
+          // Test that node roles are properly validated and enforced
+          const dataWithInvalidRole = {
+            nodes: [
+              { key: 'node1', role: 'invalid_role' as any } // Invalid role
+            ],
+            edges: []
+          };
+          
+          expect(() => {
+            LineageGraph.from(dataWithInvalidRole);
+          }).toThrow(/invalid.*role|role.*invalid/i);
+          
+          const dataWithMissingRole = {
+            nodes: [
+              { key: 'node1' } as any // Missing role property
+            ],
+            edges: []
+          };
+          
+          expect(() => {
+            LineageGraph.from(dataWithMissingRole);
+          }).toThrow(/role.*required|missing.*role/i);
+        });
+
+        test('should throw error for duplicate node keys', () => {
+          // Test that duplicate node keys are rejected as errors
+          const data = {
+            nodes: [
+              { key: 'node1', role: NodeRole.OUTPUT, attributes: { version: '1.0' } },
+              { key: 'node1', role: NodeRole.STEP, attributes: { version: '2.0' } } // Duplicate key
+            ],
+            edges: []
+          };
+          
+          expect(() => {
+            LineageGraph.from(data);
+          }).toThrow(/duplicate.*node1|node1.*duplicate/i);
+        });
+
+        test('should throw error for graphs that fail validation (dangling nodes)', () => {
+          // Test that graphs with valid individual elements but invalid overall structure are rejected
+          const data = {
+            nodes: [
+              { key: 'output1', role: NodeRole.OUTPUT },
+              { key: 'input1', role: NodeRole.INPUT },
+              { key: 'step1', role: NodeRole.STEP } // Dangling STEP (not connected to anything)
+            ],
+            edges: [
+              { source: 'output1', target: 'input1' } // Valid path, but step1 is dangling
+            ]
+          };
+          
+          expect(() => {
+            LineageGraph.from(data);
+          }).toThrow(/invalid.*graph|validation.*failed|valid.*flow/i);
+        });
+      });
+    });
+  });
 }); 
