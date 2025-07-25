@@ -32,8 +32,92 @@ export class LineageGraph {
     nodes: Array<{ key: string; role: NodeRole; attributes?: any }>;
     edges: Array<{ source: string; target: string; attributes?: any }>;
   }): LineageGraph {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+    // Step 1: Validate input data
+    LineageGraph.validateInputData(data);
+    
+    // Step 2: Use graphology's bulk construction
+    const graph = new DirectedGraph();
+    
+    // Transform data to graphology's import format
+    const graphologyData = {
+      nodes: data.nodes.map(node => ({
+        key: node.key,
+        attributes: { role: node.role, ...node.attributes }
+      })),
+      edges: data.edges.map(edge => ({
+        source: edge.source,
+        target: edge.target,
+        attributes: edge.attributes || {}
+      }))
+    };
+    
+    // Bulk import all nodes and edges
+    graph.import(graphologyData);
+    
+    // Step 3: Create LineageGraph and validate
+    const lineageGraph = new LineageGraph(graph);
+    
+    // Validate the resulting graph structure
+    if (!lineageGraph.hasValidFlow()) {
+      throw new Error('Invalid graph structure: graph fails validation (disconnected components, dangling nodes, or invalid flow patterns)');
+    }
+    
+    if (!lineageGraph.isAcyclic()) {
+      throw new Error('Invalid graph structure: graph contains cycles');
+    }
+    
+    return lineageGraph;
+  }
+
+  /**
+   * Private helper to validate input data before construction
+   */
+  private static validateInputData(data: {
+    nodes: Array<{ key: string; role: NodeRole; attributes?: any }>;
+    edges: Array<{ source: string; target: string; attributes?: any }>;
+  }): void {
+    // Check for empty data
+    if (data.nodes.length === 0) {
+      throw new Error('Invalid data: empty graphs are not allowed (must have at least one node)');
+    }
+    
+    // Check for duplicate node keys
+    const nodeKeys = new Set<string>();
+    for (const node of data.nodes) {
+      if (nodeKeys.has(node.key)) {
+        throw new Error(`Invalid data: duplicate node key '${node.key}' found`);
+      }
+      nodeKeys.add(node.key);
+      
+      // Validate node role
+      if (!Object.values(NodeRole).includes(node.role)) {
+        throw new Error(`Invalid data: invalid role '${node.role}' for node '${node.key}'. Must be one of: ${Object.values(NodeRole).join(', ')}`);
+      }
+    }
+    
+    // Check edges reference existing nodes
+    for (const edge of data.edges) {
+      if (!nodeKeys.has(edge.source)) {
+        throw new Error(`Invalid data: edge references non-existent source node '${edge.source}'`);
+      }
+      if (!nodeKeys.has(edge.target)) {
+        throw new Error(`Invalid data: edge references non-existent target node '${edge.target}'`);
+      }
+      
+      // Validate role-based edge rules
+      const sourceNode = data.nodes.find(n => n.key === edge.source)!;
+      const targetNode = data.nodes.find(n => n.key === edge.target)!;
+      
+      // INPUT nodes cannot have outgoing edges
+      if (sourceNode.role === NodeRole.INPUT) {
+        throw new Error(`Invalid data: INPUT node '${edge.source}' cannot have outgoing edges`);
+      }
+      
+      // OUTPUT nodes cannot have incoming edges
+      if (targetNode.role === NodeRole.OUTPUT) {
+        throw new Error(`Invalid data: OUTPUT node '${edge.target}' cannot have incoming edges`);
+      }
+    }
   }
 
   /**

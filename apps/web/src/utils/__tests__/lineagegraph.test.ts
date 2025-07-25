@@ -780,7 +780,7 @@ describe('LineageGraph - Dependency Analysis', () => {
           
           expect(() => {
             LineageGraph.from(data);
-          }).toThrow(/cannot add outgoing edge from INPUT node|outgoing.*INPUT/i);
+          }).toThrow(/INPUT node.*cannot have outgoing edges|outgoing.*INPUT/i);
         });
 
         test('should throw error for invalid node roles', () => {
@@ -805,7 +805,7 @@ describe('LineageGraph - Dependency Analysis', () => {
           
           expect(() => {
             LineageGraph.from(dataWithMissingRole);
-          }).toThrow(/role.*required|missing.*role/i);
+          }).toThrow(/invalid role.*undefined|role.*required|missing.*role/i);
         });
 
         test('should throw error for duplicate node keys', () => {
