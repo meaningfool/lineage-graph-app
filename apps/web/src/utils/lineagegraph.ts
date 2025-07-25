@@ -1,5 +1,7 @@
 import { DirectedGraph } from 'graphology';
 import { hasCycle } from 'graphology-dag';
+import { subgraph } from 'graphology-operators';
+import { bfsFromNode } from 'graphology-traversal';
 
 /**
  * Node roles in the lineage graph structure
@@ -19,8 +21,8 @@ export enum NodeRole {
 export class LineageGraph {
   private graph: DirectedGraph;
 
-  constructor() {
-    this.graph = new DirectedGraph();
+  constructor(existingGraph?: DirectedGraph) {
+    this.graph = existingGraph || new DirectedGraph();
   }
 
   /**
@@ -264,8 +266,43 @@ export class LineageGraph {
       throw new Error(`Node not found: ${nodeKey}`);
     }
     
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+    const nodeRole = this.graph.getNodeAttributes(nodeKey).role;
+    
+    // Step 1: Find relevant nodes via traversal
+    const relevantNodes = new Set<string>();
+    
+    if (nodeRole === NodeRole.OUTPUT) {
+      // BFS downstream only
+      bfsFromNode(this.graph, nodeKey, (node: string, attr: any, depth: number) => {
+        relevantNodes.add(node);
+        return false; // continue traversal
+      }, { mode: 'outbound' });
+    } 
+    else if (nodeRole === NodeRole.INPUT) {
+      // BFS upstream only  
+      bfsFromNode(this.graph, nodeKey, (node: string, attr: any, depth: number) => {
+        relevantNodes.add(node);
+        return false;
+      }, { mode: 'inbound' });
+    }
+    else if (nodeRole === NodeRole.STEP) {
+      // BFS upstream and downstream separately to get complete lineage
+      bfsFromNode(this.graph, nodeKey, (node: string, attr: any, depth: number) => {
+        relevantNodes.add(node);
+        return false;
+      }, { mode: 'inbound' });
+      
+      bfsFromNode(this.graph, nodeKey, (node: string, attr: any, depth: number) => {
+        relevantNodes.add(node);
+        return false;
+      }, { mode: 'outbound' });
+    }
+    
+    // Step 2: Create subgraph with relevant nodes
+    const extractedGraph = subgraph(this.graph, relevantNodes);
+    
+    // Step 3: Wrap in new LineageGraph
+    return new LineageGraph(extractedGraph);
   }
 
   /**
