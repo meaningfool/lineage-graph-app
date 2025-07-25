@@ -1,4 +1,5 @@
 import { DirectedGraph } from 'graphology';
+import { hasCycle } from 'graphology-dag';
 
 /**
  * Node roles in the lineage graph structure
@@ -170,8 +171,8 @@ export class LineageGraph {
    * Check if the graph is acyclic (DAG requirement)
    */
   isAcyclic(): boolean {
-    // TODO: Implementation  
-    throw new Error('Not implemented yet');
+    // Use graphology's official DAG library for cycle detection
+    return !hasCycle(this.graph);
   }
 
   /**
