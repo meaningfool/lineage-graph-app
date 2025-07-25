@@ -163,8 +163,8 @@ export class LineageGraph {
    * Check if the lineage graph is valid (acyclic + valid flow patterns)
    */
   isValid(): boolean {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+    // A valid lineage graph must be both acyclic AND have valid flow patterns
+    return this.isAcyclic() && this.hasValidFlow();
   }
 
   /**
@@ -180,8 +180,43 @@ export class LineageGraph {
    * (OUTPUT nodes connect to INPUT nodes through valid paths)
    */
   hasValidFlow(): boolean {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+    // Empty graph is invalid
+    if (this.graph.order === 0) {
+      return false;
+    }
+    
+    // Check all nodes meet their role requirements
+    let isValid = true;
+    
+    this.graph.forEachNode((node, attributes) => {
+      const inDegree = this.graph.inDegree(node);
+      const outDegree = this.graph.outDegree(node);
+      
+      switch (attributes.role) {
+        case NodeRole.OUTPUT:
+          // OUTPUT nodes must have outgoing edges (connect to something)
+          if (outDegree === 0) {
+            isValid = false;
+          }
+          break;
+          
+        case NodeRole.INPUT:
+          // INPUT nodes must have incoming edges (be connected from something)
+          if (inDegree === 0) {
+            isValid = false;
+          }
+          break;
+          
+        case NodeRole.STEP:
+          // STEP nodes must have both incoming AND outgoing edges (be on a path)
+          if (inDegree === 0 || outDegree === 0) {
+            isValid = false;
+          }
+          break;
+      }
+    });
+    
+    return isValid;
   }
 
   /**
