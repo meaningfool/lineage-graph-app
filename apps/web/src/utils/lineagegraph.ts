@@ -220,6 +220,81 @@ export class LineageGraph {
   }
 
   /**
+   * Check if this LineageGraph equals another LineageGraph
+   * Compares nodes, edges, and their attributes for equality
+   */
+  equals(other: LineageGraph): boolean {
+    const thisGraph = this.graph;
+    const otherGraph = other.graph;
+    
+    // Different number of nodes or edges
+    if (thisGraph.order !== otherGraph.order || thisGraph.size !== otherGraph.size) {
+      return false;
+    }
+    
+    // Check all nodes exist in both graphs with same attributes
+    const allNodesMatch = thisGraph.everyNode((node, attributes) => {
+      if (!otherGraph.hasNode(node)) return false;
+      
+      const otherAttributes = otherGraph.getNodeAttributes(node);
+      return JSON.stringify(attributes) === JSON.stringify(otherAttributes);
+    });
+    
+    if (!allNodesMatch) return false;
+    
+    // Check all edges exist in both graphs with same attributes
+    const allEdgesMatch = thisGraph.everyEdge((edge, attributes, source, target) => {
+      if (!otherGraph.hasEdge(source, target)) return false;
+      
+      const otherAttributes = otherGraph.getEdgeAttributes(source, target);
+      return JSON.stringify(attributes) === JSON.stringify(otherAttributes);
+    });
+    
+    return allEdgesMatch;
+  }
+
+  /**
+   * Get the lineage graph for a specific node with role-based behavior:
+   * - For OUTPUT nodes: returns downstream lineage (what this output derives from)
+   * - For INPUT nodes: returns upstream lineage (what outputs depend on this input)  
+   * - For STEP nodes: returns complete lineage (both upstream and downstream dependencies)
+   */
+  getLineage(nodeKey: string): LineageGraph {
+    if (!this.graph.hasNode(nodeKey)) {
+      throw new Error(`Node not found: ${nodeKey}`);
+    }
+    
+    // TODO: Implementation
+    throw new Error('Not implemented yet');
+  }
+
+  /**
+   * Get upstream dependencies for a specific node (what depends on this node)
+   * Returns a subgraph containing all nodes that have paths leading TO this node
+   */
+  getUpstreamDependencies(nodeKey: string): LineageGraph {
+    if (!this.graph.hasNode(nodeKey)) {
+      throw new Error(`Node not found: ${nodeKey}`);
+    }
+    
+    // TODO: Implementation - DEPRECATED, use getLineage()
+    throw new Error('Not implemented yet');
+  }
+
+  /**
+   * Get downstream dependencies for a specific node (what this node derives from)
+   * Returns a subgraph containing all nodes that have paths leading FROM this node
+   */
+  getDownstreamDependencies(nodeKey: string): LineageGraph {
+    if (!this.graph.hasNode(nodeKey)) {
+      throw new Error(`Node not found: ${nodeKey}`);
+    }
+    
+    // TODO: Implementation - DEPRECATED, use getLineage()
+    throw new Error('Not implemented yet');
+  }
+
+  /**
    * Get dependencies for a specific node, returning a subgraph containing:
    * - For OUTPUT nodes: all downstream dependencies (what this output derives from)
    * - For INPUT nodes: all upstream dependencies (what outputs depend on this input)  
@@ -230,7 +305,7 @@ export class LineageGraph {
       throw new Error(`Node not found: ${nodeKey}`);
     }
     
-    // TODO: Implementation
+    // TODO: Implementation - DEPRECATED, use getLineage()
     throw new Error('Not implemented yet');
   }
 

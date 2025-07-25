@@ -522,3 +522,153 @@ describe('LineageGraph - Graph Validation', () => {
     });
   });
 }); 
+
+describe('LineageGraph - Dependency Analysis', () => {
+  describe('getLineage', () => {
+    test('should throw error for non-existent node', () => {
+      const lineage = new LineageGraph();
+      
+      expect(() => {
+        lineage.getLineage('nonexistent');
+      }).toThrow('Node not found: nonexistent');
+    });
+
+    test('should return downstream lineage for OUTPUT node (complex graph with disconnected components)', () => {
+      const lineage = new LineageGraph();
+      
+      // Build Component 1 (connected - more complex)
+      lineage.addOutput('output1');
+      lineage.addOutput('output2');
+      lineage.addStep('step1');
+      lineage.addStep('step2');
+      lineage.addInput('input1');
+      lineage.addInput('input2');
+      
+      // Component 1 edges
+      lineage.addEdge('output1', 'step1');
+      lineage.addEdge('output1', 'step2');
+      lineage.addEdge('output2', 'step2');  // output2 also feeds step2
+      lineage.addEdge('step1', 'input1');
+      lineage.addEdge('step2', 'input2');
+      lineage.addEdge('step2', 'input1');   // step2 connects to both inputs
+      
+      // Build Component 2 (disconnected)
+      lineage.addOutput('output3');
+      lineage.addStep('step3');
+      lineage.addInput('input3');
+      lineage.addEdge('output3', 'step3');
+      lineage.addEdge('step3', 'input3');
+      
+      // Call getLineage on output1
+      const result = lineage.getLineage('output1');
+      
+      // Build expected LineageGraph manually
+      const expected = new LineageGraph();
+      expected.addOutput('output1');
+      expected.addStep('step1');
+      expected.addStep('step2');
+      expected.addInput('input1');
+      expected.addInput('input2');
+      
+      // Expected edges (only output1's dependency chain)
+      expected.addEdge('output1', 'step1');
+      expected.addEdge('output1', 'step2');
+      expected.addEdge('step1', 'input1');
+      expected.addEdge('step2', 'input2');
+      expected.addEdge('step2', 'input1');
+      
+      // Test graph equality
+      expect(result.equals(expected)).toBe(true);
+    });
+
+    test('should return upstream lineage for INPUT node (complex graph with disconnected components)', () => {
+      const lineage = new LineageGraph();
+      
+      // Build Component 1 (connected to input1)
+      lineage.addOutput('output1');
+      lineage.addOutput('output2');
+      lineage.addStep('step1');
+      lineage.addStep('step2');
+      lineage.addInput('input1');
+      lineage.addInput('input2');  // sibling node
+      
+      // Component 1 edges
+      lineage.addEdge('output1', 'step1');
+      lineage.addEdge('output2', 'step2');
+      lineage.addEdge('step1', 'input1');
+      lineage.addEdge('step2', 'input1');  // multiple outputs feeding same input
+      lineage.addEdge('step2', 'input2');  // step2 also feeds input2 (sibling)
+      
+      // Build Component 2 (disconnected)
+      lineage.addOutput('output3');
+      lineage.addStep('step3');
+      lineage.addInput('input3');
+      lineage.addEdge('output3', 'step3');
+      lineage.addEdge('step3', 'input3');
+      
+      // Call getLineage on input1
+      const result = lineage.getLineage('input1');
+      
+      // Build expected LineageGraph manually
+      const expected = new LineageGraph();
+      expected.addOutput('output1');
+      expected.addOutput('output2');
+      expected.addStep('step1');
+      expected.addStep('step2');
+      expected.addInput('input1');
+      
+      // Expected edges (only upstream chains to input1)
+      expected.addEdge('output1', 'step1');
+      expected.addEdge('output2', 'step2');
+      expected.addEdge('step1', 'input1');
+      expected.addEdge('step2', 'input1');
+      
+      // Test graph equality
+      expect(result.equals(expected)).toBe(true);
+    });
+
+    test('should return complete lineage for STEP node (complex graph with disconnected components)', () => {
+      const lineage = new LineageGraph();
+      
+      // Build Component 1
+      lineage.addOutput('output1');
+      lineage.addStep('step1');
+      lineage.addStep('step2');
+      lineage.addStep('step3');
+      lineage.addInput('input1');
+      lineage.addInput('input2');
+      
+      // Component 1 edges
+      lineage.addEdge('output1', 'step1');
+      lineage.addEdge('step1', 'step2');
+      lineage.addEdge('step1', 'step3');  // sibling branch from step1
+      lineage.addEdge('step2', 'input1');
+      lineage.addEdge('step3', 'input2');
+      
+      // Build Component 2 (disconnected)
+      lineage.addOutput('output3');
+      lineage.addStep('step4');
+      lineage.addInput('input3');
+      lineage.addEdge('output3', 'step4');
+      lineage.addEdge('step4', 'input3');
+      
+      // Call getLineage on step2
+      const result = lineage.getLineage('step2');
+      
+      // Build expected LineageGraph manually (complete lineage through step2)
+      const expected = new LineageGraph();
+      expected.addOutput('output1');
+      expected.addStep('step1');
+      expected.addStep('step2');
+      expected.addInput('input1');
+      
+      // Expected edges (complete lineage chain through step2)
+      expected.addEdge('output1', 'step1');
+      expected.addEdge('step1', 'step2');
+      expected.addEdge('step2', 'input1');
+      
+      // Test graph equality
+      expect(result.equals(expected)).toBe(true);
+    });
+  });
+}); 
