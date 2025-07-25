@@ -87,4 +87,92 @@ describe('LineageGraph - Basic Node Operations', () => {
       expect(lineage.getLeafNodes()).toEqual([]);
     });
   });
+});
+
+describe('LineageGraph - Edge Operations & Dependencies', () => {
+  describe('Edge Creation - Valid Cases', () => {
+    test('should allow OUTPUT -> STEP edges', () => {
+      const lineage = new LineageGraph();
+      
+      lineage.addOutput('metric1');
+      lineage.addStep('transform1');
+      
+      const edgeKey = lineage.addEdge('metric1', 'transform1');
+      expect(typeof edgeKey).toBe('string');
+      expect(edgeKey.length).toBeGreaterThan(0);
+    });
+
+    test('should allow STEP -> INPUT edges', () => {
+      const lineage = new LineageGraph();
+      
+      lineage.addStep('transform1');
+      lineage.addInput('data1');
+      
+      const edgeKey = lineage.addEdge('transform1', 'data1');
+      expect(typeof edgeKey).toBe('string');
+      expect(edgeKey.length).toBeGreaterThan(0);
+    });
+
+    test('should allow OUTPUT -> INPUT edges (direct)', () => {
+      const lineage = new LineageGraph();
+      
+      lineage.addOutput('metric1');
+      lineage.addInput('data1');
+      
+      const edgeKey = lineage.addEdge('metric1', 'data1');
+      expect(typeof edgeKey).toBe('string');
+      expect(edgeKey.length).toBeGreaterThan(0);
+    });
+
+    test('should allow STEP -> STEP edges', () => {
+      const lineage = new LineageGraph();
+      
+      lineage.addStep('step1');
+      lineage.addStep('step2');
+      
+      const edgeKey = lineage.addEdge('step1', 'step2');
+      expect(typeof edgeKey).toBe('string');
+      expect(edgeKey.length).toBeGreaterThan(0);
+    });
+
+    test('should handle edge attributes correctly', () => {
+      const lineage = new LineageGraph();
+      
+      lineage.addOutput('metric1');
+      lineage.addStep('transform1');
+      
+      const edgeKey = lineage.addEdge('metric1', 'transform1', { 
+        weight: 0.8, 
+        transform: 'aggregation' 
+      });
+      
+      expect(edgeKey).toBeDefined();
+    });
+  });
+
+  describe('Edge Creation - Invalid Cases', () => {
+    test('should reject incoming edges to OUTPUT nodes', () => {
+      const lineage = new LineageGraph();
+      
+      lineage.addOutput('metric1');
+      lineage.addStep('transform1');
+      
+      // Cannot have: STEP -> OUTPUT
+      expect(() => {
+        lineage.addEdge('transform1', 'metric1');
+      }).toThrow('Cannot add incoming edge to OUTPUT node');
+    });
+
+    test('should reject outgoing edges from INPUT nodes', () => {
+      const lineage = new LineageGraph();
+      
+      lineage.addInput('data1');
+      lineage.addStep('transform1');
+      
+      // Cannot have: INPUT -> STEP
+      expect(() => {
+        lineage.addEdge('data1', 'transform1');
+      }).toThrow('Cannot add outgoing edge from INPUT node');
+    });
+  });
 }); 
