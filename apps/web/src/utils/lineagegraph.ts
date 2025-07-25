@@ -123,19 +123,23 @@ export class LineageGraph {
   }
 
   /**
-   * Get all upstream dependencies for a node (what this node derives from)
+   * Get all upstream nodes (direct neighbors with edges TO this node)
    */
-  getUpstreamDependencies(nodeKey: string): string[] {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+  getUpstreamNodes(nodeKey: string): string[] {
+    if (!this.graph.hasNode(nodeKey)) {
+      throw new Error(`Node not found: ${nodeKey}`);
+    }
+    return this.graph.inNeighbors(nodeKey);
   }
 
   /**
-   * Get all downstream dependencies for a node (what derives from this node)
+   * Get all downstream nodes (direct neighbors with edges FROM this node)
    */
-  getDownstreamDependencies(nodeKey: string): string[] {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+  getDownstreamNodes(nodeKey: string): string[] {
+    if (!this.graph.hasNode(nodeKey)) {
+      throw new Error(`Node not found: ${nodeKey}`);
+    }
+    return this.graph.outNeighbors(nodeKey);
   }
 
   /**

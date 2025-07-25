@@ -89,6 +89,93 @@ describe('LineageGraph - Basic Node Operations', () => {
   });
 });
 
+describe('LineageGraph - Direct Neighbors', () => {
+  describe('getUpstreamNodes', () => {
+    test('should return direct upstream nodes (predecessors)', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: output1 -> step1 -> input1  
+      lineage.addOutput('output1');
+      lineage.addStep('step1');
+      lineage.addInput('input1');
+      lineage.addEdge('output1', 'step1');
+      lineage.addEdge('step1', 'input1');
+      
+      // Test upstream connections
+      expect(lineage.getUpstreamNodes('step1')).toEqual(['output1']);
+      expect(lineage.getUpstreamNodes('input1')).toEqual(['step1']);
+      expect(lineage.getUpstreamNodes('output1')).toEqual([]);
+    });
+
+    test('should handle multiple upstream nodes', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: output1 -> step1 <- output2
+      lineage.addOutput('output1');
+      lineage.addOutput('output2'); 
+      lineage.addStep('step1');
+      lineage.addEdge('output1', 'step1');
+      lineage.addEdge('output2', 'step1');
+      
+      const upstream = lineage.getUpstreamNodes('step1');
+      expect(upstream).toHaveLength(2);
+      expect(upstream).toContain('output1');
+      expect(upstream).toContain('output2');
+    });
+
+    test('should throw error for non-existent node', () => {
+      const lineage = new LineageGraph();
+      
+      expect(() => {
+        lineage.getUpstreamNodes('nonexistent');
+      }).toThrow('Node not found: nonexistent');
+    });
+  });
+
+  describe('getDownstreamNodes', () => {
+    test('should return direct downstream nodes (successors)', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: output1 -> step1 -> input1
+      lineage.addOutput('output1');
+      lineage.addStep('step1');
+      lineage.addInput('input1');
+      lineage.addEdge('output1', 'step1');
+      lineage.addEdge('step1', 'input1');
+      
+      // Test downstream connections
+      expect(lineage.getDownstreamNodes('output1')).toEqual(['step1']);
+      expect(lineage.getDownstreamNodes('step1')).toEqual(['input1']);
+      expect(lineage.getDownstreamNodes('input1')).toEqual([]);
+    });
+
+    test('should handle multiple downstream nodes', () => {
+      const lineage = new LineageGraph();
+      
+      // Create: step1 -> input1
+      //               -> input2
+      lineage.addStep('step1');
+      lineage.addInput('input1');
+      lineage.addInput('input2');
+      lineage.addEdge('step1', 'input1');
+      lineage.addEdge('step1', 'input2');
+      
+      const downstream = lineage.getDownstreamNodes('step1');
+      expect(downstream).toHaveLength(2);
+      expect(downstream).toContain('input1');
+      expect(downstream).toContain('input2');
+    });
+
+    test('should throw error for non-existent node', () => {
+      const lineage = new LineageGraph();
+      
+      expect(() => {
+        lineage.getDownstreamNodes('nonexistent');  
+      }).toThrow('Node not found: nonexistent');
+    });
+  });
+});
+
 describe('LineageGraph - Edge Operations & Dependencies', () => {
   describe('Edge Creation - Valid Cases', () => {
     test('should allow OUTPUT -> STEP edges', () => {
