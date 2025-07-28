@@ -525,6 +525,71 @@ describe('LineageGraph - Graph Analysis', () => {
         ['INPUT1', 'INPUTB', 'INPUT2', 'INPUT3']
       ]);
     });
+
+    test('should position node at maximum distance when multiple convergent paths exist', () => {
+      // Test convergent paths: STEP2 can be reached via two different path lengths
+      // Path 1: OUTPUT1 -> STEP1 -> STEP2 -> INPUT1 (STEP2 at distance 2)
+      // Path 2: OUTPUT1 -> STEP2 -> INPUT1 (STEP2 at distance 1) 
+      // STEP2 should be positioned at distance 2 (maximum)
+      const data = {
+        nodes: [
+          { key: 'OUTPUT1', role: NodeRole.OUTPUT },
+          { key: 'STEP1', role: NodeRole.STEP },
+          { key: 'STEP2', role: NodeRole.STEP },
+          { key: 'INPUT1', role: NodeRole.INPUT }
+        ],
+        edges: [
+          { source: 'OUTPUT1', target: 'STEP1' },  // Longer path
+          { source: 'STEP1', target: 'STEP2' },    // STEP2 via longer path (distance 2)
+          { source: 'OUTPUT1', target: 'STEP2' },  // Direct path (distance 1)
+          { source: 'STEP2', target: 'INPUT1' }
+        ]
+      };
+      
+      const lineage = LineageGraph.from(data);
+      const layers = lineage.getLayers();
+      
+      // STEP2 should be at layer 2 (maximum distance), not layer 1
+      expect(layers).toEqual([
+        ['OUTPUT1'],           // Layer 0: OUTPUT nodes
+        ['STEP1'],            // Layer 1: STEP1 (distance 1)
+        ['STEP2'],            // Layer 2: STEP2 (maximum distance 2, not 1)
+        ['INPUT1']            // Layer 3: INPUT nodes (final layer)
+      ]);
+    });
+
+    test('should group all INPUT nodes in final layer regardless of their natural distances', () => {
+      // Test that INPUT nodes at different natural distances are grouped together
+      // Path 1: OUTPUT1 -> S1 -> S2 -> INPUT1 (INPUT1 naturally at distance 3)
+      // Path 2: OUTPUT1 -> S1 -> INPUT2 (INPUT2 naturally at distance 2)
+      // Both INPUT1 and INPUT2 should end up in the same final layer
+      const data = {
+        nodes: [
+          { key: 'OUTPUT1', role: NodeRole.OUTPUT },
+          { key: 'S1', role: NodeRole.STEP },
+          { key: 'S2', role: NodeRole.STEP },
+          { key: 'INPUT1', role: NodeRole.INPUT },
+          { key: 'INPUT2', role: NodeRole.INPUT }
+        ],
+        edges: [
+          { source: 'OUTPUT1', target: 'S1' },    // S1 at distance 1
+          { source: 'S1', target: 'S2' },        // S2 at distance 2
+          { source: 'S2', target: 'INPUT1' },    // INPUT1 naturally at distance 3
+          { source: 'S1', target: 'INPUT2' }     // INPUT2 naturally at distance 2
+        ]
+      };
+      
+      const lineage = LineageGraph.from(data);
+      const layers = lineage.getLayers();
+      
+      // All INPUT nodes should be in the final layer together
+      expect(layers).toEqual([
+        ['OUTPUT1'],              // Layer 0: OUTPUT nodes  
+        ['S1'],                  // Layer 1: S1 (distance 1)
+        ['S2'],                  // Layer 2: S2 (distance 2)  
+        ['INPUT1', 'INPUT2']     // Layer 3: All INPUT nodes together (final layer)
+      ]);
+    });
   });
 
   describe('getDepth', () => {
