@@ -22,7 +22,16 @@ export class LineageGraph {
   private graph: DirectedGraph;
 
   constructor(existingGraph?: DirectedGraph) {
-    this.graph = existingGraph || new DirectedGraph();
+    if (!existingGraph || existingGraph.order == 0) {
+      throw new Error('Empty LineageGraphs are not allowed. Use LineageGraph.from() to create graphs.');
+    }
+    
+    // ONLY validate if graph has nodes
+    if (!LineageGraph.isValidLineageGraph(existingGraph)) {
+      throw new Error('Invalid graph structure provided to constructor');
+    }
+
+    this.graph = existingGraph;
   }
 
   /**
@@ -39,7 +48,7 @@ export class LineageGraph {
     const graph = new DirectedGraph();
     
     // Transform data to graphology's import format
-    const graphologyData = {
+    const graphData = {
       nodes: data.nodes.map(node => ({
         key: node.key,
         attributes: { role: node.role, ...node.attributes }
@@ -52,19 +61,15 @@ export class LineageGraph {
     };
     
     // Bulk import all nodes and edges
-    graph.import(graphologyData);
+    graph.import(graphData);
     
-    // Step 3: Create LineageGraph and validate
+    // Step 3: Validate the resulting graph structure
+    if (!LineageGraph.isValidLineageGraph(graph)) {
+      throw new Error('Invalid LineageGraph structure: graph fails validation (disconnected components, dangling nodes, invalid lineage flow patterns, or not acyclic)');
+    }
+
+    // Step 4: Create LineageGraph and validate
     const lineageGraph = new LineageGraph(graph);
-    
-    // Validate the resulting graph structure
-    if (!lineageGraph.hasValidFlow()) {
-      throw new Error('Invalid graph structure: graph fails validation (disconnected components, dangling nodes, or invalid flow patterns)');
-    }
-    
-    if (!lineageGraph.isAcyclic()) {
-      throw new Error('Invalid graph structure: graph contains cycles');
-    }
     
     return lineageGraph;
   }
@@ -129,104 +134,13 @@ export class LineageGraph {
   }
 
   /**
-   * Add a node with specified role (hybrid approach - generic method)
+   * Get all nodes organized by layers (distance from OUTPUT nodes)
+   * Returns Array<string[]> where each inner array contains node keys for that layer
+   * Layer 0: All OUTPUT nodes, Last layer: All INPUT nodes
    */
-  addNode(key: string, role: NodeRole, attributes?: any): string {
-    const nodeData = { role, ...attributes };
-    this.graph.addNode(key, nodeData);
-    return key;
-  }
-
-  /**
-   * Add an output node (convenience method)
-   */
-  addOutput(key: string, attributes?: any): string {
-    return this.addNode(key, NodeRole.OUTPUT, attributes);
-  }
-
-  /**
-   * Add a step node (convenience method)
-   */
-  addStep(key: string, attributes?: any): string {
-    return this.addNode(key, NodeRole.STEP, attributes);
-  }
-
-  /**
-   * Add an input node (convenience method)
-   */
-  addInput(key: string, attributes?: any): string {
-    return this.addNode(key, NodeRole.INPUT, attributes);
-  }
-
-  /**
-   * Add a single edge to the graph (source derives from target)
-   */
-  addEdge(source: string, target: string, attributes?: any): string {
-    // Get node attributes to check roles
-    const sourceAttributes = this.graph.getNodeAttributes(source);
-    const targetAttributes = this.graph.getNodeAttributes(target);
-    
-    // Validate edge based on node roles
-    // INPUT nodes cannot have outgoing edges (they are sinks)
-    if (sourceAttributes.role === NodeRole.INPUT) {
-      throw new Error('Cannot add outgoing edge from INPUT node');
-    }
-    
-    // OUTPUT nodes cannot have incoming edges (they are sources)
-    if (targetAttributes.role === NodeRole.OUTPUT) {
-      throw new Error('Cannot add incoming edge to OUTPUT node');
-    }
-    
-    // If validation passes, add the edge
-    return this.graph.addEdge(source, target, attributes);
-  }
-
-  /**
-   * Get all root nodes (outputs - nodes with no incoming edges)
-   */
-  getRootNodes(): string[] {
-    const rootNodes: string[] = [];
-    this.graph.forEachNode((node, attributes) => {
-      // For lineage graphs, root nodes are outputs with no incoming edges
-      if (this.graph.inDegree(node) === 0 && attributes.role === NodeRole.OUTPUT) {
-        rootNodes.push(node);
-      }
-    });
-    return rootNodes;
-  }
-
-  /**
-   * Get all leaf nodes (inputs - nodes with no outgoing edges)
-   */
-  getLeafNodes(): string[] {
-    const leafNodes: string[] = [];
-    this.graph.forEachNode((node, attributes) => {
-      // For lineage graphs, leaf nodes are inputs with no outgoing edges
-      if (this.graph.outDegree(node) === 0 && attributes.role === NodeRole.INPUT) {
-        leafNodes.push(node);
-      }
-    });
-    return leafNodes;
-  }
-
-  /**
-   * Get all upstream nodes (direct neighbors with edges TO this node)
-   */
-  getUpstreamNodes(nodeKey: string): string[] {
-    if (!this.graph.hasNode(nodeKey)) {
-      throw new Error(`Node not found: ${nodeKey}`);
-    }
-    return this.graph.inNeighbors(nodeKey);
-  }
-
-  /**
-   * Get all downstream nodes (direct neighbors with edges FROM this node)
-   */
-  getDownstreamNodes(nodeKey: string): string[] {
-    if (!this.graph.hasNode(nodeKey)) {
-      throw new Error(`Node not found: ${nodeKey}`);
-    }
-    return this.graph.outNeighbors(nodeKey);
+  getLayers(): string[][] {
+    // TODO: Implementation
+    throw new Error('Not implemented yet');
   }
 
   /**
@@ -246,37 +160,29 @@ export class LineageGraph {
   }
 
   /**
-   * Check if the lineage graph is valid (acyclic + valid flow patterns)
+   * Check if a graphology DirectedGraph is valid (acyclic + valid flow patterns)
    */
-  isValid(): boolean {
+  static isValidLineageGraph(graph: DirectedGraph): boolean {
     // A valid lineage graph must be both acyclic AND have valid flow patterns
-    return this.isAcyclic() && this.hasValidFlow();
+    return !hasCycle(graph) && LineageGraph.hasValidLineageFlow(graph);
   }
 
   /**
-   * Check if the graph is acyclic (DAG requirement)
-   */
-  isAcyclic(): boolean {
-    // Use graphology's official DAG library for cycle detection
-    return !hasCycle(this.graph);
-  }
-
-  /**
-   * Check if the graph has valid lineage flow patterns
+   * Check if a graphology DirectedGraph has valid lineage flow patterns
    * (OUTPUT nodes connect to INPUT nodes through valid paths)
    */
-  hasValidFlow(): boolean {
+  static hasValidLineageFlow(graph: DirectedGraph): boolean {
     // Empty graph is invalid
-    if (this.graph.order === 0) {
+    if (graph.order === 0) {
       return false;
     }
     
     // Check all nodes meet their role requirements
     let isValid = true;
     
-    this.graph.forEachNode((node, attributes) => {
-      const inDegree = this.graph.inDegree(node);
-      const outDegree = this.graph.outDegree(node);
+    graph.forEachNode((node, attributes) => {
+      const inDegree = graph.inDegree(node);
+      const outDegree = graph.outDegree(node);
       
       switch (attributes.role) {
         case NodeRole.OUTPUT:
@@ -387,47 +293,6 @@ export class LineageGraph {
     
     // Step 3: Wrap in new LineageGraph
     return new LineageGraph(extractedGraph);
-  }
-
-  /**
-   * Get upstream dependencies for a specific node (what depends on this node)
-   * Returns a subgraph containing all nodes that have paths leading TO this node
-   */
-  getUpstreamDependencies(nodeKey: string): LineageGraph {
-    if (!this.graph.hasNode(nodeKey)) {
-      throw new Error(`Node not found: ${nodeKey}`);
-    }
-    
-    // TODO: Implementation - DEPRECATED, use getLineage()
-    throw new Error('Not implemented yet');
-  }
-
-  /**
-   * Get downstream dependencies for a specific node (what this node derives from)
-   * Returns a subgraph containing all nodes that have paths leading FROM this node
-   */
-  getDownstreamDependencies(nodeKey: string): LineageGraph {
-    if (!this.graph.hasNode(nodeKey)) {
-      throw new Error(`Node not found: ${nodeKey}`);
-    }
-    
-    // TODO: Implementation - DEPRECATED, use getLineage()
-    throw new Error('Not implemented yet');
-  }
-
-  /**
-   * Get dependencies for a specific node, returning a subgraph containing:
-   * - For OUTPUT nodes: all downstream dependencies (what this output derives from)
-   * - For INPUT nodes: all upstream dependencies (what outputs depend on this input)  
-   * - For STEP nodes: complete flow graph passing through this node (both upstream and downstream)
-   */
-  getDependencies(nodeKey: string): LineageGraph {
-    if (!this.graph.hasNode(nodeKey)) {
-      throw new Error(`Node not found: ${nodeKey}`);
-    }
-    
-    // TODO: Implementation - DEPRECATED, use getLineage()
-    throw new Error('Not implemented yet');
   }
 
   /**
