@@ -228,16 +228,15 @@ export class LineageGraph {
    * Get the depth (longest path) of the lineage graph
    */
   getDepth(): number {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+    return this.getLayers().length;
   }
 
   /**
    * Get the width (maximum number of nodes at any level) of the lineage graph
    */
   getWidth(): number {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+    const layers = this.getLayers();
+    return Math.max(...layers.map(layer => layer.length));
   }
 
   /**
