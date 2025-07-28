@@ -139,8 +139,89 @@ export class LineageGraph {
    * Layer 0: All OUTPUT nodes, Last layer: All INPUT nodes
    */
   getLayers(): string[][] {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+    const distanceCache = new Map<string, number>();
+    
+    // Recursive function to compute maximum distance from any OUTPUT node
+    // Only processes OUTPUT and STEP nodes; INPUT nodes are handled separately
+    const computeMaxDistance = (nodeKey: string): number => {
+      // Return cached result if already computed
+      if (distanceCache.has(nodeKey)) {
+        return distanceCache.get(nodeKey)!;
+      }
+      
+      const nodeRole = this.graph.getNodeAttributes(nodeKey).role;
+      
+      // Skip INPUT nodes - they will be placed in final layer explicitly
+      if (nodeRole === NodeRole.INPUT) {
+        return -1; // Sentinel value to indicate INPUT node
+      }
+      
+      // OUTPUT nodes are at distance 0
+      if (nodeRole === NodeRole.OUTPUT) {
+        distanceCache.set(nodeKey, 0);
+        return 0;
+      }
+      
+      // For STEP nodes, distance = 1 + max(distance of all non-INPUT predecessors)
+      const incomingNodes = this.graph.inNeighbors(nodeKey);
+      
+      if (incomingNodes.length === 0) {
+        // This shouldn't happen in a valid lineage graph, but handle gracefully
+        distanceCache.set(nodeKey, 0);
+        return 0;
+      }
+      
+      // Compute max distance from all non-INPUT predecessors
+      let maxDistance = 0;
+      let hasValidPredecessor = false;
+      
+      for (const predecessor of incomingNodes) {
+        const predecessorDistance = computeMaxDistance(predecessor);
+        if (predecessorDistance >= 0) { // Skip INPUT nodes (sentinel value -1)
+          maxDistance = Math.max(maxDistance, predecessorDistance);
+          hasValidPredecessor = true;
+        }
+      }
+      
+      // If no valid (non-INPUT) predecessors, treat as distance 0
+      const nodeDistance = hasValidPredecessor ? maxDistance + 1 : 0;
+      distanceCache.set(nodeKey, nodeDistance);
+      return nodeDistance;
+    };
+    
+    // Compute distances for OUTPUT and STEP nodes only
+    for (const nodeKey of this.graph.nodes()) {
+      const nodeRole = this.graph.getNodeAttributes(nodeKey).role;
+      if (nodeRole !== NodeRole.INPUT) {
+        computeMaxDistance(nodeKey);
+      }
+    }
+    
+    // Group non-INPUT nodes by their distance (layer)
+    const layerMap = new Map<number, string[]>();
+    
+    for (const [nodeKey, distance] of distanceCache) {
+      if (!layerMap.has(distance)) {
+        layerMap.set(distance, []);
+      }
+      layerMap.get(distance)!.push(nodeKey);
+    }
+    
+    // Convert to array format for intermediate layers
+    const maxLayer = distanceCache.size > 0 ? Math.max(...layerMap.keys()) : -1;
+    const layers: string[][] = [];
+    
+    for (let layer = 0; layer <= maxLayer; layer++) {
+      layers.push(layerMap.get(layer) || []);
+    }
+    
+    // Explicitly add all INPUT nodes to the final layer
+    const inputNodes = this.graph.nodes().filter(nodeKey => 
+      this.graph.getNodeAttributes(nodeKey).role === NodeRole.INPUT
+    );
+    layers.push(inputNodes);
+    
+    return layers;
   }
 
   /**
