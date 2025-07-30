@@ -1,7 +1,7 @@
 // LineageGraph tests for graphology-based implementation 
 import { describe, test, expect } from 'vitest';
 import { DirectedGraph } from 'graphology';
-import { LineageGraph, NodeRole } from '../lineagegraph';
+import { LineageGraph, NodeRole, generateLineageGraph } from '../lineagegraph';
 
 
 describe('LineageGraph - Construction', () => {
@@ -641,6 +641,127 @@ describe('LineageGraph - Graph Analysis', () => {
       
       // Should return max(1, 3, 2) = 3
       expect(lineage.getWidth()).toBe(3);
+    });
+  });
+}); 
+
+describe('generateLineageGraph', () => {
+  describe('dimension guarantees', () => {
+    test('should guarantee exact depth', () => {
+      // Test various depths with seeded randomness for reproducibility
+      const depths = [2, 3, 5, 8];
+      
+      depths.forEach(depth => {
+        const graph = generateLineageGraph({ depth, width: 4, seed: 42 });
+        expect(graph.getDepth()).toBe(depth);
+      });
+    });
+
+    test('should respect width constraint', () => {
+      // Test various widths with seeded randomness for reproducibility  
+      const widths = [1, 3, 6, 10];
+      
+      widths.forEach(width => {
+        const graph = generateLineageGraph({ depth: 4, width, seed: 42 });
+        expect(graph.getWidth()).toBeLessThanOrEqual(width);
+      });
+    });
+  });
+
+  describe('node role structure', () => {
+    test('should have OUTPUT nodes in first layer and INPUT nodes in last layer', () => {
+      const graph = generateLineageGraph({ depth: 4, width: 3, seed: 42 });
+      const layers = graph.getLayers();
+      const graphInstance = graph.getGraph();
+      
+      // First layer should contain only OUTPUT nodes
+      const firstLayer = layers[0];
+      firstLayer.forEach(nodeKey => {
+        const role = graphInstance.getNodeAttributes(nodeKey).role;
+        expect(role).toBe(NodeRole.OUTPUT);
+      });
+      
+      // Last layer should contain only INPUT nodes
+      const lastLayer = layers[layers.length - 1];
+      lastLayer.forEach(nodeKey => {
+        const role = graphInstance.getNodeAttributes(nodeKey).role;
+        expect(role).toBe(NodeRole.INPUT);
+      });
+      
+      // Middle layers should contain only STEP nodes (if they exist)
+      for (let i = 1; i < layers.length - 1; i++) {
+        layers[i].forEach(nodeKey => {
+          const role = graphInstance.getNodeAttributes(nodeKey).role;
+          expect(role).toBe(NodeRole.STEP);
+        });
+      }
+    });
+  });
+
+  describe('input validation', () => {
+    test('should throw error for invalid depth', () => {
+      expect(() => {
+        generateLineageGraph({ depth: 1, width: 3 });
+      }).toThrow('depth must be at least 2');
+      
+      expect(() => {
+        generateLineageGraph({ depth: 0, width: 3 });
+      }).toThrow('depth must be at least 2');
+    });
+
+    test('should throw error for invalid width', () => {
+      expect(() => {
+        generateLineageGraph({ depth: 3, width: 0 });
+      }).toThrow('width must be at least 1');
+      
+      expect(() => {
+        generateLineageGraph({ depth: 3, width: -1 });
+      }).toThrow('width must be at least 1');
+    });
+
+    test('should throw error for invalid nodeDensity', () => {
+      expect(() => {
+        generateLineageGraph({ depth: 3, width: 3, nodeDensity: -0.1 });
+      }).toThrow('nodeDensity must be between 0 and 1');
+      
+      expect(() => {
+        generateLineageGraph({ depth: 3, width: 3, nodeDensity: 1.1 });
+      }).toThrow('nodeDensity must be between 0 and 1');
+    });
+
+  });
+
+  describe('connectivity behavior', () => {
+    test('should create minimal connectivity that satisfies role requirements', () => {
+      // Create graph with known structure for predictable testing
+      const graph = generateLineageGraph({ 
+        depth: 3, 
+        width: 4, 
+        nodeDensity: 1.0, // Use all possible nodes for predictable structure
+        seed: 123 
+      });
+      
+      const layers = graph.getLayers();
+      const graphInstance = graph.getGraph();
+      
+      // Verify minimal connectivity: every node satisfies role requirements
+      for (let i = 0; i < layers.length; i++) {
+        for (const nodeKey of layers[i]) {
+          const role = graphInstance.getNodeAttributes(nodeKey).role;
+          const inDegree = graphInstance.inDegree(nodeKey);
+          const outDegree = graphInstance.outDegree(nodeKey);
+          
+          if (role === NodeRole.OUTPUT) {
+            expect(outDegree).toBeGreaterThanOrEqual(1);
+          } else if (role === NodeRole.INPUT) {
+            expect(inDegree).toBeGreaterThanOrEqual(1);
+          } else if (role === NodeRole.STEP) {
+            expect(inDegree).toBeGreaterThanOrEqual(1);
+            expect(outDegree).toBeGreaterThanOrEqual(1);
+          }
+        }
+      }
+
     });
   });
 }); 
