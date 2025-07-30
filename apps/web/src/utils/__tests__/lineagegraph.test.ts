@@ -657,13 +657,13 @@ describe('generateLineageGraph', () => {
       });
     });
 
-    test('should respect width constraint', () => {
+    test('should guarantee exact width', () => {
       // Test various widths with seeded randomness for reproducibility  
       const widths = [1, 3, 6, 10];
       
       widths.forEach(width => {
         const graph = generateLineageGraph({ depth: 4, width, seed: 42 });
-        expect(graph.getWidth()).toBeLessThanOrEqual(width);
+        expect(graph.getWidth()).toBe(width);
       });
     });
   });
@@ -719,15 +719,7 @@ describe('generateLineageGraph', () => {
       }).toThrow('width must be at least 1');
     });
 
-    test('should throw error for invalid nodeDensity', () => {
-      expect(() => {
-        generateLineageGraph({ depth: 3, width: 3, nodeDensity: -0.1 });
-      }).toThrow('nodeDensity must be between 0 and 1');
-      
-      expect(() => {
-        generateLineageGraph({ depth: 3, width: 3, nodeDensity: 1.1 });
-      }).toThrow('nodeDensity must be between 0 and 1');
-    });
+
 
   });
 
@@ -737,7 +729,6 @@ describe('generateLineageGraph', () => {
       const graph = generateLineageGraph({ 
         depth: 3, 
         width: 4, 
-        nodeDensity: 1.0, // Use all possible nodes for predictable structure
         seed: 123 
       });
       

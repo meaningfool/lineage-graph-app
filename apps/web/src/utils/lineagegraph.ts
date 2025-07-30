@@ -2,6 +2,7 @@ import { DirectedGraph } from 'graphology';
 import { hasCycle } from 'graphology-dag';
 import { subgraph } from 'graphology-operators';
 import { bfsFromNode } from 'graphology-traversal';
+import seedrandom from 'seedrandom';
 
 /**
  * Node roles in the lineage graph structure
@@ -127,10 +128,10 @@ export class LineageGraph {
 
   /**
    * Create a LineageGraph with specific depth and width dimensions
+   * @deprecated Use generateLineageGraph() function instead
    */
   static createWithDimensions(depth: number, width: number): LineageGraph {
-    // TODO: Implementation
-    throw new Error('Not implemented yet');
+    return generateLineageGraph({ depth, width });
   }
 
   /**
@@ -381,4 +382,110 @@ export class LineageGraph {
   getGraph(): DirectedGraph {
     return this.graph;
   }
+}
+
+/**
+ * Generate a LineageGraph with specified dimensions and characteristics
+ */
+export function generateLineageGraph(options: {
+  depth: number;           // Guaranteed: getDepth() === depth
+  width: number;           // Guaranteed: getWidth() === width (max layer width)
+  seed?: number;           // Optional seed for reproducible results
+}): LineageGraph {
+  const {
+    depth,
+    width,
+    seed
+  } = options;
+
+  // Validate inputs
+  if (depth < 2) throw new Error('depth must be at least 2');
+  if (width < 1) throw new Error('width must be at least 1');
+
+  // Use seedrandom for proper seeded random number generation
+  const rng = seed !== undefined ? seedrandom(seed.toString()) : Math.random;
+
+  const nodes: Array<{ key: string; role: NodeRole; attributes?: any }> = [];
+  const edges: Array<{ source: string; target: string; attributes?: any }> = [];
+
+  // Generate layer widths: each layer has between 1 and width nodes
+  // Formula: 1 + Math.floor(random() * width) gives values from 1 to width
+  const layerWidths: number[] = [];
+  for (let layer = 0; layer < depth; layer++) {
+    const layerWidth = 1 + Math.floor(rng() * width);
+    layerWidths.push(layerWidth);
+  }
+  
+  // Ensure at least one layer has exactly 'width' nodes to guarantee getWidth() === width
+  const maxLayerWidth = Math.max(...layerWidths);
+  if (maxLayerWidth < width) {
+    const randomLayerIndex = Math.floor(rng() * depth);
+    layerWidths[randomLayerIndex] = width;
+  }
+  
+  // Also ensure no layer exceeds width (this shouldn't happen but let's be safe)
+  for (let i = 0; i < layerWidths.length; i++) {
+    if (layerWidths[i] > width) {
+      layerWidths[i] = width;
+    }
+  }
+  
+
+
+  // Create nodes for each layer
+  const layerNodes: string[][] = [];
+  let nodeCounter = 0;
+
+  for (let layer = 0; layer < depth; layer++) {
+    const currentLayerNodes: string[] = [];
+    
+    for (let i = 0; i < layerWidths[layer]; i++) {
+      let role: NodeRole;
+      let nodeKey: string;
+      
+      if (layer === 0) {
+        role = NodeRole.OUTPUT;
+        nodeKey = `OUTPUT_${nodeCounter}`;
+      } else if (layer === depth - 1) {
+        role = NodeRole.INPUT;
+        nodeKey = `INPUT_${nodeCounter}`;
+      } else {
+        role = NodeRole.STEP;
+        nodeKey = `STEP_${nodeCounter}`;
+      }
+      
+      nodes.push({ key: nodeKey, role });
+      currentLayerNodes.push(nodeKey);
+      nodeCounter++;
+    }
+    
+    layerNodes.push(currentLayerNodes);
+  }
+
+  // Create minimal connectivity - SIMPLIFIED: consecutive layers only for now
+  
+  // Create edges between consecutive layers to ensure basic connectivity
+  for (let layerIndex = 0; layerIndex < depth - 1; layerIndex++) {
+    const currentLayer = layerNodes[layerIndex];
+    const nextLayer = layerNodes[layerIndex + 1];
+    
+    // Each node in current layer gets one edge to next layer
+    for (const sourceNode of currentLayer) {
+      const targetIndex = Math.floor(rng() * nextLayer.length);
+      const targetNode = nextLayer[targetIndex];
+      edges.push({ source: sourceNode, target: targetNode });
+    }
+    
+    // Each node in next layer gets at least one incoming edge
+    for (const targetNode of nextLayer) {
+      const hasIncomingEdge = edges.some(edge => edge.target === targetNode);
+      if (!hasIncomingEdge) {
+        const sourceIndex = Math.floor(rng() * currentLayer.length);
+        const sourceNode = currentLayer[sourceIndex];
+        edges.push({ source: sourceNode, target: targetNode });
+      }
+    }
+  }
+
+  return LineageGraph.from({ nodes, edges });
 } 
