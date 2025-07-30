@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import Home from '../page'
 import nodeData from '@/data/target-lineage.json'
@@ -43,6 +43,7 @@ vi.mock('reactflow', () => ({
       ))}
     </div>
   ),
+  ReactFlowProvider: ({ children }: any) => <div data-testid="react-flow-provider">{children}</div>,
   Handle: ({ type, position }: any) => (
     <div data-testid={`handle-${type}-${position}`} />
   ),
@@ -127,6 +128,50 @@ describe('Data-Driven Edge Testing', () => {
       )
       
       expect(matchingEdge).toBeInTheDocument()
+    })
+  })
+})
+
+describe('Generate Graph Button', () => {
+  it('displays the Generate Graph button on the canvas', () => {
+    render(<Home />)
+    
+    // Check that the Generate Graph button is present
+    const generateButton = screen.getByText('Generate Graph')
+    expect(generateButton).toBeInTheDocument()
+  })
+
+  it('shows different graph data when Generate Graph button is clicked', () => {
+    render(<Home />)
+    
+    // Get initial node data (should be default data)
+    const initialNodes = screen.getAllByTestId(/^node-/)
+    const initialNodeIds = initialNodes.map(node => node.getAttribute('data-node-id'))
+    
+    // Click the Generate Graph button
+    const generateButton = screen.getByText('Generate Graph')
+    fireEvent.click(generateButton)
+    
+    // Get new node data after clicking
+    const newNodes = screen.getAllByTestId(/^node-/)
+    const newNodeIds = newNodes.map(node => node.getAttribute('data-node-id'))
+    
+    // Verify that the graph data has changed (different node IDs or different count)
+    const hasChanged = (
+      newNodeIds.length !== initialNodeIds.length ||
+      !initialNodeIds.every(id => newNodeIds.includes(id))
+    )
+    
+    expect(hasChanged).toBe(true)
+  })
+
+  it('initially loads default data before Generate Graph is clicked', () => {
+    render(<Home />)
+    
+    // Verify that initially we have the default nodes from target-lineage.json
+    nodeData.nodes.forEach(node => {
+      const nodeElement = screen.getByTestId(`node-${node.id}`)
+      expect(nodeElement).toBeInTheDocument()
     })
   })
 }) 
