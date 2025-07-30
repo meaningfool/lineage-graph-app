@@ -1,8 +1,15 @@
 import React from 'react'
-import { render, screen, within, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { render, screen, within, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import Home from '../page'
 import nodeData from '@/data/target-lineage.json'
+
+// Mock viewport state for testing
+const mockViewport = { x: 0, y: 0, zoom: 1 }
+const mockSetViewport = vi.fn((newViewport) => {
+  Object.assign(mockViewport, newViewport)
+})
+const mockGetViewport = vi.fn(() => mockViewport)
 
 // Mock ReactFlow to avoid canvas rendering issues in tests
 vi.mock('reactflow', () => ({
@@ -53,7 +60,14 @@ vi.mock('reactflow', () => ({
     Left: 'left',
     Right: 'right'
   },
-  Background: ({ children }: any) => <div data-testid="background">{children}</div>
+  Background: ({ children }: any) => <div data-testid="background">{children}</div>,
+  useReactFlow: () => ({
+    getViewport: mockGetViewport,
+    setViewport: mockSetViewport,
+    project: vi.fn(),
+    screenToFlowPosition: vi.fn(),
+    flowToScreenPosition: vi.fn(),
+  })
 }))
 
 // Mock the trpc utility
@@ -67,6 +81,17 @@ vi.mock('@/utils/trpc', () => ({
 }))
 
 describe('Home Page', () => {
+  beforeEach(() => {
+    // Clear all mocks before each test
+    vi.clearAllMocks()
+    // Reset timers
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('renders all nodes from the data', () => {
     render(<Home />)
     
@@ -105,6 +130,15 @@ describe('Home Page', () => {
  
 
 describe('Data-Driven Edge Testing', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('displays the correct number of edges from data', () => {
     render(<Home />)
     
@@ -133,6 +167,15 @@ describe('Data-Driven Edge Testing', () => {
 })
 
 describe('Generate Graph Button', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('displays the Generate Graph button on the canvas', () => {
     render(<Home />)
     
@@ -233,5 +276,166 @@ describe('Generate Graph Button', () => {
         expect(propertyElement.textContent!.trim().length).toBeGreaterThan(0)
       })
     })
+  })
+}) 
+
+describe('Automatic Camera Adjustment', () => {
+  // Mock viewport size for testing
+  const VIEWPORT_WIDTH = 1000
+  const VIEWPORT_HEIGHT = 600
+
+  // Helper function to check if all nodes are visible within viewport bounds
+  const areAllNodesVisible = (nodePositions: Array<{x: number, y: number}>, viewport: {x: number, y: number, zoom: number}) => {
+    // Transform node coordinates to screen coordinates
+    const screenPositions = nodePositions.map(node => ({
+      x: (node.x * viewport.zoom) + viewport.x,
+      y: (node.y * viewport.zoom) + viewport.y
+    }))
+    
+    // Check if all nodes are within viewport bounds (with node size buffer)
+    const NODE_SIZE = 200 // Approximate node width
+    return screenPositions.every(pos => 
+      pos.x >= -NODE_SIZE/2 && 
+      pos.x <= VIEWPORT_WIDTH + NODE_SIZE/2 &&
+      pos.y >= -NODE_SIZE/2 && 
+      pos.y <= VIEWPORT_HEIGHT + NODE_SIZE/2
+    )
+  }
+
+  // Helper function to check if graph utilizes viewport effectively
+  const doesGraphUtilizeViewportWell = (nodePositions: Array<{x: number, y: number}>, viewport: {x: number, y: number, zoom: number}) => {
+    // Calculate graph bounding box in screen coordinates
+    const screenPositions = nodePositions.map(node => ({
+      x: (node.x * viewport.zoom) + viewport.x,
+      y: (node.y * viewport.zoom) + viewport.y
+    }))
+    
+    const minX = Math.min(...screenPositions.map(p => p.x))
+    const maxX = Math.max(...screenPositions.map(p => p.x))
+    const minY = Math.min(...screenPositions.map(p => p.y))
+    const maxY = Math.max(...screenPositions.map(p => p.y))
+    
+    const graphScreenWidth = maxX - minX
+    const graphScreenHeight = maxY - minY
+    
+    // Check if graph uses ≥70% of viewport width OR ≥70% of viewport height
+    const usesWidthWell = graphScreenWidth >= (VIEWPORT_WIDTH * 0.7)
+    const usesHeightWell = graphScreenHeight >= (VIEWPORT_HEIGHT * 0.7)
+    
+    return usesWidthWell || usesHeightWell
+  }
+
+  // Helper function to test both visibility and utilization for a graph state
+  const testGraphDisplayQuality = (description: string) => {
+    const nodes = screen.getAllByTestId(/^node-/)
+    const nodePositions = nodes.map(node => ({
+      x: Number(node.getAttribute('data-position-x')),
+      y: Number(node.getAttribute('data-position-y'))
+    }))
+
+    // Advance time to allow any viewport adjustments
+    vi.advanceTimersByTime(300)
+
+    // Test 1: Graph appears fully visible
+    const allVisible = areAllNodesVisible(nodePositions, mockViewport)
+    expect(allVisible).toBe(true) // `All nodes should be visible in viewport for ${description}`
+
+    // Test 2: Graph utilizes viewport effectively
+    const utilizesWell = doesGraphUtilizeViewportWell(nodePositions, mockViewport)
+    expect(utilizesWell).toBe(true) // `Graph should use ≥70% of viewport width or height for ${description}`
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+    // Reset viewport to default state
+    Object.assign(mockViewport, { x: 0, y: 0, zoom: 1 })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('displays initial default graph with optimal camera positioning', () => {
+    render(<Home />)
+    testGraphDisplayQuality('initial default graph')
+  })
+
+  it('adjusts camera when new graphs are generated', () => {
+    render(<Home />)
+    
+    const generateButton = screen.getByText('Generate Graph')
+    
+    // Test first generated graph
+    fireEvent.click(generateButton)
+    testGraphDisplayQuality('first generated graph')
+    
+    // Test second generated graph  
+    fireEvent.click(generateButton)
+    testGraphDisplayQuality('second generated graph')
+  })
+
+  it('maintains optimal camera positioning after edge type changes', () => {
+    render(<Home />)
+    
+    // Change edge type
+    const edgeTypeSelect = screen.getByLabelText('Edge Type:')
+    fireEvent.change(edgeTypeSelect, { target: { value: 'straight' } })
+    
+    testGraphDisplayQuality('graph after edge type change')
+  })
+})
+
+describe('Edge Type Selection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('displays the edge type selector', () => {
+    render(<Home />)
+    
+    const edgeTypeLabel = screen.getByText('Edge Type:')
+    const edgeTypeSelect = screen.getByLabelText('Edge Type:')
+    
+    expect(edgeTypeLabel).toBeInTheDocument()
+    expect(edgeTypeSelect).toBeInTheDocument()
+  })
+
+  it('has correct default edge type selected', () => {
+    render(<Home />)
+    
+    const edgeTypeSelect = screen.getByLabelText('Edge Type:') as HTMLSelectElement
+    expect(edgeTypeSelect.value).toBe('smoothstep')
+  })
+
+  it('shows all available edge type options', () => {
+    render(<Home />)
+    
+    const edgeTypeSelect = screen.getByLabelText('Edge Type:')
+    
+    // Check that all edge type options are available
+    expect(within(edgeTypeSelect).getByText('Bezier (Default)')).toBeInTheDocument()
+    expect(within(edgeTypeSelect).getByText('Straight')).toBeInTheDocument()
+    expect(within(edgeTypeSelect).getByText('Step')).toBeInTheDocument()
+    expect(within(edgeTypeSelect).getByText('Smooth Step')).toBeInTheDocument()
+  })
+
+  it('changes edge type when selection changes', () => {
+    render(<Home />)
+    
+    const edgeTypeSelect = screen.getByLabelText('Edge Type:') as HTMLSelectElement
+    
+    // Change to straight edge type
+    fireEvent.change(edgeTypeSelect, { target: { value: 'straight' } })
+    expect(edgeTypeSelect.value).toBe('straight')
+    
+    // Change to step edge type
+    fireEvent.change(edgeTypeSelect, { target: { value: 'step' } })
+    expect(edgeTypeSelect.value).toBe('step')
   })
 }) 
