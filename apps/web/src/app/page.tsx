@@ -6,28 +6,34 @@ import { transformJsonToLineageGraph, generateLineageGraph } from '@/utils/linea
 import { applyGraphLayout } from '@/utils/graph-layout'
 
 export default function Home() {
-  // State to track whether to use generated data or default data
-  const [useGeneratedData, setUseGeneratedData] = useState(false)
+  // Counter to track number of generations - triggers new graph each time
+  const [generationCount, setGenerationCount] = useState(0)
 
   // Transform and layout the graph based on current state
   const { nodes, edges } = useMemo(() => {
-    if (useGeneratedData) {
-      // Generate a sample graph with different characteristics
+    if (generationCount > 0) {
+      // Generate random parameters for each generation
+      const depth = 4 + Math.floor(Math.random() * 5)  // 4-8 layers
+      const width = 3 + Math.floor(Math.random() * 8)  // 3-10 nodes
+      const seed = Date.now() + generationCount        // Always different seed
+      
+      // Generate a random graph with varying characteristics
       const generatedGraph = generateLineageGraph({
-        depth: 4,
-        width: 3,
-        seed: 42 // Use a fixed seed for consistent testing
+        depth,
+        width,
+        seed
       })
       return applyGraphLayout(generatedGraph)
     } else {
-      // Use default data
+      // Use default data when no generations have been triggered
       const lineageGraph = transformJsonToLineageGraph(nodeData)
       return applyGraphLayout(lineageGraph)
     }
-  }, [useGeneratedData])
+  }, [generationCount])
 
   const handleGenerateGraph = () => {
-    setUseGeneratedData(true)
+    // Increment counter - this will always trigger a new generation
+    setGenerationCount(prev => prev + 1)
   }
   
   return (

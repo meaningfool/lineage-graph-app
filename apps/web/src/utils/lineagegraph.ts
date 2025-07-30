@@ -406,6 +406,81 @@ export function generateLineageGraph(options: {
   // Use seedrandom for proper seeded random number generation
   const rng = seed !== undefined ? seedrandom(seed.toString()) : Math.random;
 
+  // Content pools for generating realistic node data
+  const outputNames = ['Dashboard Metric', 'Summary Report', 'KPI Score', 'Performance Index', 'Analytics Result', 'Business Metric'];
+  const stepNames = ['Data Processor', 'Transformer', 'Aggregator', 'Calculator', 'Filter', 'Validator', 'Enricher'];
+  const inputNames = ['Data Source', 'Database Table', 'API Endpoint', 'File Import', 'Stream Input', 'External Feed'];
+  
+  const propertyPools = {
+    technical: ['dataType', 'format', 'encoding', 'schema', 'compression'],
+    business: ['owner', 'category', 'priority', 'frequency', 'cost'],
+    generic: ['status', 'lastUpdated', 'description', 'version', 'environment']
+  };
+
+  const valuePools = {
+    dataType: ['String', 'Integer', 'Float', 'Boolean', 'JSON', 'Array'],
+    format: ['CSV', 'JSON', 'XML', 'Parquet', 'Avro'],
+    encoding: ['UTF-8', 'ASCII', 'Base64'],
+    schema: ['v1.2', 'v2.0', 'v2.1', 'latest'],
+    compression: ['gzip', 'lz4', 'snappy', 'none'],
+    owner: ['Data Team', 'Analytics', 'Engineering', 'Business Intelligence'],
+    category: ['Financial', 'Operational', 'Customer', 'Product', 'Marketing'],
+    priority: ['High', 'Medium', 'Low', 'Critical'],
+    frequency: ['Real-time', 'Hourly', 'Daily', 'Weekly', 'Monthly'],
+    cost: ['Low', 'Medium', 'High'],
+    status: ['Active', 'Pending', 'Deprecated', 'In Development'],
+    lastUpdated: ['2024-01-15', '2024-01-14', '2024-01-13', '2024-01-12'],
+    description: ['Processes incoming data', 'Calculates metrics', 'Generates reports', 'Validates input'],
+    version: ['1.0', '1.1', '2.0', '2.1', '3.0'],
+    environment: ['Production', 'Staging', 'Development', 'Testing']
+  };
+
+  function generateNodeContent(role: NodeRole, nodeIndex: number) {
+    // Generate label based on role
+    let label: string;
+    switch (role) {
+      case NodeRole.OUTPUT:
+        label = outputNames[nodeIndex % outputNames.length];
+        break;
+      case NodeRole.STEP:
+        label = stepNames[nodeIndex % stepNames.length];
+        break;
+      case NodeRole.INPUT:
+        label = inputNames[nodeIndex % inputNames.length];
+        break;
+    }
+
+    // Generate 2-4 random properties
+    const numProperties = 2 + Math.floor(rng() * 3); // 2-4 properties
+    const attributes: any = { label };
+
+    // Collect all available property keys
+    const allPropertyKeys = [
+      ...propertyPools.technical,
+      ...propertyPools.business,
+      ...propertyPools.generic
+    ];
+
+    // Randomly select properties without duplication
+    const selectedKeys: string[] = [];
+    while (selectedKeys.length < numProperties && selectedKeys.length < allPropertyKeys.length) {
+      const randomKey = allPropertyKeys[Math.floor(rng() * allPropertyKeys.length)];
+      if (!selectedKeys.includes(randomKey)) {
+        selectedKeys.push(randomKey);
+      }
+    }
+
+    // Assign values to selected properties
+    selectedKeys.forEach(key => {
+      const possibleValues = valuePools[key as keyof typeof valuePools];
+      if (possibleValues) {
+        attributes[key] = possibleValues[Math.floor(rng() * possibleValues.length)];
+      }
+    });
+
+    return attributes;
+  }
+
   const nodes: Array<{ key: string; role: NodeRole; attributes?: any }> = [];
   const edges: Array<{ source: string; target: string; attributes?: any }> = [];
 
@@ -455,7 +530,10 @@ export function generateLineageGraph(options: {
         nodeKey = `STEP_${nodeCounter}`;
       }
       
-      nodes.push({ key: nodeKey, role });
+      // Generate content for this node
+      const attributes = generateNodeContent(role, nodeCounter);
+      
+      nodes.push({ key: nodeKey, role, attributes });
       currentLayerNodes.push(nodeKey);
       nodeCounter++;
     }

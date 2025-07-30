@@ -165,6 +165,31 @@ describe('Generate Graph Button', () => {
     expect(hasChanged).toBe(true)
   })
 
+  it('generates different graphs on multiple clicks', () => {
+    render(<Home />)
+    
+    const generateButton = screen.getByText('Generate Graph')
+    
+    // Click first time
+    fireEvent.click(generateButton)
+    const firstGenNodes = screen.getAllByTestId(/^node-/)
+    const firstGenNodeIds = firstGenNodes.map(node => node.getAttribute('data-node-id'))
+    
+    // Click second time
+    fireEvent.click(generateButton)
+    const secondGenNodes = screen.getAllByTestId(/^node-/)
+    const secondGenNodeIds = secondGenNodes.map(node => node.getAttribute('data-node-id'))
+    
+    // Verify that each generation produces different results
+    const isDifferent = (
+      firstGenNodeIds.length !== secondGenNodeIds.length ||
+      !firstGenNodeIds.every(id => secondGenNodeIds.includes(id)) ||
+      !secondGenNodeIds.every(id => firstGenNodeIds.includes(id))
+    )
+    
+    expect(isDifferent).toBe(true)
+  })
+
   it('initially loads default data before Generate Graph is clicked', () => {
     render(<Home />)
     
@@ -172,6 +197,41 @@ describe('Generate Graph Button', () => {
     nodeData.nodes.forEach(node => {
       const nodeElement = screen.getByTestId(`node-${node.id}`)
       expect(nodeElement).toBeInTheDocument()
+    })
+  })
+
+  it('generated nodes have meaningful labels and properties', () => {
+    render(<Home />)
+    
+    const generateButton = screen.getByText('Generate Graph')
+    fireEvent.click(generateButton)
+    
+    const generatedNodes = screen.getAllByTestId(/^node-/)
+    
+    // Ensure we have generated nodes to test
+    expect(generatedNodes.length).toBeGreaterThan(0)
+    
+    generatedNodes.forEach((node) => {
+      // Test meaningful labels (not undefined or empty)
+      const nodeText = node.textContent || ''
+      const label = nodeText.split('\n')[0] // First line should be the label
+      
+      expect(label).toBeTruthy()
+      expect(label).not.toBe('undefined')
+      expect(label.trim().length).toBeGreaterThan(0)
+      
+      // Test minimum properties using Testing Library queries (more reliable than querySelector)
+      const nodeScope = within(node)
+      
+      // Count property elements directly - they exist if the content generation worked
+      const propertyElements = nodeScope.getAllByTestId(/^property-/)
+      expect(propertyElements.length).toBeGreaterThanOrEqual(2)
+      
+      // Verify each property has content
+      propertyElements.forEach(propertyElement => {
+        expect(propertyElement.textContent).toBeTruthy()
+        expect(propertyElement.textContent!.trim().length).toBeGreaterThan(0)
+      })
     })
   })
 }) 

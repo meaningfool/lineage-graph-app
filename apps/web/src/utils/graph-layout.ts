@@ -33,9 +33,9 @@ export function applyGraphLayout(
       data: { 
         label: attributes.label,
         properties: {
-          // Extract properties from attributes (excluding label)
+          // Extract properties from attributes (excluding label and role)
           ...Object.fromEntries(
-            Object.entries(attributes).filter(([key]) => key !== 'label')
+            Object.entries(attributes).filter(([key]) => key !== 'label' && key !== 'role')
           )
         }
       }
