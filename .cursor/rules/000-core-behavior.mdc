@@ -1,0 +1,33 @@
+---
+description: Critical behavioral rules that must always be followed for proper development workflow and user interaction
+globs: ["**/*"]
+---
+
+# Core Development Behavior Rules
+
+## 🚨 CRITICAL: ALWAYS CHECK BEFORE ACTING
+- **BEFORE ANY FEATURE WORK**: Follow mandatory TDD workflow (see 001-tdd-workflow.mdc)
+- **BEFORE ANY COMMIT**: Ask "Are structure and feature changes separated?"
+- **BEFORE ANY IMPLEMENTATION**: Get user validation
+
+## 🚨 CRITICAL: QUESTIONS vs ACTIONS
+- **WHEN USER ASKS A QUESTION**: Answer the question only - do NOT implement, code, or act based on the answer
+- **WHEN USER ASKS TO ACT**: Only then proceed with implementation, coding, or actions
+- **NEVER ASSUME**: Don't assume the user wants you to proceed after answering a question
+
+## 🚨 CRITICAL: SPECIFIC REQUESTS
+- **WHEN USER ASKS FOR SOMETHING SPECIFIC**: Do exactly that thing, nothing else
+- **IF CAN'T FIND/DO THE SPECIFIC THING**: Tell the user you couldn't do it and ask for alternatives
+- **DON'T TAKE INITIATIVE**: Don't substitute with something else without asking
+- **BE HONEST**: If you can't find digraph-js, say "I couldn't find digraph-js" - don't look at graphology instead
+
+## Error Prevention
+- Before initializing git, check current directory with `pwd`
+- Verify you're in the root directory before running git commands
+- Use `git status` to confirm you're working at the right level
+
+## Best Practices
+- Always check the current working directory before making changes
+- Use relative paths from root when referencing files
+- Commit meaningful changes with descriptive messages
+- Test changes in the context of the full workspace

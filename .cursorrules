@@ -120,6 +120,9 @@
 - Test changes in the context of the full workspace
 
 ## Cursor Rules Management
-- **WHEN USER ASKS TO ADD A RULE**: Add the rule to `.cursorrules` file immediately
-- **RULE ADDITION**: Use `search_replace` to add new rules to the appropriate section
-- **RULE ORGANIZATION**: Place rules in logical sections (CRITICAL, Communication, etc.) 
+- **MODERN RULES SYSTEM**: This project uses the new `.cursor/rules/` directory with modular `.mdc` files
+- **LEGACY SUPPORT**: This `.cursorrules` file will be migrated to the new system
+- **WHEN USER ASKS TO ADD A RULE**: Add new rules to appropriate `.mdc` files in `.cursor/rules/` directory
+- **RULE ADDITION**: Use `search_replace` to add new rules to the appropriate `.mdc` file
+- **RULE ORGANIZATION**: Place rules in logical, focused `.mdc` files by topic/domain
+- **FUTURE**: The new `.cursor/rules/` system is the recommended approach for Cursor rules 
