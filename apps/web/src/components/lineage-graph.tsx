@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useMemo } from 'react'
-import ReactFlow, { Handle, Position, Background, ReactFlowProvider } from 'reactflow'
+import React, { useMemo, useEffect } from 'react'
+import ReactFlow, { Handle, Position, Background, ReactFlowProvider, useReactFlow } from 'reactflow'
 import type { Node, Edge } from 'reactflow'
 import 'reactflow/dist/style.css'
 
@@ -47,9 +47,13 @@ const nodeTypes = {
 interface LineageGraphProps {
   nodes: Node[]
   edges: Edge[]
+  edgeType?: 'default' | 'straight' | 'step' | 'smoothstep'
 }
 
-export function LineageGraph({ nodes, edges }: LineageGraphProps) {
+// Inner component that uses the ReactFlow context
+function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGraphProps) {
+  const { fitView } = useReactFlow()
+
   // Memoize nodes conversion to prevent unnecessary re-renders
   const customNodes = useMemo(() => nodes.map(node => ({
     ...node,
@@ -59,7 +63,7 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
   // Memoize edges conversion to prevent unnecessary re-renders
   const customEdges = useMemo(() => edges.map(edge => ({
     ...edge,
-    type: 'smoothstep', // Use smoothstep for balanced structure and flow
+    type: edgeType, // Use dynamic edge type
     animated: false, // Remove animation
     style: { stroke: '#6b7280', strokeWidth: 2 }, // Plain line style
     markerEnd: {
@@ -68,7 +72,22 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
       height: 12,
       color: '#6b7280',
     },
-  })), [edges])
+  })), [edges, edgeType]) // Add edgeType as dependency
+
+  // Automatically fit view when nodes, edges, or edge type change
+  useEffect(() => {
+    // Small delay to ensure nodes are rendered before fitting view
+    const timer = setTimeout(() => {
+      fitView({ 
+        padding: 0.2,      // 20% padding around the graph
+        duration: 500,     // Smooth animation duration
+        minZoom: 0.1,      // Allow zooming out to see large graphs
+        maxZoom: 1.5       // Prevent over-zooming for readability
+      })
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [customNodes, customEdges, edgeType, fitView])
 
   console.log('LineageGraph nodes:', customNodes)
   console.log('LineageGraph edges:', customEdges)
@@ -82,26 +101,32 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
   }
 
   return (
+    <ReactFlow
+      nodes={customNodes}
+      edges={customEdges}
+      nodeTypes={nodeTypes}
+      fitView
+      fitViewOptions={{ padding: 0.2 }}
+      minZoom={0.1}
+      maxZoom={2}
+      defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+      proOptions={{ hideAttribution: true }}
+    >
+      <Background 
+        variant={"dots" as any}
+        gap={20} 
+        size={1.5} 
+        color="#9ca3af"
+      />
+    </ReactFlow>
+  )
+}
+
+export function LineageGraph({ nodes, edges, edgeType = 'smoothstep' }: LineageGraphProps) {
+  return (
     <div className="w-full" style={{ height: '100vh', minHeight: '600px' }}>
       <ReactFlowProvider>
-        <ReactFlow
-          nodes={customNodes}
-          edges={customEdges}
-          nodeTypes={nodeTypes}
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
-          minZoom={0.1}
-          maxZoom={2}
-          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background 
-            variant={"dots" as any}
-            gap={20} 
-            size={1.5} 
-            color="#9ca3af"
-          />
-        </ReactFlow>
+        <LineageGraphInner nodes={nodes} edges={edges} edgeType={edgeType} />
       </ReactFlowProvider>
     </div>
   )
