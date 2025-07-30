@@ -3,6 +3,7 @@ import { hasCycle } from 'graphology-dag';
 import { subgraph } from 'graphology-operators';
 import { bfsFromNode } from 'graphology-traversal';
 import seedrandom from 'seedrandom';
+import { z } from 'zod';
 
 /**
  * Node roles in the lineage graph structure
@@ -488,4 +489,83 @@ export function generateLineageGraph(options: {
   }
 
   return LineageGraph.from({ nodes, edges });
+} 
+
+/**
+ * Schema for input JSON data format
+ */
+const JsonNodeSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  type: z.enum(['source', 'computed', 'metric']),
+  properties: z.record(z.string(), z.any()).optional()
+});
+
+const JsonEdgeSchema = z.object({
+  id: z.string(),
+  source: z.string(),
+  target: z.string()
+});
+
+const JsonLineageSchema = z.object({
+  nodes: z.array(JsonNodeSchema),
+  edges: z.array(JsonEdgeSchema)
+});
+
+/**
+ * Type definitions for input JSON format
+ */
+export type JsonLineageData = z.infer<typeof JsonLineageSchema>;
+export type JsonNode = z.infer<typeof JsonNodeSchema>;
+export type JsonEdge = z.infer<typeof JsonEdgeSchema>;
+
+/**
+ * Transform JSON lineage data to LineageGraph format
+ * 
+ * Maps node types:
+ * - "source" → NodeRole.INPUT
+ * - "computed" → NodeRole.STEP  
+ * - "metric" → NodeRole.OUTPUT
+ */
+export function transformJsonToLineageGraph(jsonData: unknown): LineageGraph {
+  // Step 1: Validate input schema
+  const validatedData = JsonLineageSchema.parse(jsonData);
+  
+  // Step 2: Transform nodes
+  const nodes = validatedData.nodes.map(node => ({
+    key: node.id,
+    role: mapNodeTypeToRole(node.type),
+    attributes: {
+      label: node.label,
+      ...node.properties
+    }
+  }));
+  
+  // Step 3: Transform edges - reverse direction for "derived from" semantics
+  // JSON: source → target means "source generates target"  
+  // LineageGraph: A → B means "A is derived from B"
+  // So JSON's target becomes LineageGraph's source (target is derived from source)
+  const edges = validatedData.edges.map(edge => ({
+    source: edge.target,  // What is being derived
+    target: edge.source   // What it's derived from
+  }));
+  
+  // Step 4: Create and return LineageGraph (validates structure)
+  return LineageGraph.from({ nodes, edges });
+}
+
+/**
+ * Map JSON node type to LineageGraph NodeRole
+ */
+function mapNodeTypeToRole(type: 'source' | 'computed' | 'metric'): NodeRole {
+  switch (type) {
+    case 'source':
+      return NodeRole.INPUT;
+    case 'computed':
+      return NodeRole.STEP;
+    case 'metric':
+      return NodeRole.OUTPUT;
+    default:
+      throw new Error(`Unknown node type: ${type}`);
+  }
 } 

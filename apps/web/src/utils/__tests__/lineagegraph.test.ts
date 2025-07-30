@@ -1,7 +1,7 @@
 // LineageGraph tests for graphology-based implementation 
 import { describe, test, expect } from 'vitest';
 import { DirectedGraph } from 'graphology';
-import { LineageGraph, NodeRole, generateLineageGraph } from '../lineagegraph';
+import { LineageGraph, NodeRole, generateLineageGraph, transformJsonToLineageGraph } from '../lineagegraph';
 
 
 describe('LineageGraph - Construction', () => {
@@ -756,3 +756,154 @@ describe('generateLineageGraph', () => {
     });
   });
 }); 
+
+describe('JSON to LineageGraph transformation', () => {
+  const validJsonData = {
+    nodes: [
+      {
+        id: 'source-1',
+        label: 'Source Data',
+        type: 'source' as const,
+        properties: {
+          description: 'Test source',
+          dataType: 'Integer'
+        }
+      },
+      {
+        id: 'step-1', 
+        label: 'Processing Step',
+        type: 'computed' as const,
+        properties: {
+          formula: 'source-1 * 2'
+        }
+      },
+      {
+        id: 'output-1',
+        label: 'Final Result',
+        type: 'metric' as const
+      }
+    ],
+    edges: [
+      {
+        id: 'edge-1',
+        source: 'source-1',
+        target: 'step-1'
+      },
+      {
+        id: 'edge-2', 
+        source: 'step-1',
+        target: 'output-1'
+      }
+    ]
+  }
+
+  describe('successful transformation', () => {
+    it('transforms valid JSON data to LineageGraph', () => {
+      const result = transformJsonToLineageGraph(validJsonData)
+      
+      expect(result).toBeInstanceOf(LineageGraph)
+      expect(result.getDepth()).toBe(3) // source -> step -> output
+      expect(result.getWidth()).toBe(1) // max 1 node per layer
+    })
+
+    it('maps node types correctly', () => {
+      const result = transformJsonToLineageGraph(validJsonData)
+      const graph = result.getGraph()
+      
+      expect(graph.getNodeAttributes('source-1').role).toBe(NodeRole.INPUT)
+      expect(graph.getNodeAttributes('step-1').role).toBe(NodeRole.STEP)
+      expect(graph.getNodeAttributes('output-1').role).toBe(NodeRole.OUTPUT)
+    })
+
+    it('preserves labels and properties in attributes', () => {
+      const result = transformJsonToLineageGraph(validJsonData)
+      const graph = result.getGraph()
+      
+      const sourceAttrs = graph.getNodeAttributes('source-1')
+      expect(sourceAttrs.label).toBe('Source Data')
+      expect(sourceAttrs.description).toBe('Test source')
+      expect(sourceAttrs.dataType).toBe('Integer')
+      
+      const stepAttrs = graph.getNodeAttributes('step-1')
+      expect(stepAttrs.label).toBe('Processing Step')
+      expect(stepAttrs.formula).toBe('source-1 * 2')
+    })
+
+    it('preserves edge relationships with correct derivation semantics', () => {
+      const result = transformJsonToLineageGraph(validJsonData)
+      const graph = result.getGraph()
+      
+      // JSON: source-1 → step-1 becomes step-1 → source-1 (step-1 derived from source-1)
+      expect(graph.hasEdge('step-1', 'source-1')).toBe(true)
+      // JSON: step-1 → output-1 becomes output-1 → step-1 (output-1 derived from step-1)  
+      expect(graph.hasEdge('output-1', 'step-1')).toBe(true)
+      expect(graph.size).toBe(2) // total edges
+    })
+  })
+
+  describe('schema validation', () => {
+    it('rejects data with invalid node type', () => {
+      const invalidData = {
+        ...validJsonData,
+        nodes: [
+          {
+            id: 'invalid-node',
+            label: 'Invalid',
+            type: 'unknown' as any
+          }
+        ]
+      }
+      
+      expect(() => transformJsonToLineageGraph(invalidData)).toThrow()
+    })
+
+    it('rejects data with missing required fields', () => {
+      const invalidData = {
+        nodes: [
+          {
+            id: 'incomplete-node',
+            // missing label and type
+          }
+        ],
+        edges: []
+      }
+      
+      expect(() => transformJsonToLineageGraph(invalidData)).toThrow()
+    })
+
+    it('rejects data with invalid edge references', () => {
+      const invalidData = {
+        nodes: [
+          {
+            id: 'node-1',
+            label: 'Node 1', 
+            type: 'source' as const
+          }
+        ],
+        edges: [
+          {
+            id: 'bad-edge',
+            source: 'node-1',
+            target: 'non-existent-node' // This node doesn't exist  
+          }
+        ]
+      }
+      
+      // Should throw during LineageGraph.from() validation since edge references non-existent node
+      expect(() => transformJsonToLineageGraph(invalidData)).toThrow()
+    })
+  })
+
+  describe('integration with actual data', () => {
+    it('transforms target-lineage.json successfully', async () => {
+      // Import the actual JSON data
+      const targetLineageData = await import('@/data/target-lineage.json')
+      
+      const result = transformJsonToLineageGraph(targetLineageData.default)
+      
+      expect(result).toBeInstanceOf(LineageGraph)
+      expect(result.getGraph().order).toBe(5) // 5 nodes in target-lineage.json
+      expect(result.getGraph().size).toBe(4)  // 4 edges in target-lineage.json
+    })
+  })
+}) 

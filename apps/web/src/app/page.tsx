@@ -4,6 +4,7 @@ import { LineageGraph } from "@/components/lineage-graph"
 import type { Node, Edge } from 'reactflow'
 import dagre from 'dagre'
 import nodeData from '@/data/target-lineage.json'
+import { transformJsonToLineageGraph } from '@/utils/lineagegraph'
 
 // Layout utility function using dagre
 const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'LR') => {
@@ -56,21 +57,39 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'LR') => 
 }
 
 export default function Home() {
-  // Load node data from file
-  const initialNodes: Node[] = nodeData.nodes.map(node => ({
-    id: node.id,
-    type: 'default',
-    position: { x: 0, y: 0 }, // Will be overridden by layout
-    data: { 
-      label: node.label,
-      properties: node.properties
-    }
-  }))
+  // Transform JSON data to LineageGraph, then convert to ReactFlow format
+  const lineageGraph = transformJsonToLineageGraph(nodeData)
+  const graph = lineageGraph.getGraph()
   
-  const initialEdges: Edge[] = nodeData.edges.map(edge => ({
-    ...edge,
-    type: 'smoothstep'
-  }))
+  // Convert LineageGraph to ReactFlow nodes
+  const initialNodes: Node[] = graph.nodes().map(nodeKey => {
+    const attributes = graph.getNodeAttributes(nodeKey)
+    return {
+      id: nodeKey,
+      type: 'default',
+      position: { x: 0, y: 0 }, // Will be overridden by layout
+      data: { 
+        label: attributes.label,
+        properties: {
+          // Extract properties from attributes (excluding label)
+          ...Object.fromEntries(
+            Object.entries(attributes).filter(([key]) => key !== 'label')
+          )
+        }
+      }
+    }
+  })
+  
+  // Convert LineageGraph to ReactFlow edges
+  const initialEdges: Edge[] = graph.edges().map(edgeKey => {
+    const [source, target] = graph.extremities(edgeKey)
+    return {
+      id: edgeKey,
+      source,
+      target,
+      type: 'smoothstep'
+    }
+  })
 
   // Apply automatic layout
   const { nodes, edges } = getLayoutedElements(initialNodes, initialEdges, 'LR')

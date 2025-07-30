@@ -113,16 +113,17 @@ describe('Data-Driven Edge Testing', () => {
     expect(renderedEdges).toHaveLength(expectedEdgeCount)
   })
 
-  it('displays edges connecting the correct nodes as specified in data', () => {
+  it('displays edges connecting the correct nodes with derivation semantics', () => {
     render(<Home />)
     
     const renderedEdges = screen.getAllByTestId('react-flow__edge')
     
-    // For each edge in the data, verify it exists in the rendered component
+    // For each edge in the data, verify it exists with reversed direction (derivation semantics)
+    // JSON: A → B means "A generates B", but LineageGraph: B → A means "B is derived from A"
     nodeData.edges.forEach(expectedEdge => {
       const matchingEdge = renderedEdges.find(edge => 
-        edge.getAttribute('data-source') === expectedEdge.source &&
-        edge.getAttribute('data-target') === expectedEdge.target
+        edge.getAttribute('data-source') === expectedEdge.target &&  // Reversed
+        edge.getAttribute('data-target') === expectedEdge.source     // Reversed
       )
       
       expect(matchingEdge).toBeInTheDocument()
