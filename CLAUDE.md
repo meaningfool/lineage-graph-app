@@ -75,6 +75,15 @@ This project follows strict TDD workflow from `.cursor/rules/001-tdd-workflow.md
 - **Use correct commit types**: "feat:" for new features, "refactor:" for improvements to existing functionality, "test:" for test-only commits
 - **Iterative test refinement**: In RED phase, be prepared to iterate on test design based on user feedback before moving to GREEN phase
 
+**Refactoring Adaptation:**
+- **Still follow RED-GREEN cycle**: Even when refactoring, update tests first to see them fail, then implement
+- **RED phase for refactoring**: Update test expectations to match intended new behavior, verify tests fail
+- **GREEN phase for refactoring**: Implement the refactoring to make the updated tests pass
+- **Single refactoring commit**: After completing RED-GREEN cycle, commit both test and implementation changes together when they're tightly coupled
+- **Criteria for combined commit**: When tests are verifying structure that's being intentionally modified (e.g., moving UI elements between components)
+- **Verification**: Always ensure tests fail during RED phase to confirm they're actually testing the new behavior
+- **Still get approval**: Always ask for user confirmation before refactoring commits
+
 ### Testing Approach
 - **Use Testing Library queries exclusively**: `screen.getByTestId()`, `within().getAllByTestId()`
 - **Never use `querySelector()`** or DOM traversal (JSDOM incompatible)
@@ -85,6 +94,13 @@ This project follows strict TDD workflow from `.cursor/rules/001-tdd-workflow.md
 - Use regex patterns for dynamic test IDs: `/^property-/`
 - **Data-driven testing**: Avoid hardcoded test values - read from actual data sources to prevent test brittleness
 - **Comprehensive workflow testing**: Test complete user journeys (open-close-reopen cycles) not just isolated actions
+
+**Test Evolution Strategy:**
+- **Adapt existing tests** rather than only adding new ones when features change
+- **Recognize when feature changes require test updates**, not just additions
+- **When refactoring components**: Update test expectations to match new behavior
+- **Mock maintenance awareness**: Question if mocks duplicate internal component logic
+- **Test failure debugging**: When refactoring, verify tests actually test the new behavior (not cached old behavior in mocks)
 
 ### Feature Development Process
 - **Plan complex features** in scratchpad.md with clear iterations before starting
