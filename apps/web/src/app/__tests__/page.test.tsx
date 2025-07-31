@@ -613,4 +613,71 @@ describe('Side Panel', () => {
     fireEvent.click(newCloseButton)
     expect(screen.queryByTestId('side-panel')).not.toBeInTheDocument()
   })
+
+  it('displays all node properties in side panel when node is clicked', () => {
+    render(<Home />)
+    
+    // Find the first node with properties from the actual data
+    const firstNodeWithProperties = nodeData.nodes.find(node => 
+      node.properties && Object.keys(node.properties).length > 0
+    )
+    expect(firstNodeWithProperties).toBeDefined()
+    
+    // Click on the node
+    const nodeElement = screen.getByTestId(`node-${firstNodeWithProperties!.id}`)
+    fireEvent.click(nodeElement)
+    
+    // Verify side panel is open
+    const sidePanel = screen.getByTestId('side-panel')
+    expect(sidePanel).toBeInTheDocument()
+    
+    // Verify node label is displayed
+    expect(sidePanel).toHaveTextContent(firstNodeWithProperties!.label)
+    
+    // Verify all properties from the source data are displayed with correct test-ids
+    const sidePanelScope = within(sidePanel)
+    Object.entries(firstNodeWithProperties!.properties).forEach(([propertyKey, propertyValue]) => {
+      const propertyElement = sidePanelScope.getByTestId(`property-${propertyKey}`)
+      expect(propertyElement).toBeInTheDocument()
+      expect(propertyElement).toHaveTextContent(String(propertyValue))
+    })
+  })
+
+  it('updates side panel properties when switching between nodes', () => {
+    render(<Home />)
+    
+    // Find two different nodes with properties
+    const nodesWithProperties = nodeData.nodes.filter(node => 
+      node.properties && Object.keys(node.properties).length > 0
+    )
+    expect(nodesWithProperties.length).toBeGreaterThanOrEqual(2)
+    
+    const firstNode = nodesWithProperties[0]
+    const secondNode = nodesWithProperties[1]
+    
+    // Click first node
+    const firstNodeElement = screen.getByTestId(`node-${firstNode.id}`)
+    fireEvent.click(firstNodeElement)
+    
+    const sidePanel = screen.getByTestId('side-panel')
+    const sidePanelScope = within(sidePanel)
+    
+    // Verify first node properties are displayed
+    expect(sidePanel).toHaveTextContent(firstNode.label)
+    Object.keys(firstNode.properties).forEach(propertyKey => {
+      expect(sidePanelScope.getByTestId(`property-${propertyKey}`)).toBeInTheDocument()
+    })
+    
+    // Click second node
+    const secondNodeElement = screen.getByTestId(`node-${secondNode.id}`)
+    fireEvent.click(secondNodeElement)
+    
+    // Verify second node properties are now displayed
+    expect(sidePanel).toHaveTextContent(secondNode.label)
+    Object.entries(secondNode.properties).forEach(([propertyKey, propertyValue]) => {
+      const propertyElement = sidePanelScope.getByTestId(`property-${propertyKey}`)
+      expect(propertyElement).toBeInTheDocument()
+      expect(propertyElement).toHaveTextContent(String(propertyValue))
+    })
+  })
 }) 
