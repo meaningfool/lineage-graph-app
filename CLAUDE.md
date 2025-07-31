@@ -71,6 +71,9 @@ This project follows strict TDD workflow from `.cursor/rules/001-tdd-workflow.md
 - When testing UI interactions, test minimal necessary proof (e.g., class presence, not specific values)
 - Each RED-GREEN cycle should be committed separately
 - Never proceed to next phase without explicit user permission
+- **Wait for explicit approval before commits**: Always ask "commit?" and wait for user confirmation
+- **Use correct commit types**: "feat:" for new features, "refactor:" for improvements to existing functionality, "test:" for test-only commits
+- **Iterative test refinement**: In RED phase, be prepared to iterate on test design based on user feedback before moving to GREEN phase
 
 ### Testing Approach
 - **Use Testing Library queries exclusively**: `screen.getByTestId()`, `within().getAllByTestId()`
@@ -80,6 +83,8 @@ This project follows strict TDD workflow from `.cursor/rules/001-tdd-workflow.md
 - **Use specific test IDs** for predictable testing scenarios (e.g., `node-new-users`)
 - **Minimal proof testing**: When testing CSS classes, verify presence (e.g., `transition-transform`) not specific values
 - Use regex patterns for dynamic test IDs: `/^property-/`
+- **Data-driven testing**: Avoid hardcoded test values - read from actual data sources to prevent test brittleness
+- **Comprehensive workflow testing**: Test complete user journeys (open-close-reopen cycles) not just isolated actions
 
 ### Feature Development Process
 - **Plan complex features** in scratchpad.md with clear iterations before starting
@@ -87,6 +92,8 @@ This project follows strict TDD workflow from `.cursor/rules/001-tdd-workflow.md
 - **Each iteration should deliver clear user value** and be fully tested
 - Remove scratchpad.md after feature completion to keep repository clean
 - Use iterative TDD approach: small cycles with frequent commits
+- **UX refinement cycles**: After GREEN phase, expect additional refactoring requests for styling, spacing, and user experience improvements
+- **Session continuity**: When continuing from previous conversations, read scratchpad.md and verify tests still pass before proceeding
 
 ### Commit Strategy
 - **Structure commits**: Infrastructure, refactoring, setup (commit separately)
