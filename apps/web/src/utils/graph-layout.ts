@@ -32,6 +32,7 @@ export function applyGraphLayout(
       position: { x: 0, y: 0 }, // Will be overridden by layout
       data: { 
         label: attributes.label,
+        role: attributes.role, // Preserve role for node type styling
         properties: {
           // Extract properties from attributes (excluding label and role)
           ...Object.fromEntries(

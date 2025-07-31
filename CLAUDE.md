@@ -54,6 +54,43 @@ pnpm test:ui             # Open Vitest UI
 pnpm test:coverage       # Run with coverage
 ```
 
+### E2E Testing Commands (from root)
+```bash
+pnpm test:e2e --project=chromium [test-file]    # Standard E2E test command (ALWAYS use chromium)
+pnpm test:e2e --project=chromium --headed       # Run with visible browser for debugging
+```
+
+### Strategic Test Execution
+**Run targeted tests during development:**
+- **Component changes**: Run tests for that specific component only
+- **Feature work**: Run tests related to the feature being developed
+- **Bug fixes**: Run tests that cover the bug area + regression tests
+
+**Examples:**
+```bash
+# Working on node selection? Run only selection tests
+pnpm test:e2e --project=chromium tests/e2e/node-selection-and-side-panel.spec.ts
+
+# Working on graph layout? Run only layout-related tests  
+pnpm test:e2e --project=chromium tests/e2e/graph-layout.spec.ts
+
+# Working on multiple components? Run specific test pattern
+pnpm test:e2e --project=chromium --grep "selection|layout"
+```
+
+**Run full test suite only when:**
+- Preparing for commits/PRs
+- After major refactoring
+- Before releases
+- Weekly/milestone checkpoints
+- When unsure about cross-component impact
+
+**Test Efficiency Rules:**
+- **Never run all tests for minor changes** (CSS tweaks, text updates)
+- **Always verify servers are running first** to avoid timeouts
+- **Run related tests immediately** after implementation changes
+- **Batch test runs** when working on multiple related features
+
 ## Development Rules
 
 ### TDD Workflow (MANDATORY)
@@ -116,6 +153,7 @@ This project uses a **Hybrid Testing Strategy** combining Unit and E2E tests:
 - **Use specific test IDs** for predictable testing scenarios (e.g., `node-new-users`)
 - **Minimal proof testing**: When testing CSS classes, verify presence (e.g., `transition-transform`) not specific values
 - Use regex patterns for dynamic test IDs: `/^property-/`
+- **Test naming convention**: Use `Test N: Descriptive Name` format for easy reference in discussions and debugging
 
 #### Data-Driven Testing Strategy
 - **Import source data directly**: `import targetLineageData from 'path/to/data.json'`
@@ -129,6 +167,9 @@ This project uses a **Hybrid Testing Strategy** combining Unit and E2E tests:
 - **Consolidate expensive operations**: Group tests that require similar setup (page loads, graph generation)
 - **Meaningful test density**: Each test should validate multiple related behaviors
 - **Library evolution safety**: Use flexible assertions (`.toBeGreaterThan(1)`) for evolving dependencies
+- **Eliminate test duplication**: Remove comprehensive workflow tests that duplicate individual test functionality
+- **Unique test value**: Ensure each test validates distinct behavior - avoid redundant coverage
+- **Test suite refinement**: Regularly review test suites to remove duplicates and consolidate related functionality
 
 **Test Evolution Strategy:**
 - **Adapt existing tests** rather than only adding new ones when features change
@@ -211,6 +252,21 @@ When accessing localhost with Playwright:
    - Wait for them to be ready
    - Report the status
 3. Only proceed with browser testing after the script confirms servers are ready
+
+### Development Server Issue Handling
+When tests fail with server connectivity issues (e.g., `net::ERR_ABORTED`, timeouts):
+
+**NEVER:**
+- Run `curl -I http://localhost:3001` and wait for 2-minute timeout
+- Retry the same failing test command multiple times
+- Let Playwright tests hang waiting for unresponsive servers
+
+**CORRECT APPROACH:**
+1. **Immediate server restart**: `pkill -f "next dev"; pnpm dev` (background process)
+2. **Single browser testing**: Always use `--project=chromium` for consistency
+3. **Standard test command**: `pnpm test:e2e --project=chromium [test-file]`
+4. **Quick verification**: If servers don't start in 30 seconds, investigate port conflicts or process issues
+5. **No timeout extensions**: Don't add `--timeout=60000` - fix the root cause instead
 
 ## Collaboration Patterns
 

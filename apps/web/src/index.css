@@ -132,3 +132,33 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .selected-node {
+    @apply border-blue-500 ring-2 ring-blue-200 bg-blue-50;
+  }
+  
+  .node-source {
+    @apply bg-emerald-50 border-emerald-200;
+  }
+  
+  .node-computed {
+    @apply bg-slate-50 border-slate-200;
+  }
+  
+  .node-metric {
+    @apply bg-violet-50 border-violet-200;
+  }
+  
+  .node-source:hover {
+    @apply bg-emerald-100 border-emerald-300;
+  }
+  
+  .node-computed:hover {
+    @apply bg-slate-100 border-slate-300;
+  }
+  
+  .node-metric:hover {
+    @apply bg-violet-100 border-violet-300;
+  }
+}

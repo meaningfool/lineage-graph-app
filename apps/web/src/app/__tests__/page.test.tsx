@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import Home from '../page'
 import nodeData from '@/data/target-lineage.json'
@@ -53,6 +53,9 @@ const mockFitView = vi.fn((options) => {
   })
 })
 
+// Mock selection state for testing
+let mockSelectedNodeId: string | null = null
+
 // Mock ReactFlow to avoid canvas rendering issues in tests
 vi.mock('reactflow', () => ({
   __esModule: true,
@@ -65,7 +68,11 @@ vi.mock('reactflow', () => ({
           data-position-x={node.position.x}
           data-position-y={node.position.y}
           data-node-id={node.id}
-          onClick={(event) => onNodeClick && onNodeClick(event, node)}
+          className={mockSelectedNodeId === node.id ? 'selected-node' : ''}
+          onClick={(event) => {
+            mockSelectedNodeId = node.id
+            onNodeClick && onNodeClick(event, node)
+          }}
         >
           {node.data.label}
           {/* Properties no longer rendered in nodes - moved to side panel */}
@@ -121,6 +128,8 @@ describe('Home Page', () => {
     vi.clearAllMocks()
     // Reset timers
     vi.useFakeTimers()
+    // Reset selection state
+    mockSelectedNodeId = null
   })
 
   afterEach(() => {
@@ -155,6 +164,31 @@ describe('Home Page', () => {
         expect(() => nodeScope.getByTestId(`property-${propertyKey}`)).toThrow()
       })
     })
+  })
+
+  it('applies selection styling to clicked node', () => {
+    render(<Home />)
+    
+    const firstNode = screen.getByTestId(`node-${nodeData.nodes[0].id}`)
+    const secondNode = screen.getByTestId(`node-${nodeData.nodes[1].id}`)
+    
+    // Initially no nodes should be selected
+    expect(firstNode).not.toHaveClass('selected-node')
+    expect(secondNode).not.toHaveClass('selected-node')
+    
+    // Click first node
+    fireEvent.click(firstNode)
+    
+    // First node should have selection styling
+    expect(firstNode).toHaveClass('selected-node')
+    expect(secondNode).not.toHaveClass('selected-node')
+    
+    // Click second node
+    fireEvent.click(secondNode)
+    
+    // Now second node should be selected, first should not
+    expect(secondNode).toHaveClass('selected-node')
+    expect(firstNode).not.toHaveClass('selected-node')
   })
 
 

@@ -10,12 +10,31 @@ interface NodeData {
   properties?: {
     [key: string]: any
   }
+  isSelected?: boolean
+  nodeType?: 'source' | 'computed' | 'metric'
+  role?: string
 }
 
 // Custom node component that displays label only (properties shown in side panel)
 function CustomNode({ data }: { data: NodeData }) {
+  const isSelected = data.isSelected || false
+  const nodeType = data.nodeType || 'computed'
+  
+  // Get type-specific classes
+  const getTypeClasses = (type: string) => {
+    switch (type) {
+      case 'source':
+        return 'node-source'
+      case 'metric':
+        return 'node-metric'
+      case 'computed':
+      default:
+        return 'node-computed'
+    }
+  }
+  
   return (
-    <div className="px-3 py-2 shadow-sm rounded-sm bg-white border border-gray-200 min-w-[150px] max-w-[200px]">
+    <div className={`px-3 py-2 shadow-sm rounded-sm border min-w-[150px] max-w-[200px] cursor-pointer transition-colors ${getTypeClasses(nodeType)} ${isSelected ? 'selected-node' : ''}`}>
       <Handle type="target" position={Position.Left} className="w-1.5 h-1.5 opacity-0" />
       <div className="flex flex-col gap-0.5">
         <div className="text-xs font-medium text-gray-900">
@@ -25,6 +44,20 @@ function CustomNode({ data }: { data: NodeData }) {
       <Handle type="source" position={Position.Right} className="w-1.5 h-1.5 opacity-0" />
     </div>
   )
+}
+
+// Helper function to map LineageGraph roles to node types
+const mapRoleToNodeType = (role: string): 'source' | 'computed' | 'metric' => {
+  switch (role?.toUpperCase()) {
+    case 'INPUT':
+      return 'source'
+    case 'STEP':
+      return 'computed'
+    case 'OUTPUT':
+      return 'metric'
+    default:
+      return 'computed'
+  }
 }
 
 // Define nodeTypes outside component to prevent recreation on every render
@@ -51,13 +84,30 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
 
   const handleCloseSidePanel = () => {
     setSidePanelVisible(false)
+    setSelectedNode(null) // Deselect node when manually closing side panel
   }
+
+  const handlePaneClick = () => {
+    setSelectedNode(null)
+    setSidePanelVisible(false)
+  }
+
+  // Clear selection when nodes change (graph regeneration)
+  useEffect(() => {
+    setSelectedNode(null)
+    setSidePanelVisible(false)
+  }, [nodes])
 
   // Memoize nodes conversion to prevent unnecessary re-renders
   const customNodes = useMemo(() => nodes.map(node => ({
     ...node,
-    type: 'custom'
-  })), [nodes])
+    type: 'custom',
+    data: {
+      ...node.data,
+      isSelected: selectedNode?.id === node.id,
+      nodeType: mapRoleToNodeType((node.data as any).role) || (node as any).nodeType || (node as any).type // Map role to nodeType
+    }
+  })), [nodes, selectedNode])
 
   // Memoize edges conversion to prevent unnecessary re-renders
   const customEdges = useMemo(() => edges.map(edge => ({
@@ -106,6 +156,7 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
         edges={customEdges}
         nodeTypes={nodeTypes}
         onNodeClick={handleNodeClick}
+        onPaneClick={handlePaneClick}
         fitView
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.1}
@@ -124,7 +175,7 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
       {sidePanelVisible && (
         <div 
           data-testid="side-panel"
-          className="fixed top-0 right-0 w-80 h-full bg-white border-l border-gray-300 shadow-lg z-50 transition-transform duration-300 ease-in-out"
+          className="fixed top-0 right-0 w-96 h-full bg-white border-l border-gray-300 shadow-lg z-50 transition-transform duration-300 ease-in-out"
         >
           <div className="p-6">
             <div className="flex justify-between items-start mb-4">
