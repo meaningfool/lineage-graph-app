@@ -164,7 +164,19 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
             </div>
             {selectedNode && (
               <div>
-                <p className="font-medium text-gray-800">{selectedNode.data.label}</p>
+                <p className="font-medium text-gray-800 mb-3">{selectedNode.data.label}</p>
+                {selectedNode.data.properties && (
+                  <div className="space-y-2">
+                    {Object.entries(selectedNode.data.properties).map(([key, value]) => (
+                      <div key={key} data-testid={`property-${key}`} className="text-sm">
+                        <span className="font-medium text-gray-600 capitalize">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}:
+                        </span>
+                        <span className="ml-2 text-gray-800">{String(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
