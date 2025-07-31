@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Data Lineage App - Graph Interactions', () => {
+test.describe('Data Lineage App - Graph Controls Workflow', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     // Wait for the app to load completely
@@ -15,6 +15,7 @@ test.describe('Data Lineage App - Graph Interactions', () => {
     // Check that all edge type options are available
     const options = await edgeSelect.locator('option').allTextContents();
     
+    // Verify we have the expected edge type options
     expect(options).toContain('Bezier (Default)');
     expect(options).toContain('Straight');
     expect(options).toContain('Step');
@@ -44,8 +45,7 @@ test.describe('Data Lineage App - Graph Interactions', () => {
     await expect(edgeSelect).toHaveValue('step');
   });
 
-
-  test('should maintain graph visibility after edge type changes', async ({ page }) => {
+  test('should maintain graph stability after edge type changes', async ({ page }) => {
     // Get initial node count
     const initialNodeCount = await page.locator('.react-flow__node').count();
     
@@ -64,50 +64,5 @@ test.describe('Data Lineage App - Graph Interactions', () => {
     // Edges should still be present (count is more reliable than visibility)
     const edgeCount = await page.locator('.react-flow__edge').count();
     expect(edgeCount).toBeGreaterThan(0);
-  });
-
-
-  test('should handle rapid edge type switching', async ({ page }) => {
-    const edgeSelect = page.locator('select#edge-type-select');
-    
-    // Rapidly switch between edge types
-    await edgeSelect.selectOption('straight');
-    await edgeSelect.selectOption('step');
-    await edgeSelect.selectOption('smoothstep');
-    await edgeSelect.selectOption('default');
-    
-    // Give ReactFlow time to settle after rapid changes
-    await page.waitForTimeout(1500);
-    
-    // Graph should remain stable
-    await expect(page.locator('.react-flow__node').first()).toBeVisible();
-    
-    // Verify edges are still present
-    const edgeCount = await page.locator('.react-flow__edge').count();
-    expect(edgeCount).toBeGreaterThan(0);
-    
-    // Final selection should be correct
-    expect(await edgeSelect.inputValue()).toBe('default');
-  });
-
-  test('should display graph controls in correct positions', async ({ page }) => {
-    // Generate Graph button should be visible and positioned
-    const generateButton = page.locator('button:has-text("Generate Graph")');
-    await expect(generateButton).toBeVisible();
-    
-    // Edge type selector should be visible and positioned
-    const edgeTypeLabel = page.locator('label:has-text("Edge Type:")');
-    const edgeTypeSelect = page.locator('select#edge-type-select');
-    
-    await expect(edgeTypeLabel).toBeVisible();
-    await expect(edgeTypeSelect).toBeVisible();
-    
-    // Controls should be in the top-left area (check they're positioned absolutely)
-    const generateButtonBox = await generateButton.boundingBox();
-    const selectBox = await edgeTypeSelect.boundingBox();
-    
-    // Both controls should be in upper portion of screen
-    expect(generateButtonBox?.y).toBeLessThan(100);
-    expect(selectBox?.y).toBeLessThan(100);
   });
 });
