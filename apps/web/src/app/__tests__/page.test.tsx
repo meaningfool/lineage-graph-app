@@ -482,4 +482,30 @@ describe('Edge Type Selection', () => {
     fireEvent.change(edgeTypeSelect, { target: { value: 'step' } })
     expect(edgeTypeSelect.value).toBe('step')
   })
+})
+
+describe('Side Panel', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('opens side panel when any node is clicked', () => {
+    render(<Home />)
+    
+    // Get any available node
+    const firstNode = screen.getAllByTestId(/^node-/)[0]
+    
+    // Click the node
+    fireEvent.click(firstNode)
+    
+    // Verify side panel appears
+    const sidePanel = screen.getByTestId('side-panel')
+    expect(sidePanel).toBeInTheDocument()
+    expect(sidePanel).toHaveTextContent('Side panel is open')
+  })
 }) 
