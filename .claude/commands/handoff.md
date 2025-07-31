@@ -1,65 +1,47 @@
 ---
-description: "Generate comprehensive handoff summary for continuing work in new context"
+description: "Generate compact handoff summary for continuing work in new context"
 allowed-tools: ["Read", "Bash", "Glob"]
 ---
 
 # Session Handoff Summary
 
-I'm ending this conversation and will continue in a new context. Please provide a comprehensive handoff summary for the next Claude session.
+I'm ending this conversation and will continue in a new context. Please provide a **compact** handoff summary (10-20 lines) for the next Claude session.
 
-## Required Information
+## Guidelines
 
-### 1. What We Accomplished
-- Completed tasks and features implemented
-- Changes made to codebase
-- Issues resolved and decisions made
+**Minimize Context Transfer:**
+- Focus on essential information only
+- Reference relevant files for detailed plans rather than duplicating content
+- If extensive detail is needed, sucha as for unfinished, in-progress work, add these details in relevant files and reference those files appropriately.
+- If step is complete, just state completion and reference plan location
 
-### 2. Where We Left Off
-- Current development phase (TDD stage, iteration, etc.)
-- Pending work and immediate next steps
-- Status of any ongoing features
-
-### 3. Critical Context
-- Important user preferences established
-- Workflow adaptations made during session  
-- Key decisions that affect future work
-- Special patterns or approaches adopted
-
-### 4. Technical State
-- Modified files and their current status
-- Test suite status and coverage
-- Any technical debt or issues discovered
-- Dependencies or configuration changes
-
-### 5. Next Session Guidance
-- Files to check first for context restoration
-- Commands to run for verification
-- Priority tasks for immediate continuation
-- Scratchpad.md status and feature planning
+**Essential Information:**
+- What was completed this session
+- Current repository/feature status  
+- Immediate next steps (reference files for details) if known
+- Key files to check first
 
 ## Output Format
-Structure the handoff as:
 
 ```
 ## Session Handoff Summary
 
 ### Completed Work
-- [Specific accomplishments]
+- ✅ [Brief accomplishment description]
 
 ### Current Status  
-- [Development phase and file states]
+- [Repository state, test status]
+- [Feature completion status]
 
 ### Next Steps
-- [Immediate priorities and continuation strategy]
-
-### Critical Context
-- [User preferences, workflow patterns, decisions]
+- [Reference to plan location, e.g., "See scratchpad.md section X"]
+- [Only immediate priorities]
 
 ### Files to Check First
-- [Key files and documentation to review]
+1. [Most important file with reason]
+2. [Secondary file if needed]
 
-### Technical Notes
-- [Test status, dependencies, special considerations]
+**Verification**: [Quick command to run to verify state]
 ```
 
-Make this detailed enough that the next Claude can seamlessly continue our work without losing important context or requiring re-explanations of established patterns.
+**Keep it concise** - use files like scratchpad.md and CLAUDE.md to store detailed context that can be referenced by the next session.
