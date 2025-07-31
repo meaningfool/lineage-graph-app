@@ -61,6 +61,10 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
     setSelectedNode(node)
   }
 
+  const handleCloseSidePanel = () => {
+    setSidePanelVisible(false)
+  }
+
   // Memoize nodes conversion to prevent unnecessary re-renders
   const customNodes = useMemo(() => nodes.map(node => ({
     ...node,
@@ -134,11 +138,33 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
           data-testid="side-panel"
           className="fixed top-0 right-0 w-80 h-full bg-white border-l border-gray-300 shadow-lg z-50 transition-transform duration-300 ease-in-out"
         >
-          <div className="p-4">
-            <h3 className="text-lg font-semibold mb-2">Node Properties</h3>
+          <div className="p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">Node Properties</h3>
+              <button
+                data-testid="close-side-panel"
+                onClick={handleCloseSidePanel}
+                className="w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                aria-label="Close side panel"
+              >
+                <svg 
+                  className="w-5 h-5" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M6 18L18 6M6 6l12 12" 
+                  />
+                </svg>
+              </button>
+            </div>
             {selectedNode && (
               <div>
-                <p className="font-medium">{selectedNode.data.label}</p>
+                <p className="font-medium text-gray-800">{selectedNode.data.label}</p>
               </div>
             )}
           </div>
