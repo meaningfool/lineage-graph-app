@@ -54,9 +54,11 @@ interface LineageGraphProps {
 function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGraphProps) {
   const { fitView } = useReactFlow()
   const [sidePanelVisible, setSidePanelVisible] = useState(false)
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null)
 
-  const handleNodeClick = (event: React.MouseEvent, node: Node) => {
+  const handleNodeClick = (_event: React.MouseEvent, node: Node) => {
     setSidePanelVisible(true)
+    setSelectedNode(node)
   }
 
   // Memoize nodes conversion to prevent unnecessary re-renders
@@ -130,11 +132,15 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
       {sidePanelVisible && (
         <div 
           data-testid="side-panel"
-          className="fixed top-0 right-0 w-80 h-full bg-white border-l border-gray-300 shadow-lg z-50"
+          className="fixed top-0 right-0 w-80 h-full bg-white border-l border-gray-300 shadow-lg z-50 transition-transform duration-300 ease-in-out"
         >
           <div className="p-4">
-            <h3>Node Properties</h3>
-            <p>Side panel is open</p>
+            <h3 className="text-lg font-semibold mb-2">Node Properties</h3>
+            {selectedNode && (
+              <div>
+                <p className="font-medium">{selectedNode.data.label}</p>
+              </div>
+            )}
           </div>
         </div>
       )}

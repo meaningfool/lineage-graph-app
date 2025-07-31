@@ -507,7 +507,7 @@ describe('Side Panel', () => {
     // Verify side panel appears
     const sidePanel = screen.getByTestId('side-panel')
     expect(sidePanel).toBeInTheDocument()
-    expect(sidePanel).toHaveTextContent('Side panel is open')
+    expect(sidePanel).toHaveTextContent('Node Properties')
   })
 
   it('applies transition when opening side panel from closed state', () => {
