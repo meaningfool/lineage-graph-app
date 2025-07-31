@@ -12,27 +12,15 @@ interface NodeData {
   }
 }
 
-// Custom node component that displays label and all properties
+// Custom node component that displays label only (properties shown in side panel)
 function CustomNode({ data }: { data: NodeData }) {
   return (
     <div className="px-3 py-2 shadow-sm rounded-sm bg-white border border-gray-200 min-w-[150px] max-w-[200px]">
       <Handle type="target" position={Position.Left} className="w-1.5 h-1.5 opacity-0" />
       <div className="flex flex-col gap-0.5">
-        <div className="text-xs font-medium text-gray-900 border-b border-gray-100 pb-0.5">
+        <div className="text-xs font-medium text-gray-900">
           {data.label}
         </div>
-        {data.properties && (
-          <div className="space-y-0.5">
-            {Object.entries(data.properties).map(([key, value]) => (
-              <div key={key} className="text-xs">
-                <span className="font-medium text-gray-600 capitalize text-xs">
-                  {key.replace(/([A-Z])/g, ' $1').trim()}:
-                </span>
-                <span className="ml-1 text-gray-500 text-xs">{value}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
       <Handle type="source" position={Position.Right} className="w-1.5 h-1.5 opacity-0" />
     </div>

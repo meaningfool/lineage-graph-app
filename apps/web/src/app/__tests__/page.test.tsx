@@ -68,16 +68,7 @@ vi.mock('reactflow', () => ({
           onClick={(event) => onNodeClick && onNodeClick(event, node)}
         >
           {node.data.label}
-          {/* Render properties for testing */}
-          {node.data.properties && (
-            <div data-testid={`node-properties-${node.id}`}>
-              {Object.entries(node.data.properties).map(([key, value]) => (
-                <div key={key} data-testid={`property-${key}`}>
-                  {String(value)}
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Properties no longer rendered in nodes - moved to side panel */}
         </div>
       ))}
       {edges.map((edge: any) => (
@@ -146,24 +137,22 @@ describe('Home Page', () => {
     })
   })
 
-  it('displays node properties correctly for each node', () => {
+  it('displays node labels only without properties in nodes', () => {
     render(<Home />)
     
-    // For each node in the data, verify its properties are displayed
+    // For each node in the data, verify only labels are displayed (no properties in nodes)
     nodeData.nodes.forEach(node => {
       const nodeElement = screen.getByTestId(`node-${node.id}`)
       expect(nodeElement).toBeInTheDocument()
       
-      // Check that properties container exists
-      const propertiesContainer = screen.getByTestId(`node-properties-${node.id}`)
-      expect(propertiesContainer).toBeInTheDocument()
+      // Node should contain the label
+      expect(nodeElement).toHaveTextContent(node.label)
       
-      // Check that each property is displayed within this specific node's properties container
+      // Node should NOT contain properties (properties should only be in side panel)
       Object.keys(node.properties).forEach(propertyKey => {
-        const propertiesContainer = screen.getByTestId(`node-properties-${node.id}`)
-        const propertyElement = within(propertiesContainer).getByTestId(`property-${propertyKey}`)
-        expect(propertyElement).toBeInTheDocument()
-        expect(propertyElement).toHaveTextContent(String(node.properties[propertyKey as keyof typeof node.properties]))
+        // Try to find property elements within the node - they should NOT exist
+        const nodeScope = within(nodeElement)
+        expect(() => nodeScope.getByTestId(`property-${propertyKey}`)).toThrow()
       })
     })
   })
@@ -287,7 +276,7 @@ describe('Generate Graph Button', () => {
     })
   })
 
-  it('generated nodes have meaningful labels and properties', () => {
+  it('generated nodes have meaningful labels but no properties in nodes', () => {
     render(<Home />)
     
     const generateButton = screen.getByText('Generate Graph')
@@ -301,24 +290,17 @@ describe('Generate Graph Button', () => {
     generatedNodes.forEach((node) => {
       // Test meaningful labels (not undefined or empty)
       const nodeText = node.textContent || ''
-      const label = nodeText.split('\n')[0] // First line should be the label
+      const label = nodeText.trim()
       
       expect(label).toBeTruthy()
       expect(label).not.toBe('undefined')
-      expect(label.trim().length).toBeGreaterThan(0)
+      expect(label.length).toBeGreaterThan(0)
       
-      // Test minimum properties using Testing Library queries (more reliable than querySelector)
+      // Nodes should NOT contain property elements (properties only in side panel)
       const nodeScope = within(node)
       
-      // Count property elements directly - they exist if the content generation worked
-      const propertyElements = nodeScope.getAllByTestId(/^property-/)
-      expect(propertyElements.length).toBeGreaterThanOrEqual(2)
-      
-      // Verify each property has content
-      propertyElements.forEach(propertyElement => {
-        expect(propertyElement.textContent).toBeTruthy()
-        expect(propertyElement.textContent!.trim().length).toBeGreaterThan(0)
-      })
+      // Try to find property elements - should not exist in nodes anymore
+      expect(() => nodeScope.getByTestId(/^property-/)).toThrow()
     })
   })
 }) 
@@ -370,7 +352,7 @@ describe('Automatic Camera Adjustment', () => {
   }
 
   // Helper function to test both visibility and utilization for a graph state
-  const testGraphDisplayQuality = (description: string) => {
+  const testGraphDisplayQuality = () => {
     const nodes = screen.getAllByTestId(/^node-/)
     const nodePositions = nodes.map(node => ({
       x: Number(node.getAttribute('data-position-x')),
@@ -403,7 +385,7 @@ describe('Automatic Camera Adjustment', () => {
 
   it('displays initial default graph with optimal camera positioning', () => {
     render(<Home />)
-    testGraphDisplayQuality('initial default graph')
+    testGraphDisplayQuality()
   })
 
   it('adjusts camera when new graphs are generated', () => {
@@ -413,11 +395,11 @@ describe('Automatic Camera Adjustment', () => {
     
     // Test first generated graph
     fireEvent.click(generateButton)
-    testGraphDisplayQuality('first generated graph')
+    testGraphDisplayQuality()
     
     // Test second generated graph  
     fireEvent.click(generateButton)
-    testGraphDisplayQuality('second generated graph')
+    testGraphDisplayQuality()
   })
 
   it('maintains optimal camera positioning after edge type changes', () => {
@@ -427,7 +409,7 @@ describe('Automatic Camera Adjustment', () => {
     const edgeTypeSelect = screen.getByLabelText('Edge Type:')
     fireEvent.change(edgeTypeSelect, { target: { value: 'straight' } })
     
-    testGraphDisplayQuality('graph after edge type change')
+    testGraphDisplayQuality()
   })
 })
 
