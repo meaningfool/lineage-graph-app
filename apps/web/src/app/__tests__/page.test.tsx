@@ -564,4 +564,53 @@ describe('Side Panel', () => {
     // Verify panel shows "Paid User %"
     expect(sidePanel).toHaveTextContent('Paid User %')
   })
+
+  it('side panel has close button when opened', () => {
+    render(<Home />)
+    
+    // Open side panel by clicking any node
+    const firstNode = screen.getAllByTestId(/^node-/)[0]
+    fireEvent.click(firstNode)
+    
+    // Verify side panel is open
+    const sidePanel = screen.getByTestId('side-panel')
+    expect(sidePanel).toBeInTheDocument()
+    
+    // Verify close button exists
+    const closeButton = screen.getByTestId('close-side-panel')
+    expect(closeButton).toBeInTheDocument()
+  })
+
+  it('handles complete open-close-reopen cycle correctly', () => {
+    render(<Home />)
+    
+    // Get two different nodes for testing
+    const firstNode = screen.getByTestId('node-new-users')
+    const secondNode = screen.getByTestId('node-paid-user-ratio')
+    
+    // 1. Initially no panel should be visible
+    expect(screen.queryByTestId('side-panel')).not.toBeInTheDocument()
+    
+    // 2. Click first node to open panel
+    fireEvent.click(firstNode)
+    let sidePanel = screen.getByTestId('side-panel')
+    expect(sidePanel).toBeInTheDocument()
+    expect(sidePanel).toHaveTextContent('New Users')
+    
+    // 3. Click close button to close panel
+    const closeButton = screen.getByTestId('close-side-panel')
+    fireEvent.click(closeButton)
+    expect(screen.queryByTestId('side-panel')).not.toBeInTheDocument()
+    
+    // 4. Click second node to reopen panel with different content
+    fireEvent.click(secondNode)
+    sidePanel = screen.getByTestId('side-panel')
+    expect(sidePanel).toBeInTheDocument()
+    expect(sidePanel).toHaveTextContent('Paid User %')
+    
+    // 5. Close again to verify panel can be closed after reopening
+    const newCloseButton = screen.getByTestId('close-side-panel')
+    fireEvent.click(newCloseButton)
+    expect(screen.queryByTestId('side-panel')).not.toBeInTheDocument()
+  })
 }) 
