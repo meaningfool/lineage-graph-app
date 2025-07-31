@@ -17,11 +17,15 @@
     "db:push": "pnpm --filter server db:push",
     "db:studio": "pnpm --filter server db:studio",
     "db:generate": "pnpm --filter server db:generate",
-    "db:migrate": "pnpm --filter server db:migrate"
+    "db:migrate": "pnpm --filter server db:migrate",
+    "test:e2e": "playwright test",
+    "test:e2e:chromium": "playwright test --project=chromium",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report"
   },
-  "dependencies": {},
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",
+    "@playwright/test": "^1.54.1",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0"
   },
