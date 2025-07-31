@@ -498,16 +498,16 @@ describe('Side Panel', () => {
   it('opens side panel when any node is clicked', () => {
     render(<Home />)
     
-    // Get any available node
-    const firstNode = screen.getAllByTestId(/^node-/)[0]
-    
-    // Click the node
-    fireEvent.click(firstNode)
+    // Click on a specific node to verify title behavior
+    const newUsersNode = screen.getByTestId('node-new-users')
+    fireEvent.click(newUsersNode)
     
     // Verify side panel appears
     const sidePanel = screen.getByTestId('side-panel')
     expect(sidePanel).toBeInTheDocument()
-    expect(sidePanel).toHaveTextContent('Node Properties')
+    
+    // Verify side panel shows the node name as title
+    expect(sidePanel).toHaveTextContent('New Users')
   })
 
   it('applies transition when opening side panel from closed state', () => {

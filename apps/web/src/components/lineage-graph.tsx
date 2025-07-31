@@ -140,11 +140,13 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
         >
           <div className="p-6">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">Node Properties</h3>
+              <h3 className="text-xl font-semibold text-gray-900 pr-2 flex-1">
+                {selectedNode ? selectedNode.data.label : 'Node Properties'}
+              </h3>
               <button
                 data-testid="close-side-panel"
                 onClick={handleCloseSidePanel}
-                className="w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                className="w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer flex-shrink-0"
                 aria-label="Close side panel"
               >
                 <svg 
@@ -162,21 +164,16 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
                 </svg>
               </button>
             </div>
-            {selectedNode && (
-              <div>
-                <p className="font-medium text-gray-800 mb-3">{selectedNode.data.label}</p>
-                {selectedNode.data.properties && (
-                  <div className="space-y-2">
-                    {Object.entries(selectedNode.data.properties).map(([key, value]) => (
-                      <div key={key} data-testid={`property-${key}`} className="text-sm">
-                        <span className="font-medium text-gray-600 capitalize">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}:
-                        </span>
-                        <span className="ml-2 text-gray-800">{String(value)}</span>
-                      </div>
-                    ))}
+            {selectedNode && selectedNode.data.properties && (
+              <div className="space-y-2">
+                {Object.entries(selectedNode.data.properties).map(([key, value]) => (
+                  <div key={key} data-testid={`property-${key}`} className="text-base">
+                    <span className="font-medium text-gray-600 capitalize">
+                      {key.replace(/([A-Z])/g, ' $1').trim()}:
+                    </span>
+                    <span className="ml-1 text-gray-500">{String(value)}</span>
                   </div>
-                )}
+                ))}
               </div>
             )}
           </div>
