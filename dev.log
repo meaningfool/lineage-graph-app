@@ -1,0 +1,268 @@
+
+> data-lineage-app@ dev /Users/josselinperrus/Projects/data-lineage-app
+> pnpm -r dev
+
+Scope: 2 of 3 workspace projects
+apps/server dev$ next dev --port=3000
+apps/web dev$ next dev --port=3001
+apps/server dev:    ▲ Next.js 15.3.0
+apps/server dev:    - Local:        http://localhost:3000
+apps/server dev:    - Network:      http://192.168.1.10:3000
+apps/server dev:    - Environments: .env
+apps/server dev:  ✓ Starting...
+apps/web dev:    ▲ Next.js 15.3.0
+apps/web dev:    - Local:        http://localhost:3001
+apps/web dev:    - Network:      http://192.168.1.10:3001
+apps/web dev:    - Environments: .env
+apps/web dev:  ✓ Starting...
+apps/server dev:  ✓ Ready in 1437ms
+apps/web dev:  ✓ Ready in 1459ms
+apps/web dev:  ○ Compiling / ...
+apps/web dev:  ✓ Compiled / in 1637ms (1993 modules)
+apps/web dev: Node new-users: x=700, y=220, adjustedX=700, adjustedY=220
+apps/web dev: Node paid-user-ratio: x=700, y=440, adjustedX=700, adjustedY=440
+apps/web dev: Node avg-revenue-per-user: x=350, y=0, adjustedX=350, adjustedY=50
+apps/web dev: Node new-paid-users: x=350, y=220, adjustedX=350, adjustedY=220
+apps/web dev: Node new-mrr: x=0, y=0, adjustedX=50, adjustedY=50
+apps/web dev: LineageGraph nodes: [
+apps/web dev:   {
+apps/web dev:     id: 'new-users',
+apps/web dev:     type: 'custom',
+apps/web dev:     position: { x: 700, y: 220 },
+apps/web dev:     data: { label: 'New Users', properties: [Object] }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'paid-user-ratio',
+apps/web dev:     type: 'custom',
+apps/web dev:     position: { x: 700, y: 440 },
+apps/web dev:     data: { label: 'Paid User %', properties: [Object] }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'avg-revenue-per-user',
+apps/web dev:     type: 'custom',
+apps/web dev:     position: { x: 350, y: 50 },
+apps/web dev:     data: { label: 'Average Revenue Per User', properties: [Object] }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'new-paid-users',
+apps/web dev:     type: 'custom',
+apps/web dev:     position: { x: 350, y: 220 },
+apps/web dev:     data: { label: 'New Paid Users', properties: [Object] }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'new-mrr',
+apps/web dev:     type: 'custom',
+apps/web dev:     position: { x: 50, y: 50 },
+apps/web dev:     data: { label: 'New MRR', properties: [Object] }
+apps/web dev:   }
+apps/web dev: ]
+apps/web dev: LineageGraph edges: [
+apps/web dev:   {
+apps/web dev:     id: 'geid_107_0',
+apps/web dev:     source: 'new-paid-users',
+apps/web dev:     target: 'new-users',
+apps/web dev:     type: 'smoothstep',
+apps/web dev:     animated: false,
+apps/web dev:     style: { stroke: '#6b7280', strokeWidth: 2 },
+apps/web dev:     markerEnd: { type: 'arrowclosed', width: 12, height: 12, color: '#6b7280' }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'geid_107_1',
+apps/web dev:     source: 'new-paid-users',
+apps/web dev:     target: 'paid-user-ratio',
+apps/web dev:     type: 'smoothstep',
+apps/web dev:     animated: false,
+apps/web dev:     style: { stroke: '#6b7280', strokeWidth: 2 },
+apps/web dev:     markerEnd: { type: 'arrowclosed', width: 12, height: 12, color: '#6b7280' }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'geid_107_2',
+apps/web dev:     source: 'new-mrr',
+apps/web dev:     target: 'new-paid-users',
+apps/web dev:     type: 'smoothstep',
+apps/web dev:     animated: false,
+apps/web dev:     style: { stroke: '#6b7280', strokeWidth: 2 },
+apps/web dev:     markerEnd: { type: 'arrowclosed', width: 12, height: 12, color: '#6b7280' }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'geid_107_3',
+apps/web dev:     source: 'new-mrr',
+apps/web dev:     target: 'avg-revenue-per-user',
+apps/web dev:     type: 'smoothstep',
+apps/web dev:     animated: false,
+apps/web dev:     style: { stroke: '#6b7280', strokeWidth: 2 },
+apps/web dev:     markerEnd: { type: 'arrowclosed', width: 12, height: 12, color: '#6b7280' }
+apps/web dev:   }
+apps/web dev: ]
+apps/web dev:  GET / 200 in 2194ms
+apps/web dev:  ○ Compiling /favicon.ico ...
+apps/web dev:  ✓ Compiled /favicon.ico in 560ms (1040 modules)
+apps/web dev:  GET /favicon.ico 200 in 631ms
+apps/web dev: Node new-users: x=700, y=220, adjustedX=700, adjustedY=220
+apps/web dev: Node paid-user-ratio: x=700, y=440, adjustedX=700, adjustedY=440
+apps/web dev: Node avg-revenue-per-user: x=350, y=0, adjustedX=350, adjustedY=50
+apps/web dev: Node new-paid-users: x=350, y=220, adjustedX=350, adjustedY=220
+apps/web dev: Node new-mrr: x=0, y=0, adjustedX=50, adjustedY=50
+apps/web dev: LineageGraph nodes: [
+apps/web dev:   {
+apps/web dev:     id: 'new-users',
+apps/web dev:     type: 'custom',
+apps/web dev:     position: { x: 700, y: 220 },
+apps/web dev:     data: { label: 'New Users', properties: [Object] }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'paid-user-ratio',
+apps/web dev:     type: 'custom',
+apps/web dev:     position: { x: 700, y: 440 },
+apps/web dev:     data: { label: 'Paid User %', properties: [Object] }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'avg-revenue-per-user',
+apps/web dev:     type: 'custom',
+apps/web dev:     position: { x: 350, y: 50 },
+apps/web dev:     data: { label: 'Average Revenue Per User', properties: [Object] }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'new-paid-users',
+apps/web dev:     type: 'custom',
+apps/web dev:     position: { x: 350, y: 220 },
+apps/web dev:     data: { label: 'New Paid Users', properties: [Object] }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'new-mrr',
+apps/web dev:     type: 'custom',
+apps/web dev:     position: { x: 50, y: 50 },
+apps/web dev:     data: { label: 'New MRR', properties: [Object] }
+apps/web dev:   }
+apps/web dev: ]
+apps/web dev: LineageGraph edges: [
+apps/web dev:   {
+apps/web dev:     id: 'geid_23_0',
+apps/web dev:     source: 'new-paid-users',
+apps/web dev:     target: 'new-users',
+apps/web dev:     type: 'smoothstep',
+apps/web dev:     animated: false,
+apps/web dev:     style: { stroke: '#6b7280', strokeWidth: 2 },
+apps/web dev:     markerEnd: { type: 'arrowclosed', width: 12, height: 12, color: '#6b7280' }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'geid_23_1',
+apps/web dev:     source: 'new-paid-users',
+apps/web dev:     target: 'paid-user-ratio',
+apps/web dev:     type: 'smoothstep',
+apps/web dev:     animated: false,
+apps/web dev:     style: { stroke: '#6b7280', strokeWidth: 2 },
+apps/web dev:     markerEnd: { type: 'arrowclosed', width: 12, height: 12, color: '#6b7280' }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'geid_23_2',
+apps/web dev:     source: 'new-mrr',
+apps/web dev:     target: 'new-paid-users',
+apps/web dev:     type: 'smoothstep',
+apps/web dev:     animated: false,
+apps/web dev:     style: { stroke: '#6b7280', strokeWidth: 2 },
+apps/web dev:     markerEnd: { type: 'arrowclosed', width: 12, height: 12, color: '#6b7280' }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'geid_23_3',
+apps/web dev:     source: 'new-mrr',
+apps/web dev:     target: 'avg-revenue-per-user',
+apps/web dev:     type: 'smoothstep',
+apps/web dev:     animated: false,
+apps/web dev:     style: { stroke: '#6b7280', strokeWidth: 2 },
+apps/web dev:     markerEnd: { type: 'arrowclosed', width: 12, height: 12, color: '#6b7280' }
+apps/web dev:   }
+apps/web dev: ]
+apps/web dev:  GET / 200 in 236ms
+apps/web dev: Node new-users: x=700, y=220, adjustedX=700, adjustedY=220
+apps/web dev: Node paid-user-ratio: x=700, y=440, adjustedX=700, adjustedY=440
+apps/web dev: Node avg-revenue-per-user: x=350, y=0, adjustedX=350, adjustedY=50
+apps/web dev: Node new-paid-users: x=350, y=220, adjustedX=350, adjustedY=220
+apps/web dev: Node new-mrr: x=0, y=0, adjustedX=50, adjustedY=50
+apps/web dev: LineageGraph nodes: [
+apps/web dev:   {
+apps/web dev:     id: 'new-users',
+apps/web dev:     type: 'custom',
+apps/web dev:     position: { x: 700, y: 220 },
+apps/web dev:     data: { label: 'New Users', properties: [Object] }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'paid-user-ratio',
+apps/web dev:     type: 'custom',
+apps/web dev:     position: { x: 700, y: 440 },
+apps/web dev:     data: { label: 'Paid User %', properties: [Object] }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'avg-revenue-per-user',
+apps/web dev:     type: 'custom',
+apps/web dev:     position: { x: 350, y: 50 },
+apps/web dev:     data: { label: 'Average Revenue Per User', properties: [Object] }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'new-paid-users',
+apps/web dev:     type: 'custom',
+apps/web dev:     position: { x: 350, y: 220 },
+apps/web dev:     data: { label: 'New Paid Users', properties: [Object] }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'new-mrr',
+apps/web dev:     type: 'custom',
+apps/web dev:     position: { x: 50, y: 50 },
+apps/web dev:     data: { label: 'New MRR', properties: [Object] }
+apps/web dev:   }
+apps/web dev: ]
+apps/web dev: LineageGraph edges: [
+apps/web dev:   {
+apps/web dev:     id: 'geid_24_0',
+apps/web dev:     source: 'new-paid-users',
+apps/web dev:     target: 'new-users',
+apps/web dev:     type: 'smoothstep',
+apps/web dev:     animated: false,
+apps/web dev:     style: { stroke: '#6b7280', strokeWidth: 2 },
+apps/web dev:     markerEnd: { type: 'arrowclosed', width: 12, height: 12, color: '#6b7280' }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'geid_24_1',
+apps/web dev:     source: 'new-paid-users',
+apps/web dev:     target: 'paid-user-ratio',
+apps/web dev:     type: 'smoothstep',
+apps/web dev:     animated: false,
+apps/web dev:     style: { stroke: '#6b7280', strokeWidth: 2 },
+apps/web dev:     markerEnd: { type: 'arrowclosed', width: 12, height: 12, color: '#6b7280' }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'geid_24_2',
+apps/web dev:     source: 'new-mrr',
+apps/web dev:     target: 'new-paid-users',
+apps/web dev:     type: 'smoothstep',
+apps/web dev:     animated: false,
+apps/web dev:     style: { stroke: '#6b7280', strokeWidth: 2 },
+apps/web dev:     markerEnd: { type: 'arrowclosed', width: 12, height: 12, color: '#6b7280' }
+apps/web dev:   },
+apps/web dev:   {
+apps/web dev:     id: 'geid_24_3',
+apps/web dev:     source: 'new-mrr',
+apps/web dev:     target: 'avg-revenue-per-user',
+apps/web dev:     type: 'smoothstep',
+apps/web dev:     animated: false,
+apps/web dev:     style: { stroke: '#6b7280', strokeWidth: 2 },
+apps/web dev:     markerEnd: { type: 'arrowclosed', width: 12, height: 12, color: '#6b7280' }
+apps/web dev:   }
+apps/web dev: ]
+apps/web dev:  GET / 200 in 135ms
+apps/web dev:  GET /favicon.ico 200 in 14ms
+apps/web dev:  ✓ Compiled in 823ms (968 modules)
+apps/web dev:  GET / 200 in 51ms
+apps/web dev:  GET / 200 in 14ms
+apps/web dev:  ✓ Compiled in 294ms (968 modules)
+apps/web dev:  GET / 200 in 37ms
+apps/web dev:  GET / 200 in 31ms
+apps/web dev:  ✓ Compiled in 324ms (968 modules)
+apps/web dev:  GET / 200 in 16ms
+apps/web dev:  GET / 200 in 32ms
+apps/web dev:  ✓ Compiled in 231ms (968 modules)
+apps/web dev:  GET / 200 in 41ms
+apps/web dev:  GET / 200 in 34ms
+apps/web dev:  ✓ Compiled in 224ms (968 modules)
+apps/web dev:  GET / 200 in 13ms
+apps/web dev:  GET / 200 in 38ms
