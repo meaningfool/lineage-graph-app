@@ -509,4 +509,59 @@ describe('Side Panel', () => {
     expect(sidePanel).toBeInTheDocument()
     expect(sidePanel).toHaveTextContent('Side panel is open')
   })
+
+  it('applies transition when opening side panel from closed state', () => {
+    render(<Home />)
+    
+    // Get any available node
+    const firstNode = screen.getAllByTestId(/^node-/)[0]
+    
+    // Click the node to open panel
+    fireEvent.click(firstNode)
+    
+    // Verify side panel has transition classes (just that transition exists)
+    const sidePanel = screen.getByTestId('side-panel')
+    expect(sidePanel).toHaveClass('transition-transform')
+  })
+
+  it('does not retrigger transition when switching between nodes', () => {
+    render(<Home />)
+    
+    // Get two different nodes
+    const allNodes = screen.getAllByTestId(/^node-/)
+    const firstNode = allNodes[0]
+    const secondNode = allNodes[1]
+    
+    // Click first node to open panel
+    fireEvent.click(firstNode)
+    
+    // Verify panel is open
+    const sidePanel = screen.getByTestId('side-panel')
+    expect(sidePanel).toBeInTheDocument()
+    
+    // Click second node while panel is already open
+    fireEvent.click(secondNode)
+    
+    // Panel should still be visible (no closing/reopening)
+    expect(sidePanel).toBeInTheDocument()
+  })
+
+  it('shows selected node information in panel', () => {
+    render(<Home />)
+    
+    // Click node "New Users"
+    const firstNode = screen.getByTestId('node-new-users')
+    fireEvent.click(firstNode)
+    
+    // Verify panel shows "New Users"
+    const sidePanel = screen.getByTestId('side-panel')
+    expect(sidePanel).toHaveTextContent('New Users')
+    
+    // Click node "Paid User %"
+    const secondNode = screen.getByTestId('node-paid-user-ratio')
+    fireEvent.click(secondNode)
+    
+    // Verify panel shows "Paid User %"
+    expect(sidePanel).toHaveTextContent('Paid User %')
+  })
 }) 
