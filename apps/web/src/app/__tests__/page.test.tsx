@@ -56,7 +56,7 @@ const mockFitView = vi.fn((options) => {
 // Mock ReactFlow to avoid canvas rendering issues in tests
 vi.mock('reactflow', () => ({
   __esModule: true,
-  default: ({ nodes, edges }: any) => (
+  default: ({ nodes, edges, onNodeClick }: any) => (
     <div data-testid="react-flow">
       {nodes.map((node: any) => (
         <div 
@@ -65,6 +65,7 @@ vi.mock('reactflow', () => ({
           data-position-x={node.position.x}
           data-position-y={node.position.y}
           data-node-id={node.id}
+          onClick={(event) => onNodeClick && onNodeClick(event, node)}
         >
           {node.data.label}
           {/* Render properties for testing */}

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo, useEffect } from 'react'
+import React, { useMemo, useEffect, useState } from 'react'
 import ReactFlow, { Handle, Position, Background, ReactFlowProvider, useReactFlow } from 'reactflow'
 import type { Node, Edge } from 'reactflow'
 import 'reactflow/dist/style.css'
@@ -53,6 +53,11 @@ interface LineageGraphProps {
 // Inner component that uses the ReactFlow context
 function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGraphProps) {
   const { fitView } = useReactFlow()
+  const [sidePanelVisible, setSidePanelVisible] = useState(false)
+
+  const handleNodeClick = (event: React.MouseEvent, node: Node) => {
+    setSidePanelVisible(true)
+  }
 
   // Memoize nodes conversion to prevent unnecessary re-renders
   const customNodes = useMemo(() => nodes.map(node => ({
@@ -101,24 +106,39 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
   }
 
   return (
-    <ReactFlow
-      nodes={customNodes}
-      edges={customEdges}
-      nodeTypes={nodeTypes}
-      fitView
-      fitViewOptions={{ padding: 0.2 }}
-      minZoom={0.1}
-      maxZoom={2}
-      defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-      proOptions={{ hideAttribution: true }}
-    >
-      <Background 
-        variant={"dots" as any}
-        gap={20} 
-        size={1.5} 
-        color="#9ca3af"
-      />
-    </ReactFlow>
+    <>
+      <ReactFlow
+        nodes={customNodes}
+        edges={customEdges}
+        nodeTypes={nodeTypes}
+        onNodeClick={handleNodeClick}
+        fitView
+        fitViewOptions={{ padding: 0.2 }}
+        minZoom={0.1}
+        maxZoom={2}
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background 
+          variant={"dots" as any}
+          gap={20} 
+          size={1.5} 
+          color="#9ca3af"
+        />
+      </ReactFlow>
+      
+      {sidePanelVisible && (
+        <div 
+          data-testid="side-panel"
+          className="fixed top-0 right-0 w-80 h-full bg-white border-l border-gray-300 shadow-lg z-50"
+        >
+          <div className="p-4">
+            <h3>Node Properties</h3>
+            <p>Side panel is open</p>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
