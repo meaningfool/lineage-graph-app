@@ -117,6 +117,30 @@ This project follows strict TDD workflow from `.cursor/rules/001-tdd-workflow.md
 - **Test commits**: Always separate from implementation commits
 - Follow Kent Beck's principle: "Make the change easy, then make the easy change"
 
+### Pre-Commit Verification (MANDATORY)
+Before any commit, perform user acceptance testing using Playwright:
+1. **Start the development server**: Run `./scripts/ensure-dev-running.sh` to automatically check and start servers
+2. **Visual verification**: Use Playwright to navigate to http://localhost:3001 and capture screenshots
+3. **Check for regressions**: Verify that:
+   - The application loads without errors
+   - Main components are visible and properly rendered
+   - No console errors appear
+   - Basic interactions work (navigation, clicking nodes, etc.)
+4. **Document findings**: If any issues are found, fix them before committing
+5. **Only proceed with commit** after successful user verification
+
+This manual UAT step ensures code changes don't break the user experience and maintains application quality.
+
+### Browser Testing Automation
+When accessing localhost with Playwright:
+1. **Always run first**: `./scripts/ensure-dev-running.sh`
+2. This script will:
+   - Check if servers are running
+   - Start them if needed
+   - Wait for them to be ready
+   - Report the status
+3. Only proceed with browser testing after the script confirms servers are ready
+
 ## Code Conventions
 
 ### Graph Data Flow
