@@ -85,6 +85,30 @@ This project follows strict TDD workflow from `.cursor/rules/001-tdd-workflow.md
 - **Still get approval**: Always ask for user confirmation before refactoring commits
 
 ### Testing Approach
+
+#### Testing Strategy Guidelines
+
+This project uses a **Hybrid Testing Strategy** combining Unit and E2E tests:
+
+**Unit Tests (Fast, Isolated)**
+- Pure functions and utilities
+- Simple component logic (no ReactFlow)
+- State management and hooks
+- Data transformation logic
+
+**E2E Tests (Comprehensive, User-focused)**
+- ReactFlow interactions and workflows
+- Complete user journeys
+- Visual behavior and integration
+- Cross-component interactions
+
+**Decision Framework**
+- **Does it involve ReactFlow?** → E2E test
+- **Is it a pure function?** → Unit test
+- **Does it test user workflow?** → E2E test
+- **Is it simple component logic?** → Unit test
+
+#### Core Testing Principles
 - **Use Testing Library queries exclusively**: `screen.getByTestId()`, `within().getAllByTestId()`
 - **Never use `querySelector()`** or DOM traversal (JSDOM incompatible)
 - **Test user-visible behavior and outcomes**, not internal mechanics or implementation details
@@ -92,8 +116,19 @@ This project follows strict TDD workflow from `.cursor/rules/001-tdd-workflow.md
 - **Use specific test IDs** for predictable testing scenarios (e.g., `node-new-users`)
 - **Minimal proof testing**: When testing CSS classes, verify presence (e.g., `transition-transform`) not specific values
 - Use regex patterns for dynamic test IDs: `/^property-/`
-- **Data-driven testing**: Avoid hardcoded test values - read from actual data sources to prevent test brittleness
-- **Comprehensive workflow testing**: Test complete user journeys (open-close-reopen cycles) not just isolated actions
+
+#### Data-Driven Testing Strategy
+- **Import source data directly**: `import targetLineageData from 'path/to/data.json'`
+- **Use data properties dynamically**: `targetLineageData.nodes.length` instead of hardcoded counts
+- **Read from actual data sources**: `targetLineageData.nodes.map(node => node.label)` for expected values
+- **Avoid magic numbers**: Replace hardcoded values with data-derived values
+- **Dynamic test generation**: Use available data to determine test scenarios (e.g., edge type options)
+
+#### E2E Test Organization Patterns
+- **Workflow-based grouping**: Organize tests by complete user journeys, not technical boundaries
+- **Consolidate expensive operations**: Group tests that require similar setup (page loads, graph generation)
+- **Meaningful test density**: Each test should validate multiple related behaviors
+- **Library evolution safety**: Use flexible assertions (`.toBeGreaterThan(1)`) for evolving dependencies
 
 **Test Evolution Strategy:**
 - **Adapt existing tests** rather than only adding new ones when features change
@@ -111,11 +146,47 @@ This project follows strict TDD workflow from `.cursor/rules/001-tdd-workflow.md
 - **UX refinement cycles**: After GREEN phase, expect additional refactoring requests for styling, spacing, and user experience improvements
 - **Session continuity**: When continuing from previous conversations, read scratchpad.md and verify tests still pass before proceeding
 
+### Test Suite Refactoring Methodology
+When reorganizing or optimizing existing tests:
+
+1. **Comprehensive Coverage Analysis**:
+   - Review all existing test files systematically
+   - Use Git history to identify any lost test functionality
+   - Document current test coverage before making changes
+
+2. **Strategic Planning**:
+   - Plan reorganization strategy in scratchpad.md
+   - Identify expensive operations that can be consolidated
+   - Group tests by user workflows rather than technical boundaries
+
+3. **Sequential File Review Process**:
+   - Display complete test code for user review: "Here are all the tests from [file]"
+   - Process user feedback systematically, point by point
+   - Implement changes incrementally with immediate verification
+   - Run tests after each significant modification
+
+4. **Data-Driven Evolution**:
+   - Convert hardcoded test values to data-driven approaches
+   - Import source data directly into test files
+   - Use dynamic assertions based on actual data properties
+
+5. **Coverage Verification**:
+   - Ensure no test functionality is lost during reorganization
+   - Verify all browsers pass updated test suite
+   - Document the reorganization benefits and test count changes
+
 ### Commit Strategy
 - **Structure commits**: Infrastructure, refactoring, setup (commit separately)
 - **Feature commits**: New functionality, bug fixes (commit after structure)
 - **Test commits**: Always separate from implementation commits
 - Follow Kent Beck's principle: "Make the change easy, then make the easy change"
+
+#### Commit Message Best Practices
+- **Use specific commit types**: `feat:`, `refactor:`, `test:`, `docs:`, `fix:`
+- **Include quantified improvements**: "Reduce 9 tests to 6", "33% test reduction"
+- **Document what was preserved**: "Maintain full functionality coverage"
+- **Highlight benefits achieved**: "Enhanced assertions", "Data-driven approach"
+- **Structure multi-section commits**: Use `## Section Headers` for complex changes
 
 ### Pre-Commit Verification (MANDATORY)
 Before any commit, perform user acceptance testing using Playwright:
@@ -140,6 +211,35 @@ When accessing localhost with Playwright:
    - Wait for them to be ready
    - Report the status
 3. Only proceed with browser testing after the script confirms servers are ready
+
+## Collaboration Patterns
+
+### Effective Review and Approval Cycles
+When working with complex changes or multiple files:
+
+1. **Sequential File Review Pattern**:
+   ```
+   "Let's review X file" → Display complete code → User provides feedback → 
+   Implement changes → Verify with tests → "Next file" → Repeat
+   ```
+
+2. **Complete Code Display**: Always show full test/code blocks for comprehensive user review
+3. **Systematic Feedback Processing**: Address each user concern individually and methodically
+4. **Immediate Verification**: Run tests after each significant change to ensure functionality
+5. **Explicit Approval Seeking**: Always ask for permission before major changes or commits
+
+### Communication Best Practices
+- **Be specific about what you're showing**: "Here are all 6 tests from [filename]"
+- **Process feedback point by point**: Address each concern individually
+- **Confirm understanding**: Repeat back user requirements to ensure alignment
+- **Show results immediately**: Run tests and display outcomes after changes
+- **Ask for explicit next steps**: "Ready to move to next file?" or "Should we commit?"
+
+### Session Continuity Patterns
+- **Use scratchpad.md** for complex planning and cross-session handoffs
+- **Document decisions and rationale** for future reference
+- **Verify test status** before proceeding with previous work
+- **Reference Git history** to understand previous implementations
 
 ## Code Conventions
 
