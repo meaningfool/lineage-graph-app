@@ -9,7 +9,7 @@ test.describe('Data Lineage App - Side Panel Complete', () => {
 
   // ===== BASIC SIDE PANEL FUNCTIONALITY =====
   
-  test('should show side panel when clicking on a node', async ({ page }) => {
+  test('should show side panel with node properties when clicking on a node', async ({ page }) => {
     // Initially, side panel should not be visible
     await expect(page.getByTestId('side-panel')).not.toBeVisible();
     
@@ -17,27 +17,57 @@ test.describe('Data Lineage App - Side Panel Complete', () => {
     await page.locator('.react-flow__node').first().click();
     
     // Side panel should now be visible
-    await expect(page.getByTestId('side-panel')).toBeVisible();
+    const sidePanel = page.getByTestId('side-panel');
+    await expect(sidePanel).toBeVisible();
+    
+    // Should display node properties properly
+    await expect(sidePanel.locator('h3')).toBeVisible();
+    const nodeTitle = await sidePanel.locator('h3').textContent();
+    expect(nodeTitle).toBeTruthy();
+    
+    // Should have at least one property with actual values
+    await expect(sidePanel.locator('[data-testid^="property-"]').first()).toBeVisible();
+    const propertyCount = await sidePanel.locator('[data-testid^="property-"]').count();
+    expect(propertyCount).toBeGreaterThan(0);
   });
 
-  test('should close side panel when clicking close button', async ({ page }) => {
-    // Click on a node to open side panel
+  test('should handle complete open-close-reopen cycle correctly', async ({ page }) => {
+    // 1. Initially no panel should be visible
+    await expect(page.getByTestId('side-panel')).not.toBeVisible();
+    
+    // 2. Click first node to open panel
     await page.locator('.react-flow__node').first().click();
-    await expect(page.getByTestId('side-panel')).toBeVisible();
+    let sidePanel = page.getByTestId('side-panel');
+    await expect(sidePanel).toBeVisible();
     
-    // Click the close button
+    // 3. Click close button to close panel
     await page.getByTestId('close-side-panel').click();
+    await expect(page.getByTestId('side-panel')).not.toBeVisible();
     
-    // Side panel should no longer be visible
+    // 4. Click second node to reopen panel with different content
+    await page.locator('.react-flow__node').nth(1).click();
+    sidePanel = page.getByTestId('side-panel');
+    await expect(sidePanel).toBeVisible();
+    const secondNodeTitle = await sidePanel.locator('h3').textContent();
+    expect(secondNodeTitle).toBeTruthy();
+    
+    // 5. Close again to verify panel can be closed after reopening
+    await page.getByTestId('close-side-panel').click();
     await expect(page.getByTestId('side-panel')).not.toBeVisible();
   });
 
-  test('should apply transition classes when opening side panel', async ({ page }) => {
+  test('should handle transitions correctly for opening and node switching', async ({ page }) => {
     // Click the node to open panel
     await page.locator('.react-flow__node').first().click();
     
-    // Verify side panel has transition classes
+    // Verify side panel has transition classes when opening
     const sidePanel = page.getByTestId('side-panel');
+    await expect(sidePanel).toHaveClass(/transition-transform/);
+    
+    // When switching to another node (panel already open), should not trigger new transition
+    // Panel should remain visible and just update content
+    await page.locator('.react-flow__node').nth(1).click();
+    await expect(sidePanel).toBeVisible();
     await expect(sidePanel).toHaveClass(/transition-transform/);
   });
 
@@ -55,22 +85,6 @@ test.describe('Data Lineage App - Side Panel Complete', () => {
   });
 
   // ===== CONTENT AND PROPERTY DISPLAY =====
-
-  test('should display node properties in side panel', async ({ page }) => {
-    // Click on the first node to open side panel
-    await page.locator('.react-flow__node').first().click();
-    
-    // Wait for side panel to be visible
-    await expect(page.getByTestId('side-panel')).toBeVisible();
-    
-    const sidePanel = page.getByTestId('side-panel');
-    
-    // Should show node label as title
-    await expect(sidePanel.locator('h3')).toBeVisible();
-    
-    // Should show properties section
-    await expect(sidePanel.locator('[data-testid^="property-"]').first()).toBeVisible();
-  });
 
   test('should update side panel content when clicking different nodes', async ({ page }) => {
     // Click on the first node
@@ -100,37 +114,6 @@ test.describe('Data Lineage App - Side Panel Complete', () => {
     expect(titleChanged || propertiesChanged).toBe(true);
   });
 
-  test('should complete full open-close-reopen cycle correctly', async ({ page }) => {
-    // 1. Initially no panel should be visible
-    await expect(page.getByTestId('side-panel')).not.toBeVisible();
-    
-    // 2. Click first node to open panel
-    const firstNode = page.locator('.react-flow__node').first();
-    await firstNode.click();
-    
-    let sidePanel = page.getByTestId('side-panel');
-    await expect(sidePanel).toBeVisible();
-    const firstNodeTitle = await sidePanel.locator('h3').textContent();
-    
-    // 3. Click close button to close panel
-    await page.getByTestId('close-side-panel').click();
-    await expect(page.getByTestId('side-panel')).not.toBeVisible();
-    
-    // 4. Click second node to reopen panel with different content
-    const secondNode = page.locator('.react-flow__node').nth(1);
-    await secondNode.click();
-    
-    sidePanel = page.getByTestId('side-panel');
-    await expect(sidePanel).toBeVisible();
-    const secondNodeTitle = await sidePanel.locator('h3').textContent();
-    
-    // Verify panel reopened with content
-    expect(secondNodeTitle).toBeTruthy();
-    
-    // 5. Close again to verify panel can be closed after reopening
-    await page.getByTestId('close-side-panel').click();
-    await expect(page.getByTestId('side-panel')).not.toBeVisible();
-  });
 
   // ===== BEHAVIOR WITH GRAPH CHANGES =====
 
@@ -154,25 +137,4 @@ test.describe('Data Lineage App - Side Panel Complete', () => {
     await expect(page.getByTestId('side-panel')).toBeVisible();
   });
 
-  test('should show properties for generated graph nodes', async ({ page }) => {
-    // Generate a new graph
-    await page.click('button:has-text("Generate Graph")');
-    await page.waitForTimeout(1500);
-    
-    // Click on a generated node
-    await page.locator('.react-flow__node').first().click();
-    
-    const sidePanel = page.getByTestId('side-panel');
-    await expect(sidePanel).toBeVisible();
-    
-    // Generated nodes should also have properties
-    await expect(sidePanel.locator('h3')).toBeVisible();
-    const nodeTitle = await sidePanel.locator('h3').textContent();
-    expect(nodeTitle).toBeTruthy();
-    
-    // Should have at least one property
-    await expect(sidePanel.locator('[data-testid^="property-"]').first()).toBeVisible();
-    const propertyCount = await sidePanel.locator('[data-testid^="property-"]').count();
-    expect(propertyCount).toBeGreaterThan(0);
-  });
 });

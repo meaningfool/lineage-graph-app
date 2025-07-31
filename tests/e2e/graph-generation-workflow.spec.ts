@@ -17,9 +17,6 @@ test.describe('Data Lineage App - Graph Generation Workflow', () => {
     
     // Check that the ReactFlow canvas is present
     await expect(page.locator('.react-flow')).toBeVisible();
-    
-    // Verify we have the correct number of nodes based on source data
-    await expect(page.locator('.react-flow__node')).toHaveCount(targetLineageData.nodes.length);
   });
 
   test('should render nodes from target-lineage.json data', async ({ page }) => {
@@ -30,13 +27,16 @@ test.describe('Data Lineage App - Graph Generation Workflow', () => {
       // Look for node content that matches the expected labels
       await expect(page.locator('.react-flow__node', { hasText: nodeLabel })).toBeVisible({ timeout: 5000 });
     }
+    
+    // Verify we have the correct number of nodes based on source data
+    await expect(page.locator('.react-flow__node')).toHaveCount(targetLineageData.nodes.length);
   });
 
   test('should display correct edge count from data', async ({ page }) => {
     // Wait for edges to be rendered - use a longer timeout and wait for DOM element presence
     await page.waitForTimeout(2000); // Give ReactFlow time to render edges
     const edgeElements = page.locator('.react-flow__edge');
-    await expect(edgeElements).toHaveCount(4, { timeout: 15000 });
+    await expect(edgeElements).toHaveCount(targetLineageData.edges.length, { timeout: 15000 });
   });
 
   test('should generate different graphs when Generate Graph button is clicked', async ({ page }) => {
