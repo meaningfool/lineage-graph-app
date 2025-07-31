@@ -117,87 +117,98 @@ All iterations (1-4) completed successfully:
 
 ---
 
-# NEXT: Refactor Testing Approach - NO MOCKING
+# NEXT: Hybrid Testing Strategy - Unit + E2E
 
-## Problem Identified
-Current ReactFlow mocking approach creates **logic duplication**:
-- Real `CustomNode` component has specific rendering logic
-- Test mock duplicates this logic manually  
-- Changes require updating both component AND mock
-- Violates principle: "Don't mock what you don't own when it's core to your app"
+## Research Findings & New Approach
 
-## Chosen Approach: No Mocking of ReactFlow
-Use real ReactFlow components in tests, only mock browser APIs that are already handled in test-setup.ts:
-- `ResizeObserver` - ✅ Already mocked
-- CSS imports - ✅ Already mocked
-- No other mocking needed!
+After researching ReactFlow testing approaches, we discovered:
+- **ReactFlow team recommends E2E testing** (Cypress/Playwright) over unit testing
+- **Community struggles with unit testing ReactFlow** due to async rendering and DOM measurement requirements
+- **Our original mock approach is actually the accepted pattern** for ReactFlow unit tests
+- **Logic duplication is a known trade-off** that the community accepts
 
-## Test Refactoring Checklist
+## New Strategy: Hybrid Unit + E2E Approach
 
-### 1. Remove ReactFlow Mock (page.test.tsx)
-**File**: `apps/web/src/app/__tests__/page.test.tsx`
-**Changes needed**:
-- Remove entire `vi.mock('reactflow', ...)` block (lines 57-106)
-- Remove mock viewport functions (lines 8-54) - use real ReactFlow viewport
-- Update test selectors to work with real ReactFlow DOM structure
-- May need to use `waitFor` for async rendering
+### Keep Unit Tests For:
+- ✅ **Pure utility functions** (`lineagegraph.ts`, `graph-layout.ts`)
+- ✅ **Simple component logic** (buttons, forms, dropdowns)
+- ✅ **State management** (hooks, context)
+- ✅ **Data transformations** (JSON parsing, node/edge creation)
 
-### 2. Update Node Selection Tests
-**Tests affected**: All tests using `screen.getByTestId('node-${id}')`
-**Changes needed**:
-- Real ReactFlow renders nodes differently - need to find correct selectors
-- CustomNode component should already have test-ids, verify they work
-- May need to wait for ReactFlow initialization
+### Move to E2E Tests:
+- 🎯 **ReactFlow interactions** (node clicks, pan/zoom)
+- 🎯 **Side panel workflows** (open/close, property display)
+- 🎯 **Graph generation** (button clicks, new data loading)
+- 🎯 **Visual behaviors** (fitView, edge type switching)
+- 🎯 **Complete user journeys** (end-to-end workflows)
 
-### 3. Update Edge Tests  
-**Tests affected**: Tests using `screen.getAllByTestId('react-flow__edge')`
-**Changes needed**:
-- Real ReactFlow edge structure is different
-- Find correct way to query edges in actual ReactFlow DOM
-- Verify edge source/target attributes still accessible
+## Implementation Plan
 
-### 4. Update Click Handler Tests
-**Tests affected**: Side panel tests using `fireEvent.click(node)`
-**Changes needed**:
-- Ensure click events work on real ReactFlow nodes
-- May need to target specific elements within nodes
-- Verify `onNodeClick` prop is properly connected
+### Phase 1: Revert & Measure Baseline
+1. **Revert to working mock approach** (our original that passed all tests)
+2. **Measure current test performance**:
+   ```bash
+   pnpm test:run --reporter=verbose
+   # Record: total time, individual test times
+   ```
+3. **Document baseline metrics** for comparison
 
-### 5. Update Viewport/Camera Tests
-**Tests affected**: "Automatic Camera Adjustment" test suite
-**Changes needed**:
-- Remove mock viewport helpers
-- Use ReactFlow's real `useReactFlow` hook if needed
-- May need to spy on real `fitView` calls instead of mocking
+### Phase 2: Set Up E2E Testing
+1. **Install Playwright**:
+   ```bash
+   pnpm add -D @playwright/test
+   ```
+2. **Create E2E config** (`playwright.config.ts`)
+3. **Set up test environment** integration with our dev servers
+4. **Create initial E2E test structure** (`tests/e2e/`)
 
-### 6. Handle Async Behavior
-**All tests may need**:
-- `waitFor` wrapper for ReactFlow initialization
-- Handle loading states
-- Deal with layout calculations timing
+### Phase 3: Migrate ReactFlow Tests to E2E
+1. **Identify ReactFlow-heavy tests** (side panel, graph interactions)
+2. **Create equivalent E2E tests** testing same behaviors from user perspective
+3. **Run both unit and E2E tests** to ensure coverage
+4. **Remove unit tests** once E2E coverage is confirmed
+5. **Measure new test performance** and compare
 
-### 7. Test Environment Setup
-**Verify in test-setup.ts**:
-- ResizeObserver mock is sufficient
-- No Canvas/WebGL issues arise
-- CSS imports properly handled
+### Phase 4: Optimize Performance (If Needed)
+- **Parallel E2E execution** if tests are slow
+- **Test categorization** (smoke tests vs full suite)
+- **Selective test running** for development vs CI
 
-### 8. Component Extraction (Optional Future)
-**If real ReactFlow causes issues**:
-- Extract and export `CustomNode` from lineage-graph.tsx
-- Create separate unit tests for CustomNode
-- Keep integration tests focused on workflows
+### Phase 5: Document Testing Guidelines
+Add to CLAUDE.md testing rules:
 
-## Implementation Order
-1. Start with simplest test: "renders all nodes from the data"
-2. Get one test working with real ReactFlow
-3. Apply pattern to remaining tests
-4. Address any async/timing issues
-5. Clean up unused mock code
+```markdown
+## Testing Strategy Guidelines
+
+### Unit Tests (Fast, Isolated)
+- Pure functions and utilities
+- Simple component logic (no ReactFlow)
+- State management and hooks
+- Data transformation logic
+
+### E2E Tests (Comprehensive, User-focused)
+- ReactFlow interactions and workflows
+- Complete user journeys
+- Visual behavior and integration
+- Cross-component interactions
+
+### Decision Framework
+- **Does it involve ReactFlow?** → E2E test
+- **Is it a pure function?** → Unit test
+- **Does it test user workflow?** → E2E test
+- **Is it simple component logic?** → Unit test
+```
 
 ## Success Criteria
-- ✅ All tests pass with real ReactFlow
-- ✅ No mock/component logic duplication  
-- ✅ Tests are more reliable and catch real issues
-- ✅ Test maintenance reduced
-- ✅ Tests represent actual user experience
+- ✅ **Fast unit tests** for appropriate scenarios
+- ✅ **Comprehensive E2E tests** for ReactFlow interactions
+- ✅ **Clear guidelines** for choosing test type
+- ✅ **Better test confidence** - tests match user experience
+- ✅ **Maintainable approach** - no logic duplication issues
+- ✅ **Performance acceptable** - reasonable test suite execution time
+
+## TDD Alignment Benefits
+- **E2E tests match TDD philosophy** - test from user perspective
+- **Better behavior verification** - test what users actually do
+- **Clearer test-driven design** - think in terms of user workflows
+- **More meaningful red/green cycle** - tests represent real value
