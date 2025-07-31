@@ -117,83 +117,87 @@ All iterations (1-4) completed successfully:
 
 ---
 
-# NEXT: Refactor Testing Approach - Minimal Mocking
+# NEXT: Refactor Testing Approach - NO MOCKING
 
 ## Problem Identified
 Current ReactFlow mocking approach creates **logic duplication**:
 - Real `CustomNode` component has specific rendering logic
 - Test mock duplicates this logic manually  
 - Changes require updating both component AND mock
-- Maintenance burden and potential for mock/reality drift
+- Violates principle: "Don't mock what you don't own when it's core to your app"
 
-## Current Problematic Mock Location
-File: `apps/web/src/app/__tests__/page.test.tsx` (lines ~50-90)
-```typescript
-vi.mock('reactflow', () => ({
-  ReactFlow: ({ nodes, onNodeClick }) => (
-    <div>
-      {nodes.map(node => (
-        <div key={node.id} data-testid={`node-${node.id}`}>
-          {node.data.label}
-          {/* This logic was duplicated from CustomNode */}
-        </div>
-      ))}
-    </div>
-  )
-}))
-```
+## Chosen Approach: No Mocking of ReactFlow
+Use real ReactFlow components in tests, only mock browser APIs that are already handled in test-setup.ts:
+- `ResizeObserver` - ✅ Already mocked
+- CSS imports - ✅ Already mocked
+- No other mocking needed!
 
-## Refactoring Strategy
+## Test Refactoring Checklist
 
-### Option A: Integration Testing with Real ReactFlow
-- Remove heavy ReactFlow mocking
-- Use real ReactFlow with minimal environment mocks only
-- Test actual component interactions
-- **Benefits**: No logic duplication, tests closer to reality
-- **Challenges**: Potential test environment setup (canvas/WebGL issues)
+### 1. Remove ReactFlow Mock (page.test.tsx)
+**File**: `apps/web/src/app/__tests__/page.test.tsx`
+**Changes needed**:
+- Remove entire `vi.mock('reactflow', ...)` block (lines 57-106)
+- Remove mock viewport functions (lines 8-54) - use real ReactFlow viewport
+- Update test selectors to work with real ReactFlow DOM structure
+- May need to use `waitFor` for async rendering
 
-### Option B: Component Unit Testing + Integration
-- Extract `CustomNode` component testing separately  
-- Keep minimal ReactFlow mock for full-page integration tests
-- Test `CustomNode` in isolation without ReactFlow dependency
-- **Benefits**: Fast unit tests + targeted integration tests
-- **Implementation**: 
-  1. Create `CustomNode.test.tsx` 
-  2. Simplify ReactFlow mock to just container structure
-  3. Focus page tests on workflows, not rendering details
+### 2. Update Node Selection Tests
+**Tests affected**: All tests using `screen.getByTestId('node-${id}')`
+**Changes needed**:
+- Real ReactFlow renders nodes differently - need to find correct selectors
+- CustomNode component should already have test-ids, verify they work
+- May need to wait for ReactFlow initialization
 
-### Option C: Hybrid Approach (Recommended)
-- Use real ReactFlow for critical user workflows
-- Mock only problematic parts (Background, MiniMap, canvas operations)
-- Extract testable components where possible
-- **Benefits**: Balance of realism and test stability
+### 3. Update Edge Tests  
+**Tests affected**: Tests using `screen.getAllByTestId('react-flow__edge')`
+**Changes needed**:
+- Real ReactFlow edge structure is different
+- Find correct way to query edges in actual ReactFlow DOM
+- Verify edge source/target attributes still accessible
 
-## Implementation Steps
+### 4. Update Click Handler Tests
+**Tests affected**: Side panel tests using `fireEvent.click(node)`
+**Changes needed**:
+- Ensure click events work on real ReactFlow nodes
+- May need to target specific elements within nodes
+- Verify `onNodeClick` prop is properly connected
 
-1. **Audit current test coverage** - identify which tests actually need ReactFlow
-2. **Extract CustomNode tests** - test node rendering logic separately
-3. **Minimize ReactFlow mock** - only mock environment issues, not logic
-4. **Update integration tests** - focus on user workflows over implementation details
-5. **Validate test confidence** - ensure tests still catch regressions
+### 5. Update Viewport/Camera Tests
+**Tests affected**: "Automatic Camera Adjustment" test suite
+**Changes needed**:
+- Remove mock viewport helpers
+- Use ReactFlow's real `useReactFlow` hook if needed
+- May need to spy on real `fitView` calls instead of mocking
 
-## Files to Modify
-- `apps/web/src/app/__tests__/page.test.tsx` - main test file with ReactFlow mock
-- Create: `apps/web/src/components/__tests__/CustomNode.test.tsx` - dedicated component tests
-- `apps/web/src/components/lineage-graph.tsx` - potentially extract CustomNode export
+### 6. Handle Async Behavior
+**All tests may need**:
+- `waitFor` wrapper for ReactFlow initialization
+- Handle loading states
+- Deal with layout calculations timing
+
+### 7. Test Environment Setup
+**Verify in test-setup.ts**:
+- ResizeObserver mock is sufficient
+- No Canvas/WebGL issues arise
+- CSS imports properly handled
+
+### 8. Component Extraction (Optional Future)
+**If real ReactFlow causes issues**:
+- Extract and export `CustomNode` from lineage-graph.tsx
+- Create separate unit tests for CustomNode
+- Keep integration tests focused on workflows
+
+## Implementation Order
+1. Start with simplest test: "renders all nodes from the data"
+2. Get one test working with real ReactFlow
+3. Apply pattern to remaining tests
+4. Address any async/timing issues
+5. Clean up unused mock code
 
 ## Success Criteria
-- ✅ No logic duplication between mocks and real components
-- ✅ Tests remain fast and reliable
-- ✅ Component changes don't require mock updates
-- ✅ Test coverage maintained or improved
-- ✅ Tests better represent actual user interactions
-
-## Testing Philosophy Reference
-- **Kent C. Dodds**: "The more your tests resemble the way your software is used, the more confidence they can give you"
-- **Mock external dependencies, not your own components**
-- **Integration tests > Unit tests > E2E tests** (in terms of quantity/focus)
-
-## Future Decision Points
-- How much ReactFlow behavior do we actually need to mock?
-- Should we invest in visual regression testing for graph layouts?
-- Can we test complex graph interactions without full ReactFlow mocking?
+- ✅ All tests pass with real ReactFlow
+- ✅ No mock/component logic duplication  
+- ✅ Tests are more reliable and catch real issues
+- ✅ Test maintenance reduced
+- ✅ Tests represent actual user experience
