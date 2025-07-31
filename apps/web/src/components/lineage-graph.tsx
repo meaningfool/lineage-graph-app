@@ -123,7 +123,7 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
     },
   })), [edges, edgeType]) // Add edgeType as dependency
 
-  // Automatically fit view when nodes, edges, or edge type change
+  // Automatically fit view only when graph structure changes (not selection)
   useEffect(() => {
     // Small delay to ensure nodes are rendered before fitting view
     const timer = setTimeout(() => {
@@ -136,7 +136,7 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
     }, 100)
 
     return () => clearTimeout(timer)
-  }, [customNodes, customEdges, edgeType, fitView])
+  }, [nodes, edges, edgeType, fitView]) // Use original nodes/edges, not customNodes
 
   console.log('LineageGraph nodes:', customNodes)
   console.log('LineageGraph edges:', customEdges)

@@ -253,20 +253,37 @@ When accessing localhost with Playwright:
    - Report the status
 3. Only proceed with browser testing after the script confirms servers are ready
 
-### Development Server Issue Handling
-When tests fail with server connectivity issues (e.g., `net::ERR_ABORTED`, timeouts):
+### Development Server Management
+
+**Server Persistence Issues:**
+- Background processes started with `&` or `nohup` often get terminated between Claude interactions
+- Each Bash command runs in a new shell session, losing process context
+- System/IDE cleanup may kill orphaned Node processes
+
+**RECOMMENDED APPROACH for Server Management:**
+
+1. **For Development Work** (when user needs localhost access):
+   ```bash
+   # Use terminal multiplexer approach (more reliable)
+   screen -dmS dev-servers bash -c 'pnpm dev'
+   # Or use disown to detach from shell
+   pnpm dev > /tmp/dev-server.log 2>&1 & disown
+   ```
+
+2. **For E2E Testing** (servers managed by test runner):
+   - E2E tests don't require manual server management
+   - Playwright runs in isolated browser contexts
+   - Use `pnpm test:e2e --project=chromium [test-file]` directly
+
+3. **Quick Server Health Check:**
+   ```bash
+   lsof -i :3001 | grep LISTEN || echo "Server not running"
+   ```
 
 **NEVER:**
-- Run `curl -I http://localhost:3001` and wait for 2-minute timeout
-- Retry the same failing test command multiple times
-- Let Playwright tests hang waiting for unresponsive servers
-
-**CORRECT APPROACH:**
-1. **Immediate server restart**: `pkill -f "next dev"; pnpm dev` (background process)
-2. **Single browser testing**: Always use `--project=chromium` for consistency
-3. **Standard test command**: `pnpm test:e2e --project=chromium [test-file]`
-4. **Quick verification**: If servers don't start in 30 seconds, investigate port conflicts or process issues
-5. **No timeout extensions**: Don't add `--timeout=60000` - fix the root cause instead
+- Assume servers persist between command invocations
+- Run `curl` with long timeouts to check server status
+- Start servers with simple `&` backgrounding for user access
 
 ## Collaboration Patterns
 
