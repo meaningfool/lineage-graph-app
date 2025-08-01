@@ -1,0 +1,4 @@
+id,name,description,category
+1,"Node A","Input data source","input"
+2,"Node B","Processing step with ""quotes""","step"
+3,"Node C","Final output metric","output"

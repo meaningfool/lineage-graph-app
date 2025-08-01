@@ -132,11 +132,11 @@ describe('CSVImportModal', () => {
       render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
       
       const fileInput = screen.getByLabelText(/csv file/i)
-      // Create a CSV with inconsistent columns
+      // Create a CSV with inconsistent columns (PapaParse treats this as format error)
       const file = new File(['col1,col2\nval1', 'col1,col2,col3\nval1,val2,val3'], 'inconsistent.csv', { type: 'text/csv' })
       await user.upload(fileInput, file)
       
-      expect(screen.getByText(/csv parsing error/i)).toBeInTheDocument()
+      expect(screen.getByText(/invalid csv format/i)).toBeInTheDocument()
     })
   })
 

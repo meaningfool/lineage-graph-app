@@ -1,0 +1,5 @@
+id,name,value
+1,"Test, with comma",123.45
+2,"Test with ""quotes""",67.89
+3,"Test with 
+newline",99.99

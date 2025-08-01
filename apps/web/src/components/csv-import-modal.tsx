@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
+import Papa from 'papaparse'
 import {
   Dialog,
   DialogContent,
@@ -8,19 +9,79 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Upload, FileText, AlertCircle } from 'lucide-react'
+import { Upload, FileText, AlertCircle, Loader2 } from 'lucide-react'
 
 interface CSVImportModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
+interface ParseResult {
+  data: any[]
+  meta: Papa.ParseMeta
+  errors: Papa.ParseError[]
+}
+
 export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [parseResult, setParseResult] = useState<ParseResult | null>(null)
 
-  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
+  const validateCSV = useCallback(async (file: File) => {
+    setIsProcessing(true)
     setError(null)
+    
+    return new Promise<void>((resolve) => {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results: Papa.ParseResult<any>) => {
+          setIsProcessing(false)
+          
+          // Check for empty file
+          if (file.size === 0 || results.data.length === 0) {
+            setError('File is empty')
+            setUploadedFile(null)
+            resolve()
+            return
+          }
+          
+          // Check for parsing errors
+          if (results.errors.length > 0) {
+            const hasFormatErrors = results.errors.some(error => 
+              error.type === 'Quotes' || error.type === 'FieldMismatch'
+            )
+            
+            if (hasFormatErrors) {
+              setError('Invalid CSV format')
+            } else {
+              setError('CSV parsing error')
+            }
+            setUploadedFile(null)
+            resolve()
+            return
+          }
+          
+          // Success
+          setParseResult(results)
+          setUploadedFile(file)
+          resolve()
+        },
+        error: (error: Papa.ParseError) => {
+          setIsProcessing(false)
+          setError('Invalid CSV format')
+          setUploadedFile(null)
+          resolve()
+        }
+      })
+    })
+  }, [])
+
+  const onDrop = useCallback(async (acceptedFiles: File[], rejectedFiles: any[]) => {
+    setError(null)
+    setUploadedFile(null)
+    setParseResult(null)
     
     if (rejectedFiles.length > 0) {
       setError('Only CSV files allowed')
@@ -29,9 +90,9 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 
     if (acceptedFiles.length > 0) {
       const file = acceptedFiles[0]
-      setUploadedFile(file)
+      await validateCSV(file)
     }
-  }, [])
+  }, [validateCSV])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -86,8 +147,23 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
             </div>
           </div>
 
-          {/* File Upload Status */}
-          {uploadedFile && (
+          {/* Processing State */}
+          {isProcessing && (
+            <div className="flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800">
+              <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  Processing file...
+                </p>
+                <p className="text-xs text-blue-600 dark:text-blue-400">
+                  Validating CSV format and parsing data
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* File Upload Success */}
+          {uploadedFile && !isProcessing && !error && (
             <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-950/50 rounded-lg border border-green-200 dark:border-green-800">
               <FileText className="h-5 w-5 text-green-600" />
               <div className="flex-1">
@@ -97,6 +173,11 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
                 <p className="text-xs text-green-600 dark:text-green-400">
                   File uploaded successfully
                 </p>
+                {parseResult && (
+                  <p className="text-xs text-green-500 dark:text-green-500 mt-1">
+                    {parseResult.data.length} rows parsed
+                  </p>
+                )}
               </div>
             </div>
           )}
