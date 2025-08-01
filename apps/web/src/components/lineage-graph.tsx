@@ -215,6 +215,19 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
                 ))}
               </div>
             )}
+            {selectedNode && (
+              <div className="mt-6">
+                <button
+                  data-testid="view-lineage-button"
+                  onClick={() => {
+                    // Empty handler for now
+                  }}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+                >
+                  View Lineage
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
