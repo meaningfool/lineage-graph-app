@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { useDropzone } from 'react-dropzone'
 import Papa from 'papaparse'
 import {
@@ -9,7 +9,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Upload, FileText, AlertCircle, Loader2 } from 'lucide-react'
+import { Upload, FileText, AlertCircle, Loader2, CheckCircle } from 'lucide-react'
+import { validateRequiredFields, type ValidationResult } from '@/utils/csv-validation'
 
 interface CSVImportModalProps {
   isOpen: boolean
@@ -22,7 +23,7 @@ interface ParseResult {
   errors: Papa.ParseError[]
 }
 
-type Step = 'upload' | 'columns' | 'mapping'
+type Step = 'upload' | 'columns' | 'mapping' | 'validation'
 
 interface ColumnMapping {
   nodeId: string
@@ -48,6 +49,15 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
     nodeType: '',
     sourceNode: '',
     targetNode: ''
+  })
+
+  // Validation state
+  const [validationResult, setValidationResult] = useState<{
+    nodes: ValidationResult | null
+    edges: ValidationResult | null
+  }>({
+    nodes: null,
+    edges: null
   })
 
   const validateCSV = useCallback(async (file: File, fileType: 'nodes' | 'edges') => {
@@ -184,6 +194,38 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
       [field]: value
     }))
   }
+
+  // Run validation when entering validation step
+  const runValidation = useCallback(() => {
+    if (!nodesParseResult || !edgesParseResult) return
+
+    // Map CSV data using column mappings
+    const mappedNodes = nodesParseResult.data.map(row => ({
+      id: row[columnMapping.nodeId],
+      title: row[columnMapping.nodeTitle],
+      type: row[columnMapping.nodeType]
+    }))
+
+    const mappedEdges = edgesParseResult.data.map(row => ({
+      source: row[columnMapping.sourceNode],
+      target: row[columnMapping.targetNode]
+    }))
+
+    // Run validation
+    const nodesValidation = validateRequiredFields(mappedNodes, 'nodes')
+    const edgesValidation = validateRequiredFields(mappedEdges, 'edges')
+
+    setValidationResult({
+      nodes: nodesValidation,
+      edges: edgesValidation
+    })
+  }, [nodesParseResult, edgesParseResult, columnMapping])
+
+  // Check if validation has critical errors
+  const hasValidationErrors = useMemo(() => {
+    if (!validationResult.nodes || !validationResult.edges) return true
+    return validationResult.nodes.errors.length > 0 || validationResult.edges.errors.length > 0
+  }, [validationResult])
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -532,6 +574,98 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
               </div>
             </>
           )}
+
+          {currentStep === 'validation' && (
+            <>
+              <div className="space-y-4">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold">Step 4: Validate Data</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Review data validation results before import
+                  </p>
+                </div>
+
+                {/* Validation Results */}
+                <div className="space-y-4">
+                  {validationResult.nodes && (
+                    <div className="border rounded-lg p-4">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Nodes Validation
+                      </h4>
+                      
+                      {validationResult.nodes.isValid ? (
+                        <div className="flex items-center gap-2 text-green-600 mt-2">
+                          <CheckCircle className="h-4 w-4" />
+                          <span className="text-sm">All nodes validation passed</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 mt-2">
+                          <div className="flex items-center gap-2 text-red-600">
+                            <AlertCircle className="h-4 w-4" />
+                            <span className="text-sm font-medium">
+                              Critical Errors ({validationResult.nodes.errors.length})
+                            </span>
+                          </div>
+                          <div className="space-y-1">
+                            {validationResult.nodes.errors.map((error, index) => (
+                              <div key={index} className="text-sm text-red-600 ml-6">
+                                {error.message}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {validationResult.edges && (
+                    <div className="border rounded-lg p-4">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Edges Validation
+                      </h4>
+                      
+                      {validationResult.edges.isValid ? (
+                        <div className="flex items-center gap-2 text-green-600 mt-2">
+                          <CheckCircle className="h-4 w-4" />
+                          <span className="text-sm">All edges validation passed</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 mt-2">
+                          <div className="flex items-center gap-2 text-red-600">
+                            <AlertCircle className="h-4 w-4" />
+                            <span className="text-sm font-medium">
+                              Critical Errors ({validationResult.edges.errors.length})
+                            </span>
+                          </div>
+                          <div className="space-y-1">
+                            {validationResult.edges.errors.map((error, index) => (
+                              <div key={index} className="text-sm text-red-600 ml-6">
+                                {error.message}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {hasValidationErrors && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 text-red-800">
+                        <AlertCircle className="h-4 w-4" />
+                        <span className="text-sm font-medium">Fix required field errors</span>
+                      </div>
+                      <p className="text-sm text-red-700 mt-1">
+                        Please go back and ensure all required fields are properly filled in your CSV files.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
         
         <DialogFooter>
@@ -539,11 +673,13 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
             Cancel
           </Button>
           
-          {(currentStep === 'columns' || currentStep === 'mapping') && (
+          {(currentStep === 'columns' || currentStep === 'mapping' || currentStep === 'validation') && (
             <Button 
               variant="outline" 
               onClick={() => {
-                if (currentStep === 'mapping') {
+                if (currentStep === 'validation') {
+                  setCurrentStep('mapping')
+                } else if (currentStep === 'mapping') {
                   setCurrentStep('columns')
                 } else {
                   setCurrentStep('upload')
@@ -579,11 +715,24 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
             <Button 
               disabled={!isValidMapping}
               onClick={() => {
-                // TODO: Import graph data
-                console.log('Import graph with mapping:', columnMapping)
+                setCurrentStep('validation')
+                runValidation()
               }}
             >
               Continue
+            </Button>
+          )}
+
+          {currentStep === 'validation' && (
+            <Button 
+              disabled={hasValidationErrors}
+              onClick={() => {
+                // TODO: Import graph data
+                console.log('Import graph with mapping:', columnMapping)
+                console.log('Validation passed, importing...')
+              }}
+            >
+              Import
             </Button>
           )}
         </DialogFooter>

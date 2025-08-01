@@ -425,6 +425,85 @@ describe('CSVImportModal', () => {
     })
   })
 
+  describe('CSV Import Modal - Required Fields Validation', () => {
+    it('should show validation step after column mapping is complete', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Upload files with missing required fields
+      const nodesInput = screen.getByLabelText(/nodes csv file/i)
+      const nodesFile = new File(['id,title,type\n,Node 2,STEP\nnode3,Node 3,OUTPUT'], 'nodes.csv', { type: 'text/csv' })
+      await user.upload(nodesInput, nodesFile)
+      
+      const edgesInput = screen.getByLabelText(/edges csv file/i)
+      const edgesFile = new File(['source,target\nnode1,node2'], 'edges.csv', { type: 'text/csv' })
+      await user.upload(edgesInput, edgesFile)
+      
+      // Navigate through steps
+      let continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)  // Go to columns
+      continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)  // Go to mapping
+      continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)  // Go to validation
+      
+      // Then: should display "Step 4: Validate Data" with validation results
+      expect(screen.getByText(/step.*4.*validate.*data/i)).toBeInTheDocument()
+    })
+
+    it('should show specific missing field errors in validation step', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Upload CSV with node missing 'id' at row 2 (second data row)
+      const nodesInput = screen.getByLabelText(/nodes csv file/i)
+      const nodesFile = new File(['id,title,type\nnode1,Node 1,INPUT\n,Node 2,STEP'], 'nodes.csv', { type: 'text/csv' })
+      await user.upload(nodesInput, nodesFile)
+      
+      const edgesInput = screen.getByLabelText(/edges csv file/i)
+      const edgesFile = new File(['source,target\nnode1,node2'], 'edges.csv', { type: 'text/csv' })
+      await user.upload(edgesInput, edgesFile)
+      
+      // Navigate to validation step
+      await navigateToValidationStep(user)
+      
+      // Then: should display specific error message
+      expect(screen.getByText(/node at row 2 is missing required field: id/i)).toBeInTheDocument()
+    })
+
+    it('should prevent import when required fields missing', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Upload CSV with missing required fields
+      const nodesInput = screen.getByLabelText(/nodes csv file/i)
+      const nodesFile = new File(['id,title,type\n,Node 2,STEP'], 'nodes.csv', { type: 'text/csv' })
+      await user.upload(nodesInput, nodesFile)
+      
+      const edgesInput = screen.getByLabelText(/edges csv file/i)
+      const edgesFile = new File(['source,target\nnode1,node2'], 'edges.csv', { type: 'text/csv' })
+      await user.upload(edgesInput, edgesFile)
+      
+      // Navigate to validation step
+      await navigateToValidationStep(user)
+      
+      // Then: Import button should be disabled with message
+      const importButton = screen.getByRole('button', { name: /import/i })
+      expect(importButton).toBeDisabled()
+      expect(screen.getByText(/fix required field errors/i)).toBeInTheDocument()
+    })
+
+    async function navigateToValidationStep(user: any) {
+      // Navigate through all steps to validation
+      let continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)  // Go to columns
+      continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)  // Go to mapping
+      continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)  // Go to validation
+    }
+  })
+
   describe('Modal Behavior', () => {
     it('does not render when closed', () => {
       render(<CSVImportModal isOpen={false} onClose={mockOnClose} />)
