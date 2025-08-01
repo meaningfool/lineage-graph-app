@@ -55,4 +55,43 @@ test.describe('View Lineage Button', () => {
     // Test that View Lineage button is NOT visible after first use
     await expect(viewLineageButton).not.toBeVisible()
   })
+
+  test('Test 3: Focus node has special visual indicator in lineage view', async ({ page }) => {
+    // Click on a node to open side panel
+    const firstNode = page.locator('.react-flow__node').first()
+    await firstNode.click()
+    
+    // Get the selected node's label
+    const sidePanel = page.getByTestId('side-panel')
+    await expect(sidePanel).toBeVisible()
+    const selectedNodeLabel = await sidePanel.locator('h3').textContent()
+    
+    // Click View Lineage button
+    const viewLineageButton = page.getByTestId('view-lineage-button')
+    await viewLineageButton.click()
+    
+    // Wait for lineage view to load
+    await page.waitForTimeout(500)
+    
+    // Find the focus node (the one whose lineage we're viewing)
+    const focusNode = page.locator('.react-flow__node').locator(`text=${selectedNodeLabel}`).locator('..').first()
+    
+    // Test that the focus node has a special visual indicator
+    // This could be a specific CSS class or data attribute
+    await expect(focusNode.locator('div').first()).toHaveClass(/focus-node/)
+    
+    // Test that other nodes do not have the focus indicator
+    const allNodes = page.locator('.react-flow__node')
+    const nodeCount = await allNodes.count()
+    
+    for (let i = 0; i < nodeCount; i++) {
+      const node = allNodes.nth(i)
+      const nodeText = await node.textContent()
+      
+      if (nodeText !== selectedNodeLabel) {
+        // Non-focus nodes should not have the focus class
+        await expect(node.locator('div').first()).not.toHaveClass(/focus-node/)
+      }
+    }
+  })
 })
