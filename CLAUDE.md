@@ -58,24 +58,56 @@ pnpm test:coverage       # Run with coverage
 ```bash
 pnpm test:e2e --project=chromium [test-file]    # Standard E2E test command (ALWAYS use chromium)
 pnpm test:e2e --project=chromium --headed       # Run with visible browser for debugging
+
+# DEVELOPMENT TIMEOUTS (use these during feature development):
+pnpm test:e2e --project=chromium --timeout=10000 [test-file]  # 10-second timeout for dev work
+pnpm test:e2e --project=chromium --headed --timeout=15000    # 15-second timeout for debugging
 ```
 
+## Pre-Test Verification (MANDATORY)
+
+Before running ANY E2E test, execute these smoke checks:
+
+```bash
+# 1. Check if servers are responding (5-second timeout)
+curl -f --max-time 5 http://localhost:3001 > /dev/null || echo "❌ Web server not responding"
+curl -f --max-time 5 http://localhost:3000/api/trpc || echo "❌ API server not responding"
+
+# 2. If servers not responding, restart them
+./scripts/ensure-dev-running.sh
+
+# 3. Quick browser verification for UI changes
+# Open http://localhost:3001 in browser and verify:
+# - Page loads without console errors
+# - Main graph is visible
+# - Basic interactions work (click a node)
+```
+
+**RULE**: Never run E2E tests if smoke checks fail.
+
 ### Strategic Test Execution
+
+**Pre-flight check before every test session:**
+```bash
+curl -f --max-time 5 http://localhost:3001 > /dev/null && echo "✅ Ready for testing"
+```
+
 **Run targeted tests during development:**
-- **Component changes**: Run tests for that specific component only
-- **Feature work**: Run tests related to the feature being developed
-- **Bug fixes**: Run tests that cover the bug area + regression tests
+- **CSS/Styling changes**: Manual browser check FIRST, then targeted E2E
+- **Component logic**: Unit tests + specific E2E test
+- **New features**: Feature-specific test file only
+- **Bug fixes**: Related test + regression test
 
 **Examples:**
 ```bash
-# Working on node selection? Run only selection tests
-pnpm test:e2e --project=chromium tests/e2e/node-selection-and-side-panel.spec.ts
+# Working on focus node styling? Check browser first, then:
+pnpm test:e2e --project=chromium --timeout=10000 tests/e2e/view-lineage-button.spec.ts -g "Test 3"
 
-# Working on graph layout? Run only layout-related tests  
-pnpm test:e2e --project=chromium tests/e2e/graph-layout.spec.ts
+# Working on selection logic? Run selection tests only:
+pnpm test:e2e --project=chromium --timeout=10000 tests/e2e/node-selection-and-side-panel.spec.ts
 
-# Working on multiple components? Run specific test pattern
-pnpm test:e2e --project=chromium --grep "selection|layout"
+# Multiple related features? Use pattern matching:
+pnpm test:e2e --project=chromium --timeout=10000 --grep "lineage|selection"
 ```
 
 **Run full test suite only when:**
@@ -85,11 +117,41 @@ pnpm test:e2e --project=chromium --grep "selection|layout"
 - Weekly/milestone checkpoints
 - When unsure about cross-component impact
 
+**Time-Boxing Rules:**
+- **RED phase**: If test doesn't fail within 10 seconds, debug app directly
+- **Development timeouts**: Always use `--timeout=10000` during feature work
+- **Production timeouts**: Use default timeouts only for final verification
+
 **Test Efficiency Rules:**
 - **Never run all tests for minor changes** (CSS tweaks, text updates)
 - **Always verify servers are running first** to avoid timeouts
 - **Run related tests immediately** after implementation changes
 - **Batch test runs** when working on multiple related features
+
+## Test Failure Debugging Protocol
+
+When ANY test fails with timeout or "element not found":
+
+### STOP IMMEDIATELY - Do Not Continue Testing
+
+```bash
+# 1. Run failing test with visible browser (10-second timeout)
+pnpm test:e2e --project=chromium --headed --timeout=10000 [failing-test]
+
+# 2. If still timing out, check application directly
+open http://localhost:3001  # Or visit in browser manually
+
+# 3. Check server logs for errors
+tail -n 50 /tmp/dev-server.log | grep -E "(Error|error|ERROR)"
+```
+
+### Root Cause Categories:
+- **App broken**: Fix application first, then return to TDD
+- **Server down**: Run `./scripts/ensure-dev-running.sh`
+- **Test logic error**: Update test selectors/expectations
+- **Infinite loops**: Check console, kill processes, restart servers
+
+**NEVER** run multiple failing tests in sequence without debugging.
 
 ## Development Rules
 
@@ -111,6 +173,12 @@ This project follows strict TDD workflow from `.cursor/rules/001-tdd-workflow.md
 - **Wait for explicit approval before commits**: Always ask "commit?" and wait for user confirmation
 - **Use correct commit types**: "feat:" for new features, "refactor:" for improvements to existing functionality, "test:" for test-only commits
 - **Iterative test refinement**: In RED phase, be prepared to iterate on test design based on user feedback before moving to GREEN phase
+
+**Enhanced TDD Debugging Rules:**
+- **RED phase timeout**: If test doesn't fail within 10 seconds, stop and debug application
+- **Application verification**: Before writing tests, manually verify feature works in browser
+- **Test verification**: Use `--headed --timeout=10000` for immediate visual feedback
+- **Never batch debug**: Fix one failing test completely before running others
 
 **Refactoring Adaptation:**
 - **Still follow RED-GREEN cycle**: Even when refactoring, update tests first to see them fail, then implement
@@ -277,8 +345,17 @@ When accessing localhost with Playwright:
 
 3. **Quick Server Health Check:**
    ```bash
-   lsof -i :3001 | grep LISTEN || echo "Server not running"
+   lsof -i :3001 | grep LISTEN && lsof -i :3000 | grep LISTEN && echo "✅ Both servers running"
    ```
+
+### Server Health Monitoring
+```bash
+# Quick health check (add to workflow)
+lsof -i :3001 | grep LISTEN && lsof -i :3000 | grep LISTEN && echo "✅ Both servers running"
+
+# If servers unresponsive, force restart:
+kill -9 $(lsof -t -i:3001) $(lsof -t -i:3000); sleep 2; pnpm dev > /tmp/dev-server.log 2>&1 & disown
+```
 
 **NEVER:**
 - Assume servers persist between command invocations
