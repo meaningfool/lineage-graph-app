@@ -73,11 +73,12 @@ test.describe('View Lineage Button', () => {
     // Wait for lineage view to load
     await page.waitForTimeout(500)
     
-    // Find the focus node (the one whose lineage we're viewing)
-    const focusNode = page.locator('.react-flow__node').locator(`text=${selectedNodeLabel}`).locator('..').first()
+    // Find the focus node using a more direct approach
+    // Look for the ReactFlow node that contains the selected node's text and has the focus-node class
+    const focusNode = page.locator('.react-flow__node').filter({ hasText: selectedNodeLabel }).locator('div').first()
     
     // Test that the focus node has a special visual indicator
-    // The focus-node class should be on the outer container div
+    // The focus-node class should be on the custom node div
     await expect(focusNode).toHaveClass(/focus-node/)
     
     // Test that other nodes do not have the focus indicator
@@ -90,7 +91,8 @@ test.describe('View Lineage Button', () => {
       
       if (nodeText !== selectedNodeLabel) {
         // Non-focus nodes should not have the focus class
-        await expect(node).not.toHaveClass(/focus-node/)
+        const nodeDiv = node.locator('div').first()
+        await expect(nodeDiv).not.toHaveClass(/focus-node/)
       }
     }
   })
