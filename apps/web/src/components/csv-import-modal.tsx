@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Upload, FileText, AlertCircle, Loader2, CheckCircle } from 'lucide-react'
-import { validateRequiredFields, validateNodeTypes, validateDuplicateNodeIds, type ValidationResult } from '@/utils/csv-validation'
+import { validateRequiredFields, validateNodeTypes, validateDuplicateNodeIds, validateEdgeReferences, type ValidationResult } from '@/utils/csv-validation'
 
 interface CSVImportModalProps {
   isOpen: boolean
@@ -221,15 +221,23 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
     // Run duplicate node ID validation
     const duplicateNodesValidation = validateDuplicateNodeIds(mappedNodes)
 
+    // Run edge reference validation
+    const edgeReferencesValidation = validateEdgeReferences(mappedEdges, mappedNodes)
+
     // Combine all validation results
     const combinedNodesValidation: ValidationResult = {
       isValid: nodesRequiredFieldsValidation.isValid && nodeTypesValidation.isValid && duplicateNodesValidation.isValid,
       errors: [...nodesRequiredFieldsValidation.errors, ...nodeTypesValidation.errors, ...duplicateNodesValidation.errors]
     }
 
+    const combinedEdgesValidation: ValidationResult = {
+      isValid: edgesRequiredFieldsValidation.isValid && edgeReferencesValidation.isValid,
+      errors: [...edgesRequiredFieldsValidation.errors, ...edgeReferencesValidation.errors]
+    }
+
     setValidationResult({
       nodes: combinedNodesValidation,
-      edges: edgesRequiredFieldsValidation
+      edges: combinedEdgesValidation
     })
   }, [nodesParseResult, edgesParseResult, columnMapping])
 

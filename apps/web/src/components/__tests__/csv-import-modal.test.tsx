@@ -533,6 +533,112 @@ describe('CSVImportModal', () => {
       expect(screen.getByText(/duplicate node id "user-count" found at rows: 1, 3/i)).toBeInTheDocument()
     })
 
+    it('should show orphaned edge errors for missing node references', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Upload CSV with orphaned edge (references missing node)
+      const nodesInput = screen.getByLabelText(/nodes csv file/i)
+      const nodesFile = new File(['id,title,type\nnode1,Node 1,INPUT\nnode2,Node 2,OUTPUT'], 'nodes.csv', { type: 'text/csv' })
+      await user.upload(nodesInput, nodesFile)
+      
+      const edgesInput = screen.getByLabelText(/edges csv file/i)
+      const edgesFile = new File(['source,target\nnode1,node2\nmissing-node,node2'], 'edges.csv', { type: 'text/csv' })
+      await user.upload(edgesInput, edgesFile)
+      
+      // Navigate to validation step
+      await navigateToValidationStep(user)
+      
+      // Then: should display orphaned edge error
+      expect(screen.getByText(/edge at row 2 references missing source node: missing-node/i)).toBeInTheDocument()
+    })
+
+    it('should run all validations and display categorized results', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Upload CSV with multiple validation issues
+      const nodesInput = screen.getByLabelText(/nodes csv file/i)
+      const nodesFile = new File([
+        'id,title,type\n' +
+        ',Node Missing ID,INPUT\n' +  // missing required field
+        'duplicate-id,Node 1,INVALID_TYPE\n' +  // invalid type
+        'duplicate-id,Node 2,OUTPUT\n' +  // duplicate ID
+        'valid-node,Valid Node,STEP'
+      ], 'nodes.csv', { type: 'text/csv' })
+      await user.upload(nodesInput, nodesFile)
+      
+      const edgesInput = screen.getByLabelText(/edges csv file/i)
+      const edgesFile = new File([
+        'source,target\n' +
+        'valid-node,duplicate-id\n' +  // valid edge
+        ',valid-node\n' +  // missing source
+        'missing-node,valid-node'  // orphaned edge
+      ], 'edges.csv', { type: 'text/csv' })
+      await user.upload(edgesInput, edgesFile)
+      
+      // Navigate to validation step
+      await navigateToValidationStep(user)
+      
+      // Then: should show validation results with error counts
+      expect(screen.getByText(/step.*4.*validate.*data/i)).toBeInTheDocument()
+      expect(screen.getByText(/nodes validation/i)).toBeInTheDocument()
+      expect(screen.getByText(/edges validation/i)).toBeInTheDocument()
+      
+      // Should show specific error types
+      expect(screen.getByText(/missing required field.*id/i)).toBeInTheDocument()
+      expect(screen.getByText(/invalid type.*INVALID_TYPE/i)).toBeInTheDocument()
+      expect(screen.getByText(/duplicate.*duplicate-id/i)).toBeInTheDocument()
+      expect(screen.getByText(/missing required field.*source/i)).toBeInTheDocument()
+      expect(screen.getByText(/missing.*node.*missing-node/i)).toBeInTheDocument()
+    })
+
+    it('should enable import only when no critical errors exist', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Upload valid CSV data with no critical errors
+      const nodesInput = screen.getByLabelText(/nodes csv file/i)
+      const nodesFile = new File(['id,title,type\nnode1,Node 1,INPUT\nnode2,Node 2,OUTPUT'], 'nodes.csv', { type: 'text/csv' })
+      await user.upload(nodesInput, nodesFile)
+      
+      const edgesInput = screen.getByLabelText(/edges csv file/i)
+      const edgesFile = new File(['source,target\nnode1,node2'], 'edges.csv', { type: 'text/csv' })
+      await user.upload(edgesInput, edgesFile)
+      
+      // Navigate to validation step
+      await navigateToValidationStep(user)
+      
+      // Then: Import button should be enabled when no critical errors
+      const importButton = screen.getByRole('button', { name: /import/i })
+      expect(importButton).toBeEnabled()
+      expect(screen.getByText(/all nodes validation passed/i)).toBeInTheDocument()
+      expect(screen.getByText(/all edges validation passed/i)).toBeInTheDocument()
+    })
+
+    it('should show validation error summary when critical errors exist', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Upload CSV with critical validation errors
+      const nodesInput = screen.getByLabelText(/nodes csv file/i)
+      const nodesFile = new File(['id,title,type\n,Missing ID,INPUT'], 'nodes.csv', { type: 'text/csv' })
+      await user.upload(nodesInput, nodesFile)
+      
+      const edgesInput = screen.getByLabelText(/edges csv file/i)
+      const edgesFile = new File(['source,target\nnode1,node2'], 'edges.csv', { type: 'text/csv' })
+      await user.upload(edgesInput, edgesFile)
+      
+      // Navigate to validation step
+      await navigateToValidationStep(user)
+      
+      // Then: should show error count and disable import
+      const importButton = screen.getByRole('button', { name: /import/i })
+      expect(importButton).toBeDisabled()
+      expect(screen.getAllByText(/critical errors/i)).toHaveLength(2) // nodes and edges sections
+      expect(screen.getByText(/fix required field errors/i)).toBeInTheDocument()
+    })
+
     async function navigateToValidationStep(user: any) {
       // Navigate through all steps to validation
       let continueButton = screen.getByRole('button', { name: /continue/i })

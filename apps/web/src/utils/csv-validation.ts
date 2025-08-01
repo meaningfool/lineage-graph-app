@@ -9,6 +9,7 @@ export interface ValidationError {
   validValues?: string[]
   duplicateId?: string
   rowIndexes?: number[]
+  missingNodeId?: string
 }
 
 export interface ValidationResult {
@@ -115,6 +116,61 @@ export function validateDuplicateNodeIds(
         rowIndexes,
         dataType: 'nodes'
       })
+    }
+  })
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
+}
+
+export function validateEdgeReferences(
+  edges: Record<string, any>[],
+  nodes: Record<string, any>[]
+): ValidationResult {
+  const errors: ValidationError[] = []
+  
+  // Create a set of valid node IDs for fast lookup
+  const validNodeIds = new Set<string>()
+  nodes.forEach(node => {
+    if (node.id && typeof node.id === 'string' && node.id.trim() !== '') {
+      validNodeIds.add(node.id.trim())
+    }
+  })
+
+  // Check each edge for missing node references
+  edges.forEach((edge, index) => {
+    // Check source node reference
+    if (edge.source && typeof edge.source === 'string' && edge.source.trim() !== '') {
+      const sourceId = edge.source.trim()
+      if (!validNodeIds.has(sourceId)) {
+        errors.push({
+          type: 'ORPHANED_EDGE_SOURCE',
+          severity: 'critical',
+          message: `Edge at row ${index + 1} references missing source node: ${sourceId}`,
+          rowIndex: index,
+          field: 'source',
+          missingNodeId: sourceId,
+          dataType: 'edges'
+        })
+      }
+    }
+
+    // Check target node reference
+    if (edge.target && typeof edge.target === 'string' && edge.target.trim() !== '') {
+      const targetId = edge.target.trim()
+      if (!validNodeIds.has(targetId)) {
+        errors.push({
+          type: 'ORPHANED_EDGE_TARGET',
+          severity: 'critical',
+          message: `Edge at row ${index + 1} references missing target node: ${targetId}`,
+          rowIndex: index,
+          field: 'target',
+          missingNodeId: targetId,
+          dataType: 'edges'
+        })
+      }
     }
   })
 

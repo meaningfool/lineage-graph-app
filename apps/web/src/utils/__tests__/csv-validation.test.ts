@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateRequiredFields, validateNodeTypes, validateDuplicateNodeIds } from '../csv-validation'
+import { validateRequiredFields, validateNodeTypes, validateDuplicateNodeIds, validateEdgeReferences } from '../csv-validation'
 
 describe('validateRequiredFields', () => {
   it('should detect missing node ID with specific node identification', () => {
@@ -388,6 +388,145 @@ describe('validateDuplicateNodeIds', () => {
     const result = validateDuplicateNodeIds(nodes)
 
     // Then: should treat as different IDs and return success
+    expect(result.isValid).toBe(true)
+    expect(result.errors).toHaveLength(0)
+  })
+})
+
+describe('validateEdgeReferences', () => {
+  it('should detect orphaned edge with missing source node', () => {
+    // Given: edge at row 2 with source 'missing-node' not in nodes
+    const nodes = [
+      { id: 'node1', title: 'Node 1', type: 'INPUT' },
+      { id: 'node2', title: 'Node 2', type: 'OUTPUT' }
+    ]
+    const edges = [
+      { source: 'node1', target: 'node2' },
+      { source: 'node2', target: 'node1' },
+      { source: 'missing-node', target: 'node2' } // row 3 (index 2)
+    ]
+
+    // When: validateEdgeReferences called
+    const result = validateEdgeReferences(edges, nodes)
+
+    // Then: should return error with specific details
+    expect(result.isValid).toBe(false)
+    expect(result.errors).toHaveLength(1)
+    expect(result.errors[0]).toEqual({
+      type: 'ORPHANED_EDGE_SOURCE',
+      severity: 'critical',
+      message: 'Edge at row 3 references missing source node: missing-node',
+      rowIndex: 2,
+      field: 'source',
+      missingNodeId: 'missing-node',
+      dataType: 'edges'
+    })
+  })
+
+  it('should detect orphaned edge with missing target node', () => {
+    // Given: edge with target node not found in nodes
+    const nodes = [
+      { id: 'node1', title: 'Node 1', type: 'INPUT' },
+      { id: 'node2', title: 'Node 2', type: 'OUTPUT' }
+    ]
+    const edges = [
+      { source: 'node1', target: 'node2' },
+      { source: 'node1', target: 'missing-target' } // row 2 (index 1)
+    ]
+
+    // When: validateEdgeReferences called
+    const result = validateEdgeReferences(edges, nodes)
+
+    // Then: should return appropriate error with target identification
+    expect(result.isValid).toBe(false)
+    expect(result.errors).toHaveLength(1)
+    expect(result.errors[0]).toEqual({
+      type: 'ORPHANED_EDGE_TARGET',
+      severity: 'critical',
+      message: 'Edge at row 2 references missing target node: missing-target',
+      rowIndex: 1,
+      field: 'target',
+      missingNodeId: 'missing-target',
+      dataType: 'edges'
+    })
+  })
+
+  it('should detect multiple orphaned edges with different missing nodes', () => {
+    // Given: multiple edges with various missing node references
+    const nodes = [
+      { id: 'valid-node', title: 'Valid Node', type: 'INPUT' }
+    ]
+    const edges = [
+      { source: 'missing-source', target: 'valid-node' }, // row 1
+      { source: 'valid-node', target: 'missing-target' }, // row 2
+      { source: 'another-missing', target: 'also-missing' } // row 3
+    ]
+
+    // When: validateEdgeReferences called
+    const result = validateEdgeReferences(edges, nodes)
+
+    // Then: should return multiple errors for all missing references
+    expect(result.isValid).toBe(false)
+    expect(result.errors).toHaveLength(4)
+    
+    // Check specific error messages
+    expect(result.errors[0].message).toBe('Edge at row 1 references missing source node: missing-source')
+    expect(result.errors[1].message).toBe('Edge at row 2 references missing target node: missing-target')
+    expect(result.errors[2].message).toBe('Edge at row 3 references missing source node: another-missing')
+    expect(result.errors[3].message).toBe('Edge at row 3 references missing target node: also-missing')
+  })
+
+  it('should return success when all edge references exist in nodes', () => {
+    // Given: edges with all valid node references
+    const nodes = [
+      { id: 'input-node', title: 'Input Node', type: 'INPUT' },
+      { id: 'step-node', title: 'Step Node', type: 'STEP' },
+      { id: 'output-node', title: 'Output Node', type: 'OUTPUT' }
+    ]
+    const edges = [
+      { source: 'input-node', target: 'step-node' },
+      { source: 'step-node', target: 'output-node' }
+    ]
+
+    // When: validateEdgeReferences called
+    const result = validateEdgeReferences(edges, nodes)
+
+    // Then: should return success
+    expect(result.isValid).toBe(true)
+    expect(result.errors).toHaveLength(0)
+  })
+
+  it('should handle empty edges array', () => {
+    // Given: empty edges array with some nodes
+    const nodes = [
+      { id: 'node1', title: 'Node 1', type: 'INPUT' }
+    ]
+    const edges: any[] = []
+
+    // When: validateEdgeReferences called
+    const result = validateEdgeReferences(edges, nodes)
+
+    // Then: should return success
+    expect(result.isValid).toBe(true)
+    expect(result.errors).toHaveLength(0)
+  })
+
+  it('should handle edges with empty or missing source/target fields', () => {
+    // Given: edges with some empty/missing references (these should be caught by required fields validation)
+    const nodes = [
+      { id: 'valid-node', title: 'Valid Node', type: 'INPUT' }
+    ]
+    const edges = [
+      { source: 'valid-node', target: 'valid-node' },
+      { source: '', target: 'valid-node' }, // empty source
+      { source: 'valid-node' }, // missing target
+      { target: 'valid-node' } // missing source
+    ]
+
+    // When: validateEdgeReferences called
+    const result = validateEdgeReferences(edges, nodes)
+
+    // Then: should ignore empty/missing references and return success for valid ones
     expect(result.isValid).toBe(true)
     expect(result.errors).toHaveLength(0)
   })
