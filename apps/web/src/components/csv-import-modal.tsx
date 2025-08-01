@@ -22,7 +22,10 @@ interface ParseResult {
   errors: Papa.ParseError[]
 }
 
+type Step = 'upload' | 'columns' | 'mapping'
+
 export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
+  const [currentStep, setCurrentStep] = useState<Step>('upload')
   const [nodesFile, setNodesFile] = useState<File | null>(null)
   const [edgesFile, setEdgesFile] = useState<File | null>(null)
   const [nodesError, setNodesError] = useState<string | null>(null)
@@ -135,144 +138,206 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
         </DialogHeader>
         
         <div className="py-4 space-y-6">
-          {/* Nodes File Drop Zone */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Upload Nodes CSV</h3>
-            <div
-              {...nodesDropzone.getRootProps()}
-              className={`
-                border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-                ${nodesDropzone.isDragActive 
-                  ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/50' 
-                  : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'
-                }
-              `}
-            >
-              <input 
-                {...nodesDropzone.getInputProps()} 
-                aria-label="Nodes CSV file upload"
-                accept=".csv,text/csv"
-              />
-              
-              <div className="flex flex-col items-center space-y-2">
-                <Upload className="h-6 w-6 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium">
-                    {nodesDropzone.isDragActive 
-                      ? 'Drop nodes CSV here' 
-                      : 'Drop nodes CSV here or click to browse'
+          {currentStep === 'upload' && (
+            <>
+              {/* Nodes File Drop Zone */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Upload Nodes CSV</h3>
+                <div
+                  {...nodesDropzone.getRootProps()}
+                  className={`
+                    border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+                    ${nodesDropzone.isDragActive 
+                      ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/50' 
+                      : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'
                     }
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Contains node data (id, title, type, etc.)
+                  `}
+                >
+                  <input 
+                    {...nodesDropzone.getInputProps()} 
+                    aria-label="Nodes CSV file upload"
+                    accept=".csv,text/csv"
+                  />
+                  
+                  <div className="flex flex-col items-center space-y-2">
+                    <Upload className="h-6 w-6 text-gray-400" />
+                    <div>
+                      <p className="text-sm font-medium">
+                        {nodesDropzone.isDragActive 
+                          ? 'Drop nodes CSV here' 
+                          : 'Drop nodes CSV here or click to browse'
+                        }
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Contains node data (id, title, type, etc.)
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm" type="button">
+                      Browse Files
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Edges File Drop Zone */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Upload Edges CSV</h3>
+                <div
+                  {...edgesDropzone.getRootProps()}
+                  className={`
+                    border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+                    ${edgesDropzone.isDragActive 
+                      ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/50' 
+                      : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'
+                    }
+                  `}
+                >
+                  <input 
+                    {...edgesDropzone.getInputProps()} 
+                    aria-label="Edges CSV file upload"
+                    accept=".csv,text/csv"
+                  />
+                  
+                  <div className="flex flex-col items-center space-y-2">
+                    <Upload className="h-6 w-6 text-gray-400" />
+                    <div>
+                      <p className="text-sm font-medium">
+                        {edgesDropzone.isDragActive 
+                          ? 'Drop edges CSV here' 
+                          : 'Drop edges CSV here or click to browse'
+                        }
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Contains edge data (source, target, etc.)
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm" type="button">
+                      Browse Files
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* File Status Summary */}
+              <div className="space-y-3 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium">Upload Status</h4>
+                
+                {/* Nodes File Status */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Nodes file:</span>
+                  <div className="flex items-center space-x-2">
+                    {isProcessingNodes && (
+                      <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+                    )}
+                    {nodesFile && !isProcessingNodes && !nodesError && (
+                      <FileText className="h-4 w-4 text-green-600" />
+                    )}
+                    {nodesError && (
+                      <AlertCircle className="h-4 w-4 text-red-600" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {nodesFile ? nodesFile.name : 'Not uploaded'}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Edges File Status */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Edges file:</span>
+                  <div className="flex items-center space-x-2">
+                    {isProcessingEdges && (
+                      <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+                    )}
+                    {edgesFile && !isProcessingEdges && !edgesError && (
+                      <FileText className="h-4 w-4 text-green-600" />
+                    )}
+                    {edgesError && (
+                      <AlertCircle className="h-4 w-4 text-red-600" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {edgesFile ? edgesFile.name : 'Not uploaded'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Error Messages */}
+              {nodesError && (
+                <div className="flex items-center space-x-3 p-3 bg-red-50 dark:bg-red-950/50 rounded-lg border border-red-200 dark:border-red-800">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                    Nodes file: {nodesError}
                   </p>
                 </div>
-                <Button variant="outline" size="sm" type="button">
-                  Browse Files
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Edges File Drop Zone */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Upload Edges CSV</h3>
-            <div
-              {...edgesDropzone.getRootProps()}
-              className={`
-                border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-                ${edgesDropzone.isDragActive 
-                  ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/50' 
-                  : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'
-                }
-              `}
-            >
-              <input 
-                {...edgesDropzone.getInputProps()} 
-                aria-label="Edges CSV file upload"
-                accept=".csv,text/csv"
-              />
+              )}
               
-              <div className="flex flex-col items-center space-y-2">
-                <Upload className="h-6 w-6 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium">
-                    {edgesDropzone.isDragActive 
-                      ? 'Drop edges CSV here' 
-                      : 'Drop edges CSV here or click to browse'
-                    }
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Contains edge data (source, target, etc.)
+              {edgesError && (
+                <div className="flex items-center space-x-3 p-3 bg-red-50 dark:bg-red-950/50 rounded-lg border border-red-200 dark:border-red-800">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                    Edges file: {edgesError}
                   </p>
                 </div>
-                <Button variant="outline" size="sm" type="button">
-                  Browse Files
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* File Status Summary */}
-          <div className="space-y-3 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg">
-            <h4 className="text-sm font-medium">Upload Status</h4>
-            
-            {/* Nodes File Status */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Nodes file:</span>
-              <div className="flex items-center space-x-2">
-                {isProcessingNodes && (
-                  <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
-                )}
-                {nodesFile && !isProcessingNodes && !nodesError && (
-                  <FileText className="h-4 w-4 text-green-600" />
-                )}
-                {nodesError && (
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                )}
-                <span className="text-sm font-medium">
-                  {nodesFile ? nodesFile.name : 'Not uploaded'}
-                </span>
-              </div>
-            </div>
-            
-            {/* Edges File Status */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Edges file:</span>
-              <div className="flex items-center space-x-2">
-                {isProcessingEdges && (
-                  <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
-                )}
-                {edgesFile && !isProcessingEdges && !edgesError && (
-                  <FileText className="h-4 w-4 text-green-600" />
-                )}
-                {edgesError && (
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                )}
-                <span className="text-sm font-medium">
-                  {edgesFile ? edgesFile.name : 'Not uploaded'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Error Messages */}
-          {nodesError && (
-            <div className="flex items-center space-x-3 p-3 bg-red-50 dark:bg-red-950/50 rounded-lg border border-red-200 dark:border-red-800">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                Nodes file: {nodesError}
-              </p>
-            </div>
+              )}
+            </>
           )}
-          
-          {edgesError && (
-            <div className="flex items-center space-x-3 p-3 bg-red-50 dark:bg-red-950/50 rounded-lg border border-red-200 dark:border-red-800">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                Edges file: {edgesError}
-              </p>
-            </div>
+
+          {currentStep === 'columns' && (
+            <>
+              {/* Column Detection View */}
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h3 className="text-lg font-medium">Column Detection</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Review the columns found in your CSV files
+                  </p>
+                </div>
+
+                {/* Nodes File Columns */}
+                {nodesParseResult && (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium">Nodes File Columns</h4>
+                    <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg">
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {nodesParseResult.meta.fields?.map((column, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-xs rounded"
+                          >
+                            {column}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {nodesParseResult.data.length} rows found
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Edges File Columns */}
+                {edgesParseResult && (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium">Edges File Columns</h4>
+                    <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg">
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {edgesParseResult.meta.fields?.map((column, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 text-xs rounded"
+                          >
+                            {column}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {edgesParseResult.data.length} rows found
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
         
@@ -280,15 +345,35 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button 
-            disabled={!nodesFile || !edgesFile || isProcessingNodes || isProcessingEdges || !!nodesError || !!edgesError}
-            onClick={() => {
-              // TODO: Navigate to next step (column detection)
-              console.log('Continue to column detection')
-            }}
-          >
-            Continue
-          </Button>
+          
+          {currentStep === 'columns' && (
+            <Button 
+              variant="outline" 
+              onClick={() => setCurrentStep('upload')}
+            >
+              Back
+            </Button>
+          )}
+          
+          {currentStep === 'upload' && (
+            <Button 
+              disabled={!nodesFile || !edgesFile || isProcessingNodes || isProcessingEdges || !!nodesError || !!edgesError}
+              onClick={() => setCurrentStep('columns')}
+            >
+              Continue
+            </Button>
+          )}
+          
+          {currentStep === 'columns' && (
+            <Button 
+              onClick={() => {
+                // TODO: Navigate to next step (column mapping)
+                console.log('Continue to column mapping')
+              }}
+            >
+              Continue
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
