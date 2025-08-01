@@ -493,6 +493,26 @@ describe('CSVImportModal', () => {
       expect(screen.getByText(/fix required field errors/i)).toBeInTheDocument()
     })
 
+    it('should show invalid node type errors with suggestions', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Upload CSV with invalid node type 'PROCESSING'
+      const nodesInput = screen.getByLabelText(/nodes csv file/i)
+      const nodesFile = new File(['id,title,type\nnode1,Node 1,INPUT\nnode2,Node 2,PROCESSING'], 'nodes.csv', { type: 'text/csv' })
+      await user.upload(nodesInput, nodesFile)
+      
+      const edgesInput = screen.getByLabelText(/edges csv file/i)
+      const edgesFile = new File(['source,target\nnode1,node2'], 'edges.csv', { type: 'text/csv' })
+      await user.upload(edgesInput, edgesFile)
+      
+      // Navigate to validation step
+      await navigateToValidationStep(user)
+      
+      // Then: should show error with valid type suggestions
+      expect(screen.getByText(/node at row 2 has invalid type: PROCESSING. Must be INPUT, STEP, or OUTPUT/i)).toBeInTheDocument()
+    })
+
     async function navigateToValidationStep(user: any) {
       // Navigate through all steps to validation
       let continueButton = screen.getByRole('button', { name: /continue/i })

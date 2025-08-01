@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateRequiredFields } from '../csv-validation'
+import { validateRequiredFields, validateNodeTypes } from '../csv-validation'
 
 describe('validateRequiredFields', () => {
   it('should detect missing node ID with specific node identification', () => {
@@ -133,5 +133,109 @@ describe('validateRequiredFields', () => {
     expect(nodeResult.errors).toHaveLength(0)
     expect(edgeResult.isValid).toBe(true)
     expect(edgeResult.errors).toHaveLength(0)
+  })
+})
+
+describe('validateNodeTypes', () => {
+  it('should detect invalid node type with specific node identification', () => {
+    // Given: node at index 1 with type 'PROCESSING' (invalid)
+    const nodes = [
+      { id: 'node1', title: 'Node 1', type: 'INPUT' },
+      { id: 'node2', title: 'Node 2', type: 'PROCESSING' }, // invalid type
+      { id: 'node3', title: 'Node 3', type: 'OUTPUT' }
+    ]
+
+    // When: validateNodeTypes called
+    const result = validateNodeTypes(nodes)
+
+    // Then: should return error with specific details
+    expect(result.isValid).toBe(false)
+    expect(result.errors).toHaveLength(1)
+    expect(result.errors[0]).toEqual({
+      type: 'INVALID_NODE_TYPE',
+      severity: 'critical',
+      message: 'Node at row 2 has invalid type: PROCESSING. Must be INPUT, STEP, or OUTPUT',
+      rowIndex: 1,
+      invalidValue: 'PROCESSING',
+      validValues: ['INPUT', 'STEP', 'OUTPUT'],
+      dataType: 'nodes'
+    })
+  })
+
+  it('should handle case-insensitive type validation', () => {
+    // Given: node with type 'input' (lowercase)
+    const nodes = [
+      { id: 'node1', title: 'Node 1', type: 'input' }
+    ]
+
+    // When: validateNodeTypes called
+    const result = validateNodeTypes(nodes)
+
+    // Then: should normalize to 'INPUT' and pass validation
+    expect(result.isValid).toBe(true)
+    expect(result.errors).toHaveLength(0)
+    // Note: The function should normalize the type internally
+  })
+
+  it('should handle mixed case types correctly', () => {
+    // Given: nodes with various case combinations
+    const nodes = [
+      { id: 'node1', title: 'Node 1', type: 'Input' },
+      { id: 'node2', title: 'Node 2', type: 'STEP' },
+      { id: 'node3', title: 'Node 3', type: 'output' }
+    ]
+
+    // When: validateNodeTypes called
+    const result = validateNodeTypes(nodes)
+
+    // Then: should normalize all and pass validation
+    expect(result.isValid).toBe(true)
+    expect(result.errors).toHaveLength(0)
+  })
+
+  it('should detect multiple invalid node types', () => {
+    // Given: multiple nodes with invalid types
+    const nodes = [
+      { id: 'node1', title: 'Node 1', type: 'INPUT' },
+      { id: 'node2', title: 'Node 2', type: 'PROCESSING' }, // invalid
+      { id: 'node3', title: 'Node 3', type: 'CALCULATION' } // invalid
+    ]
+
+    // When: validateNodeTypes called
+    const result = validateNodeTypes(nodes)
+
+    // Then: should return multiple errors
+    expect(result.isValid).toBe(false)
+    expect(result.errors).toHaveLength(2)
+    expect(result.errors[0].message).toBe('Node at row 2 has invalid type: PROCESSING. Must be INPUT, STEP, or OUTPUT')
+    expect(result.errors[1].message).toBe('Node at row 3 has invalid type: CALCULATION. Must be INPUT, STEP, or OUTPUT')
+  })
+
+  it('should return success for valid node types', () => {
+    // Given: nodes with types ['INPUT', 'STEP', 'OUTPUT']
+    const nodes = [
+      { id: 'node1', title: 'Node 1', type: 'INPUT' },
+      { id: 'node2', title: 'Node 2', type: 'STEP' },
+      { id: 'node3', title: 'Node 3', type: 'OUTPUT' }
+    ]
+
+    // When: validateNodeTypes called
+    const result = validateNodeTypes(nodes)
+
+    // Then: should return success
+    expect(result.isValid).toBe(true)
+    expect(result.errors).toHaveLength(0)
+  })
+
+  it('should handle empty nodes array', () => {
+    // Given: empty nodes array
+    const nodes: any[] = []
+
+    // When: validateNodeTypes called
+    const result = validateNodeTypes(nodes)
+
+    // Then: should return success
+    expect(result.isValid).toBe(true)
+    expect(result.errors).toHaveLength(0)
   })
 })

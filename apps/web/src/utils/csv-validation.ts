@@ -3,8 +3,10 @@ export interface ValidationError {
   severity: 'critical' | 'warning' | 'info'
   message: string
   rowIndex: number
-  field: string
+  field?: string
   dataType: 'nodes' | 'edges'
+  invalidValue?: string
+  validValues?: string[]
 }
 
 export interface ValidationResult {
@@ -40,6 +42,40 @@ export function validateRequiredFields(
         })
       }
     })
+  })
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
+}
+
+// Valid node types
+const VALID_NODE_TYPES = ['INPUT', 'STEP', 'OUTPUT'] as const
+
+export function validateNodeTypes(
+  nodes: Record<string, any>[]
+): ValidationResult {
+  const errors: ValidationError[] = []
+
+  nodes.forEach((node, index) => {
+    if (node.type) {
+      // Normalize type to uppercase for comparison
+      const normalizedType = String(node.type).toUpperCase()
+      
+      // Check if the normalized type is valid
+      if (!VALID_NODE_TYPES.includes(normalizedType as any)) {
+        errors.push({
+          type: 'INVALID_NODE_TYPE',
+          severity: 'critical',
+          message: `Node at row ${index + 1} has invalid type: ${node.type}. Must be INPUT, STEP, or OUTPUT`,
+          rowIndex: index,
+          invalidValue: node.type,
+          validValues: [...VALID_NODE_TYPES],
+          dataType: 'nodes'
+        })
+      }
+    }
   })
 
   return {
