@@ -52,8 +52,8 @@ test.describe('View Lineage Button', () => {
     const currentSelectedLabel = await sidePanel.locator('h3').textContent()
     expect(currentSelectedLabel).toBe(selectedNodeLabel)
     
-    // Test that View Lineage button is NOT visible after first use
-    await expect(viewLineageButton).not.toBeVisible()
+    // Test that View Lineage button remains visible for continuous exploration
+    await expect(viewLineageButton).toBeVisible()
   })
 
   test('Test 3: Focus node has special visual indicator in lineage view', async ({ page }) => {

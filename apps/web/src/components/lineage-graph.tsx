@@ -239,7 +239,7 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep', onViewLineag
                 ))}
               </div>
             )}
-            {selectedNode && !isLineageView && (
+            {selectedNode && (
               <div className="mt-6">
                 <button
                   data-testid="view-lineage-button"
