@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { LineageGraph } from "@/components/lineage-graph"
 import nodeData from '@/data/target-lineage.json'
 import { transformJsonToLineageGraph, generateLineageGraph } from '@/utils/lineagegraph'
@@ -28,6 +28,31 @@ export default function Home() {
   // State for lineage view
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null)
 
+  // Generate the base graph (separate from lineage logic)
+  const baseGraph = useMemo(() => {
+    if (generationCount > 0) {
+      // Generate random parameters for each generation
+      const depth = 4 + Math.floor(Math.random() * 5)  // 4-8 layers
+      const width = 3 + Math.floor(Math.random() * 8)  // 3-10 nodes
+      const seed = Date.now() + generationCount        // Always different seed
+      
+      // Generate a random graph with varying characteristics
+      return generateLineageGraph({
+        depth,
+        width,
+        seed
+      })
+    } else {
+      // Use default data when no generations have been triggered
+      return transformJsonToLineageGraph(nodeData)
+    }
+  }, [generationCount])
+  
+  // Update fullGraph when baseGraph changes
+  useEffect(() => {
+    setFullGraph(baseGraph)
+  }, [baseGraph])
+  
   // Transform and layout the graph based on current state
   const { nodes, edges, currentGraph } = useMemo(() => {
     let graph;
@@ -35,32 +60,14 @@ export default function Home() {
     if (focusNodeId && fullGraph) {
       // Show lineage view
       graph = fullGraph.getLineage(focusNodeId)
-    } else if (generationCount > 0) {
-      // Generate random parameters for each generation
-      const depth = 4 + Math.floor(Math.random() * 5)  // 4-8 layers
-      const width = 3 + Math.floor(Math.random() * 8)  // 3-10 nodes
-      const seed = Date.now() + generationCount        // Always different seed
-      
-      // Generate a random graph with varying characteristics
-      graph = generateLineageGraph({
-        depth,
-        width,
-        seed
-      })
-      // Store as full graph when generating new one
-      setFullGraph(graph)
     } else {
-      // Use default data when no generations have been triggered
-      graph = transformJsonToLineageGraph(nodeData)
-      // Store as full graph on initial load
-      if (!fullGraph) {
-        setFullGraph(graph)
-      }
+      // Use base graph
+      graph = baseGraph
     }
     
     const layoutResult = applyGraphLayout(graph)
     return { ...layoutResult, currentGraph: graph }
-  }, [generationCount, focusNodeId, fullGraph])
+  }, [focusNodeId, fullGraph, baseGraph])
 
   const handleGenerateGraph = () => {
     // Reset lineage view when generating new graph
