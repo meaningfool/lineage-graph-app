@@ -20,4 +20,39 @@ test.describe('View Lineage Button', () => {
     await expect(viewLineageButton).toBeVisible()
     await expect(viewLineageButton).toHaveText('View Lineage')
   })
+
+  test('Test 2: Clicking View Lineage loads new graph with selection persistence', async ({ page }) => {
+    // Click on a node to open side panel
+    const firstNode = page.locator('.react-flow__node').first()
+    await firstNode.click()
+    
+    // Get the selected node's label from side panel
+    const sidePanel = page.getByTestId('side-panel')
+    await expect(sidePanel).toBeVisible()
+    const selectedNodeLabel = await sidePanel.locator('h3').textContent()
+    
+    // Count initial nodes
+    const initialNodeCount = await page.locator('.react-flow__node').count()
+    
+    // Click View Lineage button
+    const viewLineageButton = page.getByTestId('view-lineage-button')
+    await viewLineageButton.click()
+    
+    // Wait a bit for graph to update
+    await page.waitForTimeout(500)
+    
+    // Test that a new graph loads (node count should change)
+    const newNodeCount = await page.locator('.react-flow__node').count()
+    expect(newNodeCount).not.toBe(initialNodeCount)
+    
+    // Test that side panel remains open
+    await expect(sidePanel).toBeVisible()
+    
+    // Test that a node with the same label remains selected
+    const currentSelectedLabel = await sidePanel.locator('h3').textContent()
+    expect(currentSelectedLabel).toBe(selectedNodeLabel)
+    
+    // Test that View Lineage button is NOT visible after first use
+    await expect(viewLineageButton).not.toBeVisible()
+  })
 })
