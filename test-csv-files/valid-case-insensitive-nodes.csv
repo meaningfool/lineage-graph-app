@@ -1,0 +1,4 @@
+id,title,type
+raw-data,Raw Data,input
+processed-data,Processed Data,Step
+final-metric,Final Metric,OUTPUT
