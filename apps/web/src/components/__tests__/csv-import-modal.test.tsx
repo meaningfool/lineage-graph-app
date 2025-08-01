@@ -302,6 +302,105 @@ describe('CSVImportModal', () => {
     })
   })
 
+  describe('Column Mapping Interface', () => {
+    it('displays column mapping dropdowns for required fields', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Navigate to column mapping step
+      await navigateToColumnMapping(user)
+      
+      // Nodes mapping
+      expect(screen.getByLabelText(/node id column/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/node title column/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/node type column/i)).toBeInTheDocument()
+      
+      // Edges mapping
+      expect(screen.getByLabelText(/source node column/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/target node column/i)).toBeInTheDocument()
+    })
+
+    it('validates required mappings before allowing continue', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Navigate to column mapping step
+      await navigateToColumnMapping(user)
+      
+      // Continue should be disabled without mappings
+      expect(screen.getByRole('button', { name: /continue/i })).toBeDisabled()
+      
+      // Map required fields
+      await selectMapping(user, 'node-id', 'id')
+      await selectMapping(user, 'node-title', 'title')
+      await selectMapping(user, 'source-node', 'source')
+      await selectMapping(user, 'target-node', 'target')
+      
+      expect(screen.getByRole('button', { name: /continue/i })).toBeEnabled()
+    })
+
+    it('auto-detects obvious column mappings', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Upload files with standard column names
+      const nodesInput = screen.getByLabelText(/nodes csv file/i)
+      const nodesFile = new File(['id,title,type\n1,Users,input'], 'nodes.csv', { type: 'text/csv' })
+      await user.upload(nodesInput, nodesFile)
+      
+      const edgesInput = screen.getByLabelText(/edges csv file/i)
+      const edgesFile = new File(['source,target\n1,2'], 'edges.csv', { type: 'text/csv' })
+      await user.upload(edgesInput, edgesFile)
+      
+      // Navigate through steps
+      let continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)  // Go to columns
+      continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)  // Go to mapping
+      
+      // Should auto-select obvious matches
+      expect(screen.getByDisplayValue('id')).toBeInTheDocument() // node-id mapped to 'id'
+      expect(screen.getByDisplayValue('title')).toBeInTheDocument() // node-title mapped to 'title'
+      expect(screen.getByDisplayValue('source')).toBeInTheDocument() // source-node mapped to 'source'
+      expect(screen.getByDisplayValue('target')).toBeInTheDocument() // target-node mapped to 'target'
+    })
+
+    it('provides navigation back to column detection', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Navigate to column mapping step
+      await navigateToColumnMapping(user)
+      
+      // Should have back button
+      const backButton = screen.getByRole('button', { name: /back/i })
+      expect(backButton).toBeInTheDocument()
+      
+      // Click back should return to column detection view
+      await user.click(backButton)
+      expect(screen.getByText(/column detection/i)).toBeInTheDocument()
+      expect(screen.getByText(/nodes file columns/i)).toBeInTheDocument()
+    })
+
+    it('shows mapping validation errors', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Navigate to column mapping step
+      await navigateToColumnMapping(user)
+      
+      // Should show which required fields are missing
+      expect(screen.getByText(/required.*missing/i)).toBeInTheDocument()
+      
+      // Map some fields
+      await selectMapping(user, 'node-id', 'id')
+      await selectMapping(user, 'node-title', 'title')
+      
+      // Should still show missing fields
+      expect(screen.getByText(/source.*target.*required/i)).toBeInTheDocument()
+    })
+  })
+
   describe('Modal Behavior', () => {
     it('does not render when closed', () => {
       render(<CSVImportModal isOpen={false} onClose={mockOnClose} />)
@@ -311,7 +410,7 @@ describe('CSVImportModal', () => {
     })
   })
 
-  // Helper function for tests
+  // Helper functions for tests
   async function uploadBothValidFiles(user: any) {
     const nodesInput = screen.getByLabelText(/nodes csv file/i)
     const nodesFile = new File(['id,title,type\n1,Users,input'], 'nodes.csv', { type: 'text/csv' })
@@ -320,5 +419,23 @@ describe('CSVImportModal', () => {
     const edgesInput = screen.getByLabelText(/edges csv file/i)
     const edgesFile = new File(['source,target\n1,2'], 'edges.csv', { type: 'text/csv' })
     await user.upload(edgesInput, edgesFile)
+  }
+
+  async function navigateToColumnMapping(user: any) {
+    // Upload both files
+    await uploadBothValidFiles(user)
+    
+    // Navigate to columns step
+    let continueButton = screen.getByRole('button', { name: /continue/i })
+    await user.click(continueButton)
+    
+    // Navigate to mapping step
+    continueButton = screen.getByRole('button', { name: /continue/i })
+    await user.click(continueButton)
+  }
+
+  async function selectMapping(user: any, fieldName: string, columnValue: string) {
+    const dropdown = screen.getByLabelText(new RegExp(fieldName.replace('-', '.*'), 'i'))
+    await user.selectOptions(dropdown, columnValue)
   }
 })
