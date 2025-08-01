@@ -24,6 +24,14 @@ interface ParseResult {
 
 type Step = 'upload' | 'columns' | 'mapping'
 
+interface ColumnMapping {
+  nodeId: string
+  nodeTitle: string
+  nodeType: string
+  sourceNode: string
+  targetNode: string
+}
+
 export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
   const [currentStep, setCurrentStep] = useState<Step>('upload')
   const [nodesFile, setNodesFile] = useState<File | null>(null)
@@ -34,6 +42,13 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
   const [isProcessingEdges, setIsProcessingEdges] = useState(false)
   const [nodesParseResult, setNodesParseResult] = useState<ParseResult | null>(null)
   const [edgesParseResult, setEdgesParseResult] = useState<ParseResult | null>(null)
+  const [columnMapping, setColumnMapping] = useState<ColumnMapping>({
+    nodeId: '',
+    nodeTitle: '',
+    nodeType: '',
+    sourceNode: '',
+    targetNode: ''
+  })
 
   const validateCSV = useCallback(async (file: File, fileType: 'nodes' | 'edges') => {
     const setProcessing = fileType === 'nodes' ? setIsProcessingNodes : setIsProcessingEdges
@@ -129,6 +144,46 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
     maxFiles: 1,
     multiple: false,
   })
+
+  // Auto-detect column mappings when navigating to mapping step
+  const autoDetectMappings = useCallback(() => {
+    if (!nodesParseResult || !edgesParseResult) return
+
+    const nodeColumns = nodesParseResult.meta.fields || []
+    const edgeColumns = edgesParseResult.meta.fields || []
+
+    const newMapping: ColumnMapping = {
+      nodeId: nodeColumns.find(col => 
+        col.toLowerCase().includes('id') || col.toLowerCase() === 'id'
+      ) || '',
+      nodeTitle: nodeColumns.find(col => 
+        col.toLowerCase().includes('title') || col.toLowerCase().includes('name') || col.toLowerCase() === 'title'
+      ) || '',
+      nodeType: nodeColumns.find(col => 
+        col.toLowerCase().includes('type') || col.toLowerCase() === 'type'
+      ) || '',
+      sourceNode: edgeColumns.find(col => 
+        col.toLowerCase().includes('source') || col.toLowerCase().includes('from') || col.toLowerCase() === 'source'
+      ) || '',
+      targetNode: edgeColumns.find(col => 
+        col.toLowerCase().includes('target') || col.toLowerCase().includes('to') || col.toLowerCase() === 'target'
+      ) || ''
+    }
+
+    setColumnMapping(newMapping)
+  }, [nodesParseResult, edgesParseResult])
+
+  // Check if required mappings are complete
+  const isValidMapping = columnMapping.nodeId && columnMapping.nodeTitle && 
+                        columnMapping.sourceNode && columnMapping.targetNode
+
+  // Handle mapping field changes
+  const handleMappingChange = (field: keyof ColumnMapping, value: string) => {
+    setColumnMapping(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -339,6 +394,144 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
               </div>
             </>
           )}
+
+          {currentStep === 'mapping' && (
+            <>
+              {/* Column Mapping View */}
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h3 className="text-lg font-medium">Column Mapping</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Map your CSV columns to the required fields
+                  </p>
+                </div>
+
+                {/* Nodes Mapping */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium">Node Fields</h4>
+                  
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <label htmlFor="node-id" className="text-sm font-medium">
+                        Node ID Column *
+                      </label>
+                      <select
+                        id="node-id"
+                        aria-label="Node ID column mapping"
+                        className="w-full p-2 border rounded-md text-sm"
+                        value={columnMapping.nodeId}
+                        onChange={(e) => handleMappingChange('nodeId', e.target.value)}
+                      >
+                        <option value="">Select column...</option>
+                        {nodesParseResult?.meta.fields?.map(column => (
+                          <option key={column} value={column}>{column}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="node-title" className="text-sm font-medium">
+                        Node Title Column *
+                      </label>
+                      <select
+                        id="node-title"
+                        aria-label="Node title column mapping"
+                        className="w-full p-2 border rounded-md text-sm"
+                        value={columnMapping.nodeTitle}
+                        onChange={(e) => handleMappingChange('nodeTitle', e.target.value)}
+                      >
+                        <option value="">Select column...</option>
+                        {nodesParseResult?.meta.fields?.map(column => (
+                          <option key={column} value={column}>{column}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="node-type" className="text-sm font-medium">
+                        Node Type Column
+                      </label>
+                      <select
+                        id="node-type"
+                        aria-label="Node type column mapping"
+                        className="w-full p-2 border rounded-md text-sm"
+                        value={columnMapping.nodeType}
+                        onChange={(e) => handleMappingChange('nodeType', e.target.value)}
+                      >
+                        <option value="">Select column...</option>
+                        {nodesParseResult?.meta.fields?.map(column => (
+                          <option key={column} value={column}>{column}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Edges Mapping */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium">Edge Fields</h4>
+                  
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <label htmlFor="source-node" className="text-sm font-medium">
+                        Source Node Column *
+                      </label>
+                      <select
+                        id="source-node"
+                        aria-label="Source node column mapping"
+                        className="w-full p-2 border rounded-md text-sm"
+                        value={columnMapping.sourceNode}
+                        onChange={(e) => handleMappingChange('sourceNode', e.target.value)}
+                      >
+                        <option value="">Select column...</option>
+                        {edgesParseResult?.meta.fields?.map(column => (
+                          <option key={column} value={column}>{column}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="target-node" className="text-sm font-medium">
+                        Target Node Column *
+                      </label>
+                      <select
+                        id="target-node"
+                        aria-label="Target node column mapping"
+                        className="w-full p-2 border rounded-md text-sm"
+                        value={columnMapping.targetNode}
+                        onChange={(e) => handleMappingChange('targetNode', e.target.value)}
+                      >
+                        <option value="">Select column...</option>
+                        {edgesParseResult?.meta.fields?.map(column => (
+                          <option key={column} value={column}>{column}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Validation Messages */}
+                {!isValidMapping && (
+                  <div className="bg-amber-50 dark:bg-amber-950/50 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                      Required fields missing
+                    </p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                      Please map all required fields: Node ID, Node Title, Source Node, and Target Node
+                    </p>
+                  </div>
+                )}
+
+                {!columnMapping.sourceNode && !columnMapping.targetNode && columnMapping.nodeId && columnMapping.nodeTitle && (
+                  <div className="bg-amber-50 dark:bg-amber-950/50 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                      Source and Target fields required
+                    </p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
         
         <DialogFooter>
@@ -346,10 +539,16 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
             Cancel
           </Button>
           
-          {currentStep === 'columns' && (
+          {(currentStep === 'columns' || currentStep === 'mapping') && (
             <Button 
               variant="outline" 
-              onClick={() => setCurrentStep('upload')}
+              onClick={() => {
+                if (currentStep === 'mapping') {
+                  setCurrentStep('columns')
+                } else {
+                  setCurrentStep('upload')
+                }
+              }}
             >
               Back
             </Button>
@@ -367,8 +566,21 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
           {currentStep === 'columns' && (
             <Button 
               onClick={() => {
-                // TODO: Navigate to next step (column mapping)
-                console.log('Continue to column mapping')
+                setCurrentStep('mapping')
+                // Auto-detect mappings when navigating to mapping step
+                autoDetectMappings()
+              }}
+            >
+              Continue
+            </Button>
+          )}
+
+          {currentStep === 'mapping' && (
+            <Button 
+              disabled={!isValidMapping}
+              onClick={() => {
+                // TODO: Import graph data
+                console.log('Import graph with mapping:', columnMapping)
               }}
             >
               Continue

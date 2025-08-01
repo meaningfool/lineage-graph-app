@@ -324,17 +324,29 @@ describe('CSVImportModal', () => {
       const user = userEvent.setup()
       render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
       
-      // Navigate to column mapping step
-      await navigateToColumnMapping(user)
+      // Upload files with non-standard column names that won't auto-detect
+      const nodesInput = screen.getByLabelText(/nodes csv file/i)
+      const nodesFile = new File(['col1,col2,col3\n1,Users,input'], 'nodes.csv', { type: 'text/csv' })
+      await user.upload(nodesInput, nodesFile)
       
-      // Continue should be disabled without mappings
+      const edgesInput = screen.getByLabelText(/edges csv file/i)
+      const edgesFile = new File(['col1,col2\n1,2'], 'edges.csv', { type: 'text/csv' })
+      await user.upload(edgesInput, edgesFile)
+      
+      // Navigate through steps
+      let continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)  // Go to columns
+      continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)  // Go to mapping
+      
+      // Continue should be disabled without proper mappings (auto-detection won't find standard names)
       expect(screen.getByRole('button', { name: /continue/i })).toBeDisabled()
       
-      // Map required fields
-      await selectMapping(user, 'node-id', 'id')
-      await selectMapping(user, 'node-title', 'title')
-      await selectMapping(user, 'source-node', 'source')
-      await selectMapping(user, 'target-node', 'target')
+      // Map required fields manually
+      await selectMapping(user, 'node-id', 'col1')
+      await selectMapping(user, 'node-title', 'col2')
+      await selectMapping(user, 'source-node', 'col1')
+      await selectMapping(user, 'target-node', 'col2')
       
       expect(screen.getByRole('button', { name: /continue/i })).toBeEnabled()
     })
@@ -386,18 +398,30 @@ describe('CSVImportModal', () => {
       const user = userEvent.setup()
       render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
       
-      // Navigate to column mapping step
-      await navigateToColumnMapping(user)
+      // Upload files with non-standard column names to prevent auto-detection
+      const nodesInput = screen.getByLabelText(/nodes csv file/i)
+      const nodesFile = new File(['col1,col2,col3\n1,Users,input'], 'nodes.csv', { type: 'text/csv' })
+      await user.upload(nodesInput, nodesFile)
       
-      // Should show which required fields are missing
+      const edgesInput = screen.getByLabelText(/edges csv file/i)
+      const edgesFile = new File(['col1,col2\n1,2'], 'edges.csv', { type: 'text/csv' })
+      await user.upload(edgesInput, edgesFile)
+      
+      // Navigate through steps
+      let continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)  // Go to columns
+      continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)  // Go to mapping
+      
+      // Should show which required fields are missing (no auto-detection for non-standard names)
       expect(screen.getByText(/required.*missing/i)).toBeInTheDocument()
       
       // Map some fields
-      await selectMapping(user, 'node-id', 'id')
-      await selectMapping(user, 'node-title', 'title')
+      await selectMapping(user, 'node-id', 'col1')
+      await selectMapping(user, 'node-title', 'col2')
       
-      // Should still show missing fields
-      expect(screen.getByText(/source.*target.*required/i)).toBeInTheDocument()
+      // Should still show missing fields message
+      expect(screen.getByText(/required.*missing/i)).toBeInTheDocument()
     })
   })
 
