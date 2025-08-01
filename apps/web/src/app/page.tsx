@@ -27,6 +27,9 @@ export default function Home() {
   
   // State for lineage view
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null)
+  
+  // State for CSV import coming soon message
+  const [showComingSoon, setShowComingSoon] = useState(false)
 
   // Generate the base graph (separate from lineage logic)
   const baseGraph = useMemo(() => {
@@ -84,6 +87,12 @@ export default function Home() {
     setFocusNodeId(nodeId)
   }
   
+  const handleImportCSV = () => {
+    setShowComingSoon(true)
+    // Auto-hide the message after 3 seconds
+    setTimeout(() => setShowComingSoon(false), 3000)
+  }
+  
   return (
     <div className="w-full h-full relative">
       {/* Controls positioned on top of the canvas */}
@@ -93,6 +102,13 @@ export default function Home() {
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-md"
         >
           Generate Graph
+        </button>
+        
+        <button 
+          onClick={handleImportCSV}
+          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors shadow-md"
+        >
+          Import CSV
         </button>
         
         <div className="flex items-center gap-2">
@@ -122,6 +138,13 @@ export default function Home() {
         isLineageView={!!focusNodeId}
         focusNodeId={focusNodeId}
       />
+      
+      {/* Coming soon message */}
+      {showComingSoon && (
+        <div className="absolute top-20 left-4 z-20 bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-2 rounded-md shadow-md">
+          CSV import coming soon!
+        </div>
+      )}
     </div>
   )
 }

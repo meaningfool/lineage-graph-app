@@ -258,12 +258,12 @@ describe('CSV Import Feature', () => {
   })
 
   it('shows coming soon message when import button clicked', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<Home />)
     
     const importButton = screen.getByRole('button', { name: /import csv/i })
-    await user.click(importButton)
+    fireEvent.click(importButton)
     
+    // Check that the message appears
     expect(screen.getByText(/csv import coming soon/i)).toBeInTheDocument()
   })
 })
