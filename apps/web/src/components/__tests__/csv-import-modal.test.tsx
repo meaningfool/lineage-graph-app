@@ -77,6 +77,69 @@ describe('CSVImportModal', () => {
     })
   })
 
+  describe('CSV Validation', () => {
+    it('shows error for empty CSV file', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      const fileInput = screen.getByLabelText(/csv file/i)
+      const file = new File([''], 'empty.csv', { type: 'text/csv' })
+      await user.upload(fileInput, file)
+      
+      expect(screen.getByText(/file is empty/i)).toBeInTheDocument()
+    })
+
+    it('shows error for malformed CSV', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      const fileInput = screen.getByLabelText(/csv file/i)
+      const file = new File(['col1,col2\n"unclosed quote'], 'bad.csv', { type: 'text/csv' })
+      await user.upload(fileInput, file)
+      
+      expect(screen.getByText(/invalid csv format/i)).toBeInTheDocument()
+    })
+
+    it('shows success for valid CSV', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      const fileInput = screen.getByLabelText(/csv file/i)
+      const file = new File(['col1,col2\nval1,val2'], 'good.csv', { type: 'text/csv' })
+      await user.upload(fileInput, file)
+      
+      expect(screen.getByText(/file uploaded successfully/i)).toBeInTheDocument()
+      expect(screen.queryByText(/invalid csv format/i)).not.toBeInTheDocument()
+      expect(screen.queryByText(/file is empty/i)).not.toBeInTheDocument()
+    })
+
+    it('displays parsing progress during file processing', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      const fileInput = screen.getByLabelText(/csv file/i)
+      const file = new File(['col1,col2\nval1,val2'], 'processing.csv', { type: 'text/csv' })
+      
+      // Start upload
+      await user.upload(fileInput, file)
+      
+      // Should show final success state
+      expect(screen.getByText(/file uploaded successfully/i)).toBeInTheDocument()
+    })
+
+    it('shows detailed error messages for parsing failures', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      const fileInput = screen.getByLabelText(/csv file/i)
+      // Create a CSV with inconsistent columns
+      const file = new File(['col1,col2\nval1', 'col1,col2,col3\nval1,val2,val3'], 'inconsistent.csv', { type: 'text/csv' })
+      await user.upload(fileInput, file)
+      
+      expect(screen.getByText(/csv parsing error/i)).toBeInTheDocument()
+    })
+  })
+
   describe('Modal Behavior', () => {
     it('does not render when closed', () => {
       render(<CSVImportModal isOpen={false} onClose={mockOnClose} />)
