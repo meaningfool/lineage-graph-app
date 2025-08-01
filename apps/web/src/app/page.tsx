@@ -1,6 +1,7 @@
 "use client"
 import React, { useState, useMemo, useEffect } from 'react'
 import { LineageGraph } from "@/components/lineage-graph"
+import { CSVImportModal } from "@/components/csv-import-modal"
 import nodeData from '@/data/target-lineage.json'
 import { transformJsonToLineageGraph, generateLineageGraph } from '@/utils/lineagegraph'
 import { applyGraphLayout } from '@/utils/graph-layout'
@@ -28,8 +29,8 @@ export default function Home() {
   // State for lineage view
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null)
   
-  // State for CSV import coming soon message
-  const [showComingSoon, setShowComingSoon] = useState(false)
+  // State for CSV import modal
+  const [showCSVModal, setShowCSVModal] = useState(false)
 
   // Generate the base graph (separate from lineage logic)
   const baseGraph = useMemo(() => {
@@ -88,9 +89,11 @@ export default function Home() {
   }
   
   const handleImportCSV = () => {
-    setShowComingSoon(true)
-    // Auto-hide the message after 3 seconds
-    setTimeout(() => setShowComingSoon(false), 3000)
+    setShowCSVModal(true)
+  }
+  
+  const handleCloseCSVModal = () => {
+    setShowCSVModal(false)
   }
   
   return (
@@ -139,12 +142,11 @@ export default function Home() {
         focusNodeId={focusNodeId}
       />
       
-      {/* Coming soon message */}
-      {showComingSoon && (
-        <div className="absolute top-20 left-4 z-20 bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-2 rounded-md shadow-md">
-          CSV import coming soon!
-        </div>
-      )}
+      {/* CSV Import Modal */}
+      <CSVImportModal 
+        isOpen={showCSVModal} 
+        onClose={handleCloseCSVModal} 
+      />
     </div>
   )
 }
