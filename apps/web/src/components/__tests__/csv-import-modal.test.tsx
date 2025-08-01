@@ -23,10 +23,10 @@ describe('CSVImportModal', () => {
       const user = userEvent.setup()
       render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
       
-      const dropzone = screen.getByText(/drop.*csv.*here/i)
+      const fileInput = screen.getByLabelText(/csv file/i)
       
       const file = new File(['col1,col2\nval1,val2'], 'test.csv', { type: 'text/csv' })
-      await user.upload(dropzone, file)
+      await user.upload(fileInput, file)
       
       expect(screen.getByText('test.csv')).toBeInTheDocument()
     })
@@ -35,22 +35,26 @@ describe('CSVImportModal', () => {
       const user = userEvent.setup()
       render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
       
-      const dropzone = screen.getByText(/drop.*csv.*here/i)
+      const fileInput = screen.getByLabelText(/csv file/i)
       
+      // Try to upload a non-CSV file - react-dropzone should prevent it
       const file = new File(['data'], 'test.txt', { type: 'text/plain' })
-      await user.upload(dropzone, file)
+      await user.upload(fileInput, file)
       
-      expect(screen.getByText(/only csv files allowed/i)).toBeInTheDocument()
+      // No file should be shown since it was rejected
+      expect(screen.queryByText('test.txt')).not.toBeInTheDocument()
+      // No success message should be shown
+      expect(screen.queryByText(/file uploaded successfully/i)).not.toBeInTheDocument()
     })
 
     it('shows file name when valid CSV uploaded', async () => {
       const user = userEvent.setup()
       render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
       
-      const dropzone = screen.getByText(/drop.*csv.*here/i)
+      const fileInput = screen.getByLabelText(/csv file/i)
       
       const file = new File(['id,name\n1,test'], 'my-data.csv', { type: 'text/csv' })
-      await user.upload(dropzone, file)
+      await user.upload(fileInput, file)
       
       expect(screen.getByText('my-data.csv')).toBeInTheDocument()
       expect(screen.queryByText(/only csv files allowed/i)).not.toBeInTheDocument()
