@@ -58,119 +58,355 @@
 **Features**: Non-blocking validation, smart data extraction, error filtering
 **Recovery**: Automatic orphaned edge removal, duplicate resolution
 
-## DETAILED TDD IMPLEMENTATION PLANS
+## DETAILED TDD IMPLEMENTATION PLANS - PROGRESSIVE APPROACH
 
-### Phase 7 - Data Validation & Error Reporting
+### Phase 7 - Data Format Validation (Progressive Mini-Iterations)
 
-#### RED Phase 7A: Graph Structure Validation Function
+#### Mini-Iteration 7.1: Required Fields Validation
+
+**RED Phase 7.1A: Required Fields Validation Logic**
 **File**: `apps/web/src/utils/csv-validation.ts`
+**Test Type**: Unit Test
 
 **Tests to write in csv-validation.test.ts:**
 ```typescript
-describe('validateGraphStructure', () => {
-  it('should detect orphaned edges when source node ID not found in nodes', () => {
-    // Given: nodes with IDs [A, B] and edge with source C
-    // When: validateGraphStructure called
-    // Then: should return critical error "Orphaned edge: source 'C' not found"
+describe('validateRequiredFields', () => {
+  it('should detect missing node ID with specific node identification', () => {
+    // Given: nodes array with node at index 1 missing 'id' field
+    // When: validateRequiredFields(nodes, 'nodes') called
+    // Then: should return { 
+    //   isValid: false, 
+    //   errors: [{ 
+    //     type: 'MISSING_REQUIRED_FIELD',
+    //     severity: 'critical',
+    //     message: 'Node at row 2 is missing required field: id',
+    //     rowIndex: 1,
+    //     field: 'id',
+    //     dataType: 'nodes'
+    //   }]
+    // }
   })
 
-  it('should detect orphaned edges when target node ID not found in nodes', () => {
-    // Given: nodes with IDs [A, B] and edge with target Z  
-    // When: validateGraphStructure called
-    // Then: should return critical error "Orphaned edge: target 'Z' not found"
+  it('should detect missing node title with row identification', () => {
+    // Given: nodes array with node at index 0 having empty 'title' field
+    // When: validateRequiredFields called
+    // Then: should return error with rowIndex: 0, field: 'title'
   })
 
-  it('should identify duplicate node IDs', () => {
-    // Given: nodes array with duplicate ID "user-count" 
-    // When: validateGraphStructure called
-    // Then: should return critical error "Duplicate node ID: user-count"
+  it('should detect missing edge source field', () => {
+    // Given: edges array with edge at index 2 missing 'source' field  
+    // When: validateRequiredFields(edges, 'edges') called
+    // Then: should return error with message 'Edge at row 3 is missing required field: source'
   })
 
-  it('should validate required node fields are not empty', () => {
-    // Given: node with empty id or title field
-    // When: validateGraphStructure called  
-    // Then: should return critical error "Node missing required field: id"
+  it('should detect missing edge target field', () => {
+    // Given: edges array with edge missing 'target' field
+    // When: validateRequiredFields called
+    // Then: should return appropriate error with field identification
   })
 
-  it('should validate required edge fields are not empty', () => {
-    // Given: edge with empty source or target field
-    // When: validateGraphStructure called
-    // Then: should return critical error "Edge missing required field: source"
-  })
-
-  it('should return validation success when all checks pass', () => {
-    // Given: valid nodes and edges with proper references
-    // When: validateGraphStructure called
-    // Then: should return { isValid: true, errors: [], warnings: [] }
+  it('should return success when all required fields present', () => {
+    // Given: valid nodes and edges with all required fields
+    // When: validateRequiredFields called
+    // Then: should return { isValid: true, errors: [] }
   })
 })
 ```
 
-**Expected**: All tests fail - validateGraphStructure function doesn't exist
+**Expected**: Tests fail - validateRequiredFields function doesn't exist
 
-#### GREEN Phase 7A: Implement Structure Validation
-- Create validateGraphStructure function returning ValidationResult
-- Add ValidationResult interface with isValid, errors[], warnings[] 
-- Implement all validation logic to make tests pass
+**GREEN Phase 7.1B: Implement Required Fields Validation**
+- Create validateRequiredFields function with detailed error reporting
+- Add ValidationError interface with rowIndex, field, dataType
+- Implement specific error messages with row identification
 
-#### RED Phase 7B: Validation UI Integration
+**RED Phase 7.1C: Required Fields UI Integration**
 **File**: `apps/web/src/components/csv-import-modal.tsx`
+**Test Type**: E2E Test
 
 **Tests to write in csv-import-modal.test.tsx:**
 ```typescript
-describe('CSV Import Modal - Validation Step', () => {
-  it('should show validation step after column mapping is complete', () => {
-    // Given: user completes column mapping step
-    // When: clicks Next button  
-    // Then: should display "Step 4: Validate Data" with validation results
+describe('CSV Import Modal - Required Fields Validation', () => {
+  it('should show specific missing field errors in validation step', () => {
+    // Given: CSV with node missing 'id' at row 2
+    // When: user reaches validation step
+    // Then: should display "Node at row 2 is missing required field: id"
   })
 
-  it('should display critical errors preventing import', () => {
-    // Given: CSV data with orphaned edges
+  it('should prevent import when required fields missing', () => {
+    // Given: validation shows missing required fields
     // When: validation step loads
-    // Then: should show "Critical Errors (2)" section with error details
-    // And: Import button should be disabled
-  })
-
-  it('should display warnings that allow import', () => {
-    // Given: CSV data with minor warnings only
-    // When: validation step loads  
-    // Then: should show "Warnings (1)" section with warning details
-    // And: Import button should be enabled with warning text
-  })
-
-  it('should show success state when validation passes', () => {
-    // Given: CSV data passes all validation
-    // When: validation step loads
-    // Then: should show "✅ Data validation passed" message
-    // And: Import button should be enabled
-  })
-
-  it('should allow going back to fix column mapping', () => {
-    // Given: user on validation step with errors
-    // When: clicks Back button
-    // Then: should return to column mapping step for corrections
+    // Then: Import button should be disabled with message "Fix required field errors"
   })
 })
 ```
 
-**Expected**: All tests fail - validation step doesn't exist in modal
+**Expected**: Tests fail - validation step doesn't show field-specific errors
 
-#### GREEN Phase 7B: Implement Validation UI
-- Add step 4 to CSV import modal for validation results
-- Create ValidationResults component with error/warning display
-- Add conditional import button based on validation status
-- Integrate with validateGraphStructure function
+**GREEN Phase 7.1D: Implement Required Fields UI**
+- Add validateRequiredFields integration to validation step
+- Display specific field errors with row numbers
+- Disable import when required field errors exist
 
-### Phase 8 - Graph Preview & Import
+#### Mini-Iteration 7.2: Node Type Validation
 
-#### RED Phase 8A: CSV to Graph Conversion Function
+**RED Phase 7.2A: Node Type Validation Logic**
+**File**: `apps/web/src/utils/csv-validation.ts`  
+**Test Type**: Unit Test
+
+**Tests to write in csv-validation.test.ts:**
+```typescript
+describe('validateNodeTypes', () => {
+  it('should detect invalid node type with specific node identification', () => {
+    // Given: node at index 1 with type 'PROCESSING' (invalid)
+    // When: validateNodeTypes called
+    // Then: should return error {
+    //   type: 'INVALID_NODE_TYPE', 
+    //   message: 'Node at row 2 has invalid type: PROCESSING. Must be INPUT, STEP, or OUTPUT',
+    //   rowIndex: 1,
+    //   invalidValue: 'PROCESSING',
+    //   validValues: ['INPUT', 'STEP', 'OUTPUT']
+    // }
+  })
+
+  it('should handle case-insensitive type validation', () => {
+    // Given: node with type 'input' (lowercase)
+    // When: validateNodeTypes called
+    // Then: should normalize to 'INPUT' and pass validation
+  })
+
+  it('should return success for valid node types', () => {
+    // Given: nodes with types ['INPUT', 'STEP', 'OUTPUT']
+    // When: validateNodeTypes called
+    // Then: should return { isValid: true, errors: [] }
+  })
+})
+```
+
+**Expected**: Tests fail - validateNodeTypes function doesn't exist
+
+**GREEN Phase 7.2B: Implement Node Type Validation**
+- Create validateNodeTypes with case-insensitive validation
+- Add type normalization logic
+- Include valid values in error messages
+
+**RED Phase 7.2C: Node Type UI Integration**
+**Test Type**: E2E Test
+
+**Tests to write in csv-import-modal.test.tsx:**
+```typescript
+describe('CSV Import Modal - Node Type Validation', () => {
+  it('should show invalid node type errors with suggestions', () => {
+    // Given: CSV with invalid node type 'PROCESSING'
+    // When: validation step loads
+    // Then: should show "Node at row 2 has invalid type: PROCESSING. Must be INPUT, STEP, or OUTPUT"
+  })
+})
+```
+
+**GREEN Phase 7.2D: Implement Node Type UI**
+- Integrate validateNodeTypes into validation step
+- Display type errors with valid options
+
+#### Mini-Iteration 7.3: Duplicate Node ID Detection
+
+**RED Phase 7.3A: Duplicate Detection Logic**
+**Test Type**: Unit Test
+
+**Tests to write in csv-validation.test.ts:**
+```typescript
+describe('validateDuplicateNodeIds', () => {
+  it('should detect duplicate node IDs with all affected rows', () => {
+    // Given: nodes with duplicate ID 'user-count' at rows 1 and 4
+    // When: validateDuplicateNodeIds called
+    // Then: should return error {
+    //   type: 'DUPLICATE_NODE_ID',
+    //   message: 'Duplicate node ID "user-count" found at rows: 2, 5',
+    //   duplicateId: 'user-count',
+    //   rowIndexes: [1, 4]
+    // }
+  })
+
+  it('should detect multiple sets of duplicates', () => {
+    // Given: multiple duplicate IDs in dataset
+    // When: validateDuplicateNodeIds called
+    // Then: should return separate error for each duplicate set
+  })
+})
+```
+
+**GREEN Phase 7.3B: Implement Duplicate Detection**
+- Create validateDuplicateNodeIds with all affected rows
+- Group duplicates and report all occurrences
+
+**RED Phase 7.3C: Duplicate Detection UI**
+**Test Type**: E2E Test
+
+**Tests to write in csv-import-modal.test.tsx:**
+```typescript
+describe('CSV Import Modal - Duplicate ID Validation', () => {
+  it('should show duplicate ID errors with all affected rows', () => {
+    // Given: CSV with duplicate node IDs
+    // When: validation step loads
+    // Then: should display "Duplicate node ID 'user-count' found at rows: 2, 5"
+  })
+})
+```
+
+**GREEN Phase 7.3D: Implement Duplicate Detection UI**
+- Integrate duplicate detection into validation step
+- Display all affected rows for each duplicate
+
+#### Mini-Iteration 7.4: Edge Reference Validation
+
+**RED Phase 7.4A: Edge Reference Logic**
+**Test Type**: Unit Test
+
+**Tests to write in csv-validation.test.ts:**
+```typescript
+describe('validateEdgeReferences', () => {
+  it('should detect orphaned edge with missing source node', () => {
+    // Given: edge at row 2 with source 'missing-node' not in nodes
+    // When: validateEdgeReferences called
+    // Then: should return error {
+    //   type: 'ORPHANED_EDGE_SOURCE',
+    //   message: 'Edge at row 3 references missing source node: missing-node',
+    //   rowIndex: 2,
+    //   missingNodeId: 'missing-node'
+    // }
+  })
+
+  it('should detect orphaned edge with missing target node', () => {
+    // Given: edge with target node not found
+    // When: validateEdgeReferences called  
+    // Then: should return appropriate error with target identification
+  })
+})
+```
+
+**GREEN Phase 7.4B: Implement Edge Reference Validation**
+- Create validateEdgeReferences with specific node identification
+- Check both source and target references
+
+**RED Phase 7.4C: Edge Reference UI**
+**Test Type**: E2E Test
+
+**GREEN Phase 7.4D: Implement Edge Reference UI**
+- Integrate edge reference validation
+- Display missing node references clearly
+
+#### Mini-Iteration 7.5: Validation Integration & UI
+
+**RED Phase 7.5A: Complete Validation Integration**
+**Test Type**: E2E Test
+
+**Tests to write in csv-import-modal.test.tsx:**
+```typescript
+describe('CSV Import Modal - Complete Data Validation', () => {
+  it('should run all validations and display categorized results', () => {
+    // Given: CSV with multiple validation issues
+    // When: validation step loads
+    // Then: should show "Critical Errors (3)", "Warnings (1)" sections
+    // And: should list all specific errors by category
+  })
+
+  it('should enable import only when no critical errors exist', () => {
+    // Given: validation with warnings but no critical errors
+    // When: validation completes
+    // Then: Import button should be enabled with warning message
+  })
+})
+```
+
+**GREEN Phase 7.5B: Complete Validation System**
+- Integrate all validation functions
+- Create comprehensive validation step UI
+- Add step 4 to CSV import modal
+
+### Phase 8 - Graph Structure Validation & Preview
+
+#### Mini-Iteration 8.1: Graph Structure Validation (Lineage Graph Semantics)
+
+**RED Phase 8.1A: Node Connectivity Validation Logic**
+**File**: `apps/web/src/utils/graph-structure-validation.ts`
+**Test Type**: Unit Test
+
+**Tests to write in graph-structure-validation.test.ts:**
+```typescript
+describe('validateNodeConnectivity', () => {
+  it('should detect INPUT nodes without outgoing edges', () => {
+    // Given: INPUT node with no outgoing edges in edge list
+    // When: validateNodeConnectivity called
+    // Then: should return warning {
+    //   type: 'INPUT_NO_OUTGOING',
+    //   severity: 'warning',
+    //   message: 'INPUT node "raw-data" at row 1 has no outgoing connections',
+    //   nodeId: 'raw-data',
+    //   nodeType: 'INPUT'
+    // }
+  })
+
+  it('should detect OUTPUT nodes without incoming edges', () => {
+    // Given: OUTPUT node with no incoming edges
+    // When: validateNodeConnectivity called
+    // Then: should return warning for OUTPUT node isolation
+  })
+
+  it('should detect STEP nodes without both incoming and outgoing edges', () => {
+    // Given: STEP node missing either incoming or outgoing connections
+    // When: validateNodeConnectivity called
+    // Then: should return critical error for incomplete STEP node
+  })
+
+  it('should detect completely orphaned nodes', () => {
+    // Given: node with no connections at all
+    // When: validateNodeConnectivity called
+    // Then: should return critical error for isolated node
+  })
+})
+```
+
+**Expected**: Tests fail - validateNodeConnectivity function doesn't exist
+
+**GREEN Phase 8.1B: Implement Graph Structure Validation**
+- Create validateNodeConnectivity with lineage-specific rules
+- Add severity levels (critical vs warning) for different violations
+- Implement connectivity analysis logic
+
+**RED Phase 8.1C: Graph Structure UI Integration**
+**Test Type**: E2E Test
+
+**Tests to write in csv-import-modal.test.tsx:**
+```typescript
+describe('CSV Import Modal - Graph Structure Validation', () => {
+  it('should show connectivity warnings for isolated nodes', () => {
+    // Given: CSV with INPUT node having no outgoing edges
+    // When: graph structure validation runs
+    // Then: should display "Warning: INPUT node 'raw-data' has no outgoing connections"
+  })
+
+  it('should allow import with connectivity warnings', () => {
+    // Given: graph structure validation shows warnings only
+    // When: validation completes
+    // Then: Import button should be enabled with "Import with warnings" text
+  })
+})
+```
+
+**GREEN Phase 8.1D: Implement Graph Structure UI**
+- Integrate graph structure validation into validation step
+- Display connectivity warnings with appropriate severity
+
+#### Mini-Iteration 8.2: CSV to Graph Conversion
+
+**RED Phase 8.2A: Graph Construction Logic**
 **File**: `apps/web/src/utils/csv-to-graph.ts`
+**Test Type**: Unit Test
 
 **Tests to write in csv-to-graph.test.ts:**
 ```typescript
 describe('createGraphFromCSV', () => {
-  it('should create LineageGraph from valid CSV data', () => {
+  it('should create LineageGraph from validated CSV data', () => {
     // Given: valid nodes and edges CSV data with column mappings
     // When: createGraphFromCSV called
     // Then: should return LineageGraph instance with correct node count
@@ -182,247 +418,152 @@ describe('createGraphFromCSV', () => {
     // Then: should create nodes with correct NodeType (INPUT/STEP/OUTPUT)
   })
 
-  it('should create edges with correct source/target references', () => {
-    // Given: edges CSV with source, target columns mapped
-    // When: createGraphFromCSV called
-    // Then: should create edges connecting proper node IDs
-  })
-
   it('should preserve additional CSV columns as node properties', () => {
     // Given: CSV with extra columns like "description", "owner"
     // When: createGraphFromCSV called  
-    // Then: should include extra properties in node data
-  })
-
-  it('should handle empty CSV data gracefully', () => {
-    // Given: empty nodes and edges arrays
-    // When: createGraphFromCSV called
-    // Then: should return empty LineageGraph without errors
+    // Then: should include extra properties in node.data
   })
 })
 ```
 
-**Expected**: All tests fail - createGraphFromCSV function doesn't exist
-
-#### GREEN Phase 8A: Implement Graph Conversion
-- Create createGraphFromCSV function taking nodes/edges data and mappings
-- Add CSV data transformation logic for nodes and edges
+**GREEN Phase 8.2B: Implement Graph Construction**
+- Create createGraphFromCSV function
+- Add CSV data transformation logic
 - Integrate with existing LineageGraph class
-- Map CSV column data to node/edge properties
 
-#### RED Phase 8B: Mini Graph Preview Component
+#### Mini-Iteration 8.3: Graph Preview Component
+
+**RED Phase 8.3A: Mini Graph Preview Logic**
 **File**: `apps/web/src/components/mini-graph-preview.tsx`
+**Test Type**: Unit Test
 
 **Tests to write in mini-graph-preview.test.tsx:**
 ```typescript
 describe('MiniGraphPreview', () => {
-  it('should render preview graph with correct node count', () => {
+  it('should render preview graph with correct stats', () => {
     // Given: LineageGraph with 5 nodes and 4 edges
     // When: MiniGraphPreview rendered
-    // Then: should display "5 nodes, 4 connections" in preview
+    // Then: should display "5 nodes, 4 connections" summary
   })
 
-  it('should show node labels in mini preview', () => {
-    // Given: graph with nodes labeled "Users", "Orders"
-    // When: MiniGraphPreview rendered
-    // Then: should display node labels in preview visualization
-  })
-
-  it('should handle layout automatically for preview', () => {
-    // Given: graph with complex node relationships
-    // When: MiniGraphPreview rendered
-    // Then: should apply dagre layout without overlapping nodes
-  })
-
-  it('should fit preview within modal container dimensions', () => {
+  it('should fit preview within modal container', () => {
     // Given: large graph with many nodes
-    // When: MiniGraphPreview rendered in modal
-    // Then: should scale and fit within 400px preview container
-  })
-
-  it('should show loading state while generating preview', () => {
-    // Given: complex graph being processed
-    // When: MiniGraphPreview initially rendered
-    // Then: should show "Generating preview..." loading state
+    // When: MiniGraphPreview rendered
+    // Then: should scale to fit within 400px container
   })
 })
 ```
 
-**Expected**: All tests fail - MiniGraphPreview component doesn't exist
+**GREEN Phase 8.3B: Implement Graph Preview**
+- Create MiniGraphPreview component with ReactFlow
+- Add automatic layout and scaling for modal
+- Integrate preview into validation step
 
-#### GREEN Phase 8B: Implement Graph Preview
-- Create MiniGraphPreview component using ReactFlow
-- Add simplified node/edge rendering for preview
-- Implement automatic layout for preview (scaled-down dagre)
-- Add preview as step 5 in CSV import modal
+#### Mini-Iteration 8.4: Canvas Integration
 
-#### RED Phase 8C: Canvas Integration and Import
+**RED Phase 8.4A: Canvas Import Integration**
 **File**: Update main page component
+**Test Type**: E2E Test
 
 **Tests to write in page.test.tsx:**
 ```typescript
 describe('CSV Import - Canvas Integration', () => {
-  it('should replace current graph when import is confirmed', () => {
-    // Given: existing graph on canvas and completed CSV import
-    // When: user clicks "Import to Canvas" button
-    // Then: should replace canvas graph with imported graph data
-  })
-
-  it('should close modal after successful import', () => {
-    // Given: user completes import process
-    // When: import to canvas succeeds
-    // Then: should close CSV import modal automatically
-  })
-
-  it('should update canvas view to show imported graph', () => {
-    // Given: imported graph with new nodes and edges
-    // When: import completes
-    // Then: should center and zoom canvas to show full imported graph
+  it('should replace current graph when import confirmed', () => {
+    // Given: completed CSV import with preview
+    // When: user clicks "Import to Canvas"
+    // Then: should replace canvas graph with imported data
   })
 
   it('should show success notification after import', () => {
     // Given: successful graph import
-    // When: import process completes
-    // Then: should display "Graph imported successfully" notification
-  })
-
-  it('should handle import errors gracefully', () => {
-    // Given: graph import fails due to processing error
-    // When: import is attempted
-    // Then: should show error message and keep modal open
+    // When: import completes
+    // Then: should display "Graph imported successfully" message
   })
 })
 ```
 
-**Expected**: All tests fail - canvas integration not implemented
-
-#### GREEN Phase 8C: Complete Import Integration
-- Add import confirmation and graph replacement logic
-- Integrate with existing LineageGraph state in main component
-- Implement proper state transition from CSV data to canvas
-- Add success feedback and modal cleanup
+**GREEN Phase 8.4B: Complete Canvas Integration**
+- Add graph replacement logic to main component
+- Implement success feedback and modal cleanup
+- Complete import workflow
 
 ### Phase 9 - Advanced Error Recovery & Partial Import
 
-#### RED Phase 9A: Error Recovery Options UI
+#### Mini-Iteration 9.1: Error Recovery Options
+
+**RED Phase 9.1A: Recovery Options Logic**
 **File**: `apps/web/src/components/error-recovery-options.tsx`
+**Test Type**: Unit Test
 
 **Tests to write in error-recovery-options.test.tsx:**
 ```typescript
 describe('ErrorRecoveryOptions', () => {
-  it('should offer to exclude problematic rows during validation', () => {
-    // Given: validation results with 3 orphaned edges
-    // When: ErrorRecoveryOptions rendered
-    // Then: should show "Exclude 3 invalid edges" checkbox option
+  it('should calculate recovery options from validation errors', () => {
+    // Given: validation results with multiple error types
+    // When: ErrorRecoveryOptions processes errors
+    // Then: should offer specific recovery strategies per error type
   })
 
-  it('should show preview of graph with/without problematic data', () => {
-    // Given: recovery options with exclusions selected
-    // When: preview updates
-    // Then: should show "Original: 10 nodes" vs "Cleaned: 8 nodes"  
-  })
-
-  it('should allow user to choose recovery strategy', () => {
-    // Given: multiple error types (duplicates, orphaned edges)
-    // When: user selects recovery options
-    // Then: should offer "Remove duplicates", "Skip orphaned edges" options
-  })
-
-  it('should automatically remove orphaned edges when nodes excluded', () => {
-    // Given: nodes with validation errors selected for exclusion
-    // When: recovery options calculated
-    // Then: should automatically include dependent edge removal
+  it('should preview impact of recovery choices', () => {
+    // Given: recovery options selected
+    // When: impact calculation runs
+    // Then: should show "Original: 10 nodes" vs "After cleanup: 7 nodes"
   })
 })
 ```
 
-**Expected**: All tests fail - ErrorRecoveryOptions component doesn't exist
+**GREEN Phase 9.1B: Implement Error Recovery**
+- Create ErrorRecoveryOptions component
+- Add recovery strategy calculation logic
+- Implement impact preview functionality
 
-#### GREEN Phase 9A: Implement Error Recovery
-- Create ErrorRecoveryOptions component with checkbox interface
-- Add automatic orphaned edge removal logic
-- Create preview comparison (full vs cleaned data)
-- Integrate recovery options with validation results
+#### Mini-Iteration 9.2: Partial Import System
 
-#### RED Phase 9B: Partial Import Implementation
-**File**: Update CSV import workflow
+**RED Phase 9.2A: Data Filtering Logic**
+**Test Type**: Unit Test
 
-**Tests to write in csv-import-modal.test.tsx:**
+**Tests to write in csv-validation.test.ts:**
 ```typescript
-describe('Partial Import with Data Cleaning', () => {
-  it('should import only valid subset of data when requested', () => {
-    // Given: 10 nodes with 3 having validation errors, recovery options selected
-    // When: partial import executed
-    // Then: should import only 7 valid nodes and related edges
+describe('filterDataByRecoveryOptions', () => {
+  it('should exclude problematic rows based on recovery choices', () => {
+    // Given: CSV data with validation errors and recovery options
+    // When: filterDataByRecoveryOptions called
+    // Then: should return cleaned dataset excluding selected error rows
   })
 
-  it('should show summary of what was imported vs excluded', () => {
-    // Given: completed partial import
-    // When: import summary displayed  
-    // Then: should show "Imported: 7 nodes, 5 edges | Excluded: 3 nodes, 2 edges"
-  })
-
-  it('should maintain data integrity in partial import', () => {
-    // Given: partial import excluding some nodes
-    // When: import completes
-    // Then: should ensure no orphaned edges remain in imported graph
-  })
-
-  it('should provide download of excluded rows for fixing', () => {
-    // Given: partial import with excluded data
-    // When: import summary shown
-    // Then: should offer "Download excluded data" button with CSV file
+  it('should maintain referential integrity after filtering', () => {
+    // Given: filtering that removes nodes
+    // When: filterDataByRecoveryOptions called
+    // Then: should automatically remove orphaned edges
   })
 })
 ```
 
-**Expected**: All tests fail - partial import functionality not implemented
+**GREEN Phase 9.2B: Implement Partial Import**
+- Create data filtering logic based on recovery options
+- Add referential integrity maintenance
+- Implement import summary reporting
 
-#### GREEN Phase 9B: Complete Partial Import System
-- Implement data filtering based on user recovery choices
-- Add import summary showing included/excluded counts  
-- Create downloadable report of excluded data with reasons
-- Complete integration with graph construction and canvas import
+#### Mini-Iteration 9.3: Advanced Merge Capabilities
 
-#### RED Phase 9C: Advanced Merge Capabilities
-**File**: Extend CSV import for re-upload scenarios
+**RED Phase 9.3A: Merge Detection Logic**
+**Test Type**: Unit Test
 
-**Tests to write in csv-import-modal.test.tsx:**
+**Tests to write in csv-merge.test.ts:**
 ```typescript
-describe('Re-upload and Merge Capabilities', () => {
-  it('should allow re-upload of fixed CSV files', () => {
-    // Given: previous import with excluded data
-    // When: user uploads corrected CSV files
-    // Then: should detect potential merge scenario and offer merge options
-  })
-
-  it('should offer to merge with existing imported data', () => {
-    // Given: re-uploaded CSV with some existing node IDs
-    // When: merge detection runs
-    // Then: should show "Merge with existing graph" option
-  })
-
-  it('should detect and handle duplicate entries during merge', () => {
-    // Given: new CSV contains nodes already in current graph
-    // When: merge process runs
-    // Then: should identify conflicts and offer resolution strategies
-  })
-
-  it('should provide merge conflict resolution interface', () => {
-    // Given: merge conflicts detected
-    // When: conflict resolution UI shown
-    // Then: should offer "Keep existing", "Replace with new", "Manual merge" options
+describe('detectMergeConflicts', () => {
+  it('should detect duplicate node IDs between current and new data', () => {
+    // Given: existing graph and new CSV with overlapping node IDs
+    // When: detectMergeConflicts called
+    // Then: should return conflict details with resolution options
   })
 })
 ```
 
-**Expected**: All tests fail - merge capabilities not implemented
-
-#### GREEN Phase 9C: Advanced Merge Implementation
-- Implement CSV re-upload with merge detection
-- Add conflict resolution UI for duplicate handling
-- Create merge strategy options (replace, skip, manual)
-- Complete advanced import workflow with full error recovery
+**GREEN Phase 9.3B: Implement Merge System**
+- Create merge conflict detection
+- Add conflict resolution UI
+- Complete advanced import workflow
 
 ## COMPLETE FEATURE IMPLEMENTATION SUMMARY
 
