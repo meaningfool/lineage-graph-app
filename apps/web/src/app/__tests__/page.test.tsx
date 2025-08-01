@@ -1,5 +1,6 @@
 import React from 'react'
 import { render, screen, within, fireEvent } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import Home from '../page'
 import nodeData from '@/data/target-lineage.json'
@@ -239,3 +240,30 @@ describe('Generate Graph Button', () => {
 //   * Complete open-close-reopen cycles
 //   * Behavior with graph regeneration
 //   * Properties for generated graph nodes 
+
+describe('CSV Import Feature', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('displays CSV import button on page', async () => {
+    render(<Home />)
+    const importButton = screen.getByRole('button', { name: /import csv/i })
+    expect(importButton).toBeInTheDocument()
+  })
+
+  it('shows coming soon message when import button clicked', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(<Home />)
+    
+    const importButton = screen.getByRole('button', { name: /import csv/i })
+    await user.click(importButton)
+    
+    expect(screen.getByText(/csv import coming soon/i)).toBeInTheDocument()
+  })
+})
