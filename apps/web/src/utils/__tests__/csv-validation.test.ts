@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateRequiredFields, validateNodeTypes } from '../csv-validation'
+import { validateRequiredFields, validateNodeTypes, validateDuplicateNodeIds } from '../csv-validation'
 
 describe('validateRequiredFields', () => {
   it('should detect missing node ID with specific node identification', () => {
@@ -235,6 +235,159 @@ describe('validateNodeTypes', () => {
     const result = validateNodeTypes(nodes)
 
     // Then: should return success
+    expect(result.isValid).toBe(true)
+    expect(result.errors).toHaveLength(0)
+  })
+})
+
+describe('validateDuplicateNodeIds', () => {
+  it('should detect duplicate node IDs with all affected rows', () => {
+    // Given: nodes with duplicate ID 'user-count' at rows 1 and 4
+    const nodes = [
+      { id: 'sessions', title: 'Sessions', type: 'INPUT' },
+      { id: 'user-count', title: 'User Count', type: 'STEP' }, // row 2 (index 1)
+      { id: 'orders', title: 'Orders', type: 'INPUT' },
+      { id: 'revenue', title: 'Revenue', type: 'OUTPUT' },
+      { id: 'user-count', title: 'User Count Duplicate', type: 'STEP' } // row 5 (index 4)
+    ]
+
+    // When: validateDuplicateNodeIds called
+    const result = validateDuplicateNodeIds(nodes)
+
+    // Then: should return error with all affected rows
+    expect(result.isValid).toBe(false)
+    expect(result.errors).toHaveLength(1)
+    expect(result.errors[0]).toEqual({
+      type: 'DUPLICATE_NODE_ID',
+      severity: 'critical',
+      message: 'Duplicate node ID "user-count" found at rows: 2, 5',
+      duplicateId: 'user-count',
+      rowIndexes: [1, 4],
+      dataType: 'nodes'
+    })
+  })
+
+  it('should detect multiple sets of duplicates', () => {
+    // Given: multiple duplicate IDs in dataset
+    const nodes = [
+      { id: 'users', title: 'Users', type: 'INPUT' },
+      { id: 'orders', title: 'Orders', type: 'INPUT' }, // duplicate set 1
+      { id: 'revenue', title: 'Revenue', type: 'OUTPUT' },
+      { id: 'users', title: 'Users Duplicate', type: 'STEP' }, // duplicate set 2
+      { id: 'orders', title: 'Orders Duplicate', type: 'STEP' } // duplicate set 1
+    ]
+
+    // When: validateDuplicateNodeIds called
+    const result = validateDuplicateNodeIds(nodes)
+
+    // Then: should return separate error for each duplicate set
+    expect(result.isValid).toBe(false)
+    expect(result.errors).toHaveLength(2)
+    
+    // Should have error for 'users' duplicates
+    const usersError = result.errors.find(e => e.duplicateId === 'users')
+    expect(usersError).toEqual({
+      type: 'DUPLICATE_NODE_ID',
+      severity: 'critical',
+      message: 'Duplicate node ID "users" found at rows: 1, 4',
+      duplicateId: 'users',
+      rowIndexes: [0, 3],
+      dataType: 'nodes'
+    })
+
+    // Should have error for 'orders' duplicates
+    const ordersError = result.errors.find(e => e.duplicateId === 'orders')
+    expect(ordersError).toEqual({
+      type: 'DUPLICATE_NODE_ID',
+      severity: 'critical',
+      message: 'Duplicate node ID "orders" found at rows: 2, 5',
+      duplicateId: 'orders',
+      rowIndexes: [1, 4],
+      dataType: 'nodes'
+    })
+  })
+
+  it('should handle triple or more duplicates correctly', () => {
+    // Given: three nodes with same ID
+    const nodes = [
+      { id: 'metric', title: 'Metric 1', type: 'INPUT' },
+      { id: 'metric', title: 'Metric 2', type: 'STEP' },
+      { id: 'metric', title: 'Metric 3', type: 'OUTPUT' }
+    ]
+
+    // When: validateDuplicateNodeIds called
+    const result = validateDuplicateNodeIds(nodes)
+
+    // Then: should list all three occurrences
+    expect(result.isValid).toBe(false)
+    expect(result.errors).toHaveLength(1)
+    expect(result.errors[0]).toEqual({
+      type: 'DUPLICATE_NODE_ID',
+      severity: 'critical',
+      message: 'Duplicate node ID "metric" found at rows: 1, 2, 3',
+      duplicateId: 'metric',
+      rowIndexes: [0, 1, 2],
+      dataType: 'nodes'
+    })
+  })
+
+  it('should ignore nodes with empty or missing IDs', () => {
+    // Given: nodes with some empty IDs (these should be caught by required fields validation)
+    const nodes = [
+      { id: 'valid-node', title: 'Valid Node', type: 'INPUT' },
+      { id: '', title: 'Empty ID', type: 'STEP' },
+      { title: 'Missing ID', type: 'OUTPUT' }, // no id field
+      { id: 'another-valid', title: 'Another Valid', type: 'STEP' }
+    ]
+
+    // When: validateDuplicateNodeIds called
+    const result = validateDuplicateNodeIds(nodes)
+
+    // Then: should return success (empty IDs don't count as duplicates)
+    expect(result.isValid).toBe(true)
+    expect(result.errors).toHaveLength(0)
+  })
+
+  it('should return success when all node IDs are unique', () => {
+    // Given: nodes with all unique IDs
+    const nodes = [
+      { id: 'users', title: 'Users', type: 'INPUT' },
+      { id: 'orders', title: 'Orders', type: 'INPUT' },
+      { id: 'revenue', title: 'Revenue', type: 'OUTPUT' },
+      { id: 'conversion', title: 'Conversion Rate', type: 'STEP' }
+    ]
+
+    // When: validateDuplicateNodeIds called
+    const result = validateDuplicateNodeIds(nodes)
+
+    // Then: should return success
+    expect(result.isValid).toBe(true)
+    expect(result.errors).toHaveLength(0)
+  })
+
+  it('should handle empty nodes array', () => {
+    // Given: empty nodes array
+    const nodes: any[] = []
+
+    // When: validateDuplicateNodeIds called
+    const result = validateDuplicateNodeIds(nodes)
+
+    // Then: should return success
+    expect(result.isValid).toBe(true)
+    expect(result.errors).toHaveLength(0)
+  })
+
+  it('should be case-sensitive for node IDs', () => {
+    // Given: nodes with IDs that differ only in case
+    const nodes = [
+      { id: 'Users', title: 'Users Capitalized', type: 'INPUT' },
+      { id: 'users', title: 'Users Lowercase', type: 'INPUT' }
+    ]
+
+    // When: validateDuplicateNodeIds called
+    const result = validateDuplicateNodeIds(nodes)
+
+    // Then: should treat as different IDs and return success
     expect(result.isValid).toBe(true)
     expect(result.errors).toHaveLength(0)
   })

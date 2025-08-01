@@ -2,11 +2,13 @@ export interface ValidationError {
   type: string
   severity: 'critical' | 'warning' | 'info'
   message: string
-  rowIndex: number
+  rowIndex?: number
   field?: string
   dataType: 'nodes' | 'edges'
   invalidValue?: string
   validValues?: string[]
+  duplicateId?: string
+  rowIndexes?: number[]
 }
 
 export interface ValidationResult {
@@ -75,6 +77,44 @@ export function validateNodeTypes(
           dataType: 'nodes'
         })
       }
+    }
+  })
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
+}
+
+export function validateDuplicateNodeIds(
+  nodes: Record<string, any>[]
+): ValidationResult {
+  const errors: ValidationError[] = []
+  const idOccurrences = new Map<string, number[]>()
+
+  // Track all occurrences of each ID
+  nodes.forEach((node, index) => {
+    if (node.id && typeof node.id === 'string' && node.id.trim() !== '') {
+      const id = node.id.trim()
+      if (!idOccurrences.has(id)) {
+        idOccurrences.set(id, [])
+      }
+      idOccurrences.get(id)!.push(index)
+    }
+  })
+
+  // Find duplicates and create error messages
+  idOccurrences.forEach((rowIndexes, id) => {
+    if (rowIndexes.length > 1) {
+      const rowNumbers = rowIndexes.map(index => index + 1).join(', ')
+      errors.push({
+        type: 'DUPLICATE_NODE_ID',
+        severity: 'critical',
+        message: `Duplicate node ID "${id}" found at rows: ${rowNumbers}`,
+        duplicateId: id,
+        rowIndexes,
+        dataType: 'nodes'
+      })
     }
   })
 

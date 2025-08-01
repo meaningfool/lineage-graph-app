@@ -513,6 +513,26 @@ describe('CSVImportModal', () => {
       expect(screen.getByText(/node at row 2 has invalid type: PROCESSING. Must be INPUT, STEP, or OUTPUT/i)).toBeInTheDocument()
     })
 
+    it('should show duplicate node ID errors with all affected rows', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Upload CSV with duplicate node IDs
+      const nodesInput = screen.getByLabelText(/nodes csv file/i)
+      const nodesFile = new File(['id,title,type\nuser-count,User Count,STEP\norders,Orders,INPUT\nuser-count,User Count Duplicate,OUTPUT'], 'nodes.csv', { type: 'text/csv' })
+      await user.upload(nodesInput, nodesFile)
+      
+      const edgesInput = screen.getByLabelText(/edges csv file/i)
+      const edgesFile = new File(['source,target\nuser-count,orders'], 'edges.csv', { type: 'text/csv' })
+      await user.upload(edgesInput, edgesFile)
+      
+      // Navigate to validation step
+      await navigateToValidationStep(user)
+      
+      // Then: should display duplicate ID error with all affected rows
+      expect(screen.getByText(/duplicate node id "user-count" found at rows: 1, 3/i)).toBeInTheDocument()
+    })
+
     async function navigateToValidationStep(user: any) {
       // Navigate through all steps to validation
       let continueButton = screen.getByRole('button', { name: /continue/i })

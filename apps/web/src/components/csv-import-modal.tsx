@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Upload, FileText, AlertCircle, Loader2, CheckCircle } from 'lucide-react'
-import { validateRequiredFields, validateNodeTypes, type ValidationResult } from '@/utils/csv-validation'
+import { validateRequiredFields, validateNodeTypes, validateDuplicateNodeIds, type ValidationResult } from '@/utils/csv-validation'
 
 interface CSVImportModalProps {
   isOpen: boolean
@@ -217,11 +217,14 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
     
     // Run node type validation
     const nodeTypesValidation = validateNodeTypes(mappedNodes)
+    
+    // Run duplicate node ID validation
+    const duplicateNodesValidation = validateDuplicateNodeIds(mappedNodes)
 
     // Combine all validation results
     const combinedNodesValidation: ValidationResult = {
-      isValid: nodesRequiredFieldsValidation.isValid && nodeTypesValidation.isValid,
-      errors: [...nodesRequiredFieldsValidation.errors, ...nodeTypesValidation.errors]
+      isValid: nodesRequiredFieldsValidation.isValid && nodeTypesValidation.isValid && duplicateNodesValidation.isValid,
+      errors: [...nodesRequiredFieldsValidation.errors, ...nodeTypesValidation.errors, ...duplicateNodesValidation.errors]
     }
 
     setValidationResult({
