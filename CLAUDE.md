@@ -247,13 +247,54 @@ This project uses a **Hybrid Testing Strategy** combining Unit and E2E tests:
 - **Test failure debugging**: When refactoring, verify tests actually test the new behavior (not cached old behavior in mocks)
 
 ### Feature Development Process
+
+#### Research-Plan-Implement Flow (MANDATORY)
+When starting new features, always follow this sequence:
+
+1. **RESEARCH PHASE**: Before any planning, research existing solutions
+   - Use WebSearch to find current libraries, patterns, and best practices
+   - Focus on actively maintained solutions (check recent updates, download stats)
+   - Research UI/UX patterns for similar features
+   - Identify technical constraints and integration points
+
+2. **USER-CENTRIC PLANNING**: Plan iterations from user perspective
+   - Define each iteration by "User sees" and "User can" statements
+   - Ensure every iteration delivers visible user value
+   - Keep detailed planning only for immediate next steps (first 3-4 iterations)
+   - Document the plan in scratchpad.md as a living document
+
+3. **ITERATIVE IMPLEMENTATION**: Build incrementally with TDD
+   - Each iteration should be small enough to complete in one session
+   - Always start with the simplest possible user interaction (e.g., just a button)
+   - Build complexity gradually, maintaining working software at every step
+
+#### Feature Planning Guidelines
 - **Plan complex features** in scratchpad.md with clear iterations before starting
 - **Break features into small, independently testable increments**
 - **Each iteration should deliver clear user value** and be fully tested
+- **User-centric iteration design**: Each phase explicitly states what the user sees and can do
+- **Flexible planning depth**: Detailed RED/GREEN phases only for immediate next steps
+- **Acknowledge discovery**: Plan structure should account for learning during implementation
 - Remove scratchpad.md after feature completion to keep repository clean
 - Use iterative TDD approach: small cycles with frequent commits
 - **UX refinement cycles**: After GREEN phase, expect additional refactoring requests for styling, spacing, and user experience improvements
 - **Session continuity**: When continuing from previous conversations, read scratchpad.md and verify tests still pass before proceeding
+
+#### Iteration Structure Template
+For each iteration, define:
+```
+### Phase N: [Feature Name]
+**User sees**: [What's visible to the user]
+**User can**: [What interactions are possible]
+**Feedback**: [What responses/validation they get]
+```
+
+#### Research Documentation
+When researching solutions, document:
+- Library maintenance status (last updated, download stats)
+- Integration compatibility with existing stack
+- UI/UX patterns from established tools
+- Alternative approaches and trade-offs
 
 ### Test Suite Refactoring Methodology
 When reorganizing or optimizing existing tests:
@@ -385,11 +426,44 @@ When working with complex changes or multiple files:
 - **Show results immediately**: Run tests and display outcomes after changes
 - **Ask for explicit next steps**: "Ready to move to next file?" or "Should we commit?"
 
+#### Adaptive Planning Communication
+**When user provides feedback on approach:**
+- Acknowledge the specific issues raised
+- Demonstrate understanding by refactoring the approach
+- Show the revised plan that addresses their concerns
+- Confirm the new direction before proceeding
+
+**Research Presentation Pattern:**
+- Present findings from web research first
+- Explain why specific libraries/approaches were recommended
+- Show trade-offs and alternatives considered
+- Connect research findings to implementation choices
+
 ### Session Continuity Patterns
 - **Use scratchpad.md** for complex planning and cross-session handoffs
 - **Document decisions and rationale** for future reference
 - **Verify test status** before proceeding with previous work
 - **Reference Git history** to understand previous implementations
+
+#### Scratchpad.md Usage Pattern
+**When to create/update scratchpad.md:**
+- Beginning any complex feature development
+- When user requests refactoring of development approach
+- For cross-session feature continuity
+- When research findings need to inform planning
+
+**Structure for effective scratchpad.md:**
+- **High-Level Development Flow**: User-centric phase overview
+- **Detailed Implementation Plan**: RED/GREEN phases for immediate next steps only
+- **Technical Architecture Notes**: Library choices, integration points
+- **Next Steps**: What comes after current detailed phases
+- **Notes for Development**: Key constraints and patterns
+
+**Living Document Approach:**
+- Update scratchpad.md as discoveries are made during implementation
+- Refactor planning based on user feedback
+- Keep immediate steps detailed, future steps high-level
+- Remove after feature completion to maintain clean repository
 
 ## Code Conventions
 
