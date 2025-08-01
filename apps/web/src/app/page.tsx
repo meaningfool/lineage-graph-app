@@ -120,6 +120,7 @@ export default function Home() {
         edgeType={selectedEdgeType}
         onViewLineage={handleViewLineage}
         isLineageView={!!focusNodeId}
+        focusNodeId={focusNodeId}
       />
     </div>
   )

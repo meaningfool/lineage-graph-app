@@ -11,6 +11,7 @@ interface NodeData {
     [key: string]: any
   }
   isSelected?: boolean
+  isFocusNode?: boolean
   nodeType?: 'source' | 'computed' | 'metric'
   role?: string
 }
@@ -18,6 +19,7 @@ interface NodeData {
 // Custom node component that displays label only (properties shown in side panel)
 function CustomNode({ data }: { data: NodeData }) {
   const isSelected = data.isSelected || false
+  const isFocusNode = data.isFocusNode || false
   const nodeType = data.nodeType || 'computed'
   
   // Get type-specific classes
@@ -33,8 +35,14 @@ function CustomNode({ data }: { data: NodeData }) {
     }
   }
   
+  // Build CSS classes based on state
+  const baseClasses = 'px-3 py-2 shadow-sm rounded-sm border min-w-[150px] max-w-[200px] cursor-pointer transition-colors'
+  const typeClasses = getTypeClasses(nodeType)
+  const selectedClasses = isSelected ? 'selected-node' : ''
+  const focusClasses = isFocusNode ? 'focus-node' : ''
+  
   return (
-    <div className={`px-3 py-2 shadow-sm rounded-sm border min-w-[150px] max-w-[200px] cursor-pointer transition-colors ${getTypeClasses(nodeType)} ${isSelected ? 'selected-node' : ''}`}>
+    <div className={`${baseClasses} ${typeClasses} ${selectedClasses} ${focusClasses}`}>
       <Handle type="target" position={Position.Left} className="w-1.5 h-1.5 opacity-0" />
       <div className="flex flex-col gap-0.5">
         <div className="text-xs font-medium text-gray-900">
@@ -71,10 +79,11 @@ interface LineageGraphProps {
   edgeType?: 'default' | 'straight' | 'step' | 'smoothstep'
   onViewLineage?: (nodeId: string) => void
   isLineageView?: boolean
+  focusNodeId?: string | null
 }
 
 // Inner component that uses the ReactFlow context
-function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep', onViewLineage, isLineageView }: LineageGraphProps) {
+function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep', onViewLineage, isLineageView, focusNodeId }: LineageGraphProps) {
   const { fitView } = useReactFlow()
   const [sidePanelVisible, setSidePanelVisible] = useState(false)
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
@@ -119,9 +128,10 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep', onViewLineag
     data: {
       ...node.data,
       isSelected: selectedNode?.id === node.id,
+      isFocusNode: focusNodeId === node.id,
       nodeType: mapRoleToNodeType((node.data as any).role) || (node as any).nodeType || (node as any).type // Map role to nodeType
     }
-  })), [nodes, selectedNode])
+  })), [nodes, selectedNode, focusNodeId])
 
   // Memoize edges conversion to prevent unnecessary re-renders
   const customEdges = useMemo(() => edges.map(edge => ({
@@ -251,7 +261,7 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep', onViewLineag
   )
 }
 
-export function LineageGraph({ nodes, edges, edgeType = 'smoothstep', onViewLineage, isLineageView }: LineageGraphProps) {
+export function LineageGraph({ nodes, edges, edgeType = 'smoothstep', onViewLineage, isLineageView, focusNodeId }: LineageGraphProps) {
   return (
     <div className="w-full" style={{ height: '100vh', minHeight: '600px' }}>
       <ReactFlowProvider>
@@ -261,6 +271,7 @@ export function LineageGraph({ nodes, edges, edgeType = 'smoothstep', onViewLine
           edgeType={edgeType}
           onViewLineage={onViewLineage}
           isLineageView={isLineageView}
+          focusNodeId={focusNodeId}
         />
       </ReactFlowProvider>
     </div>

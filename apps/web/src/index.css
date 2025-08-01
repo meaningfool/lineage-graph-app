@@ -138,6 +138,10 @@ body {
     @apply border-blue-500 ring-2 ring-blue-200 bg-blue-50;
   }
   
+  .focus-node {
+    @apply border-orange-500 ring-4 ring-orange-300 bg-orange-100 shadow-lg;
+  }
+  
   .node-source {
     @apply bg-emerald-50 border-emerald-200;
   }

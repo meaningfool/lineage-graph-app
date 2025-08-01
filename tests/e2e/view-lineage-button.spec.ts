@@ -77,8 +77,8 @@ test.describe('View Lineage Button', () => {
     const focusNode = page.locator('.react-flow__node').locator(`text=${selectedNodeLabel}`).locator('..').first()
     
     // Test that the focus node has a special visual indicator
-    // This could be a specific CSS class or data attribute
-    await expect(focusNode.locator('div').first()).toHaveClass(/focus-node/)
+    // The focus-node class should be on the outer container div
+    await expect(focusNode).toHaveClass(/focus-node/)
     
     // Test that other nodes do not have the focus indicator
     const allNodes = page.locator('.react-flow__node')
@@ -90,7 +90,7 @@ test.describe('View Lineage Button', () => {
       
       if (nodeText !== selectedNodeLabel) {
         // Non-focus nodes should not have the focus class
-        await expect(node.locator('div').first()).not.toHaveClass(/focus-node/)
+        await expect(node).not.toHaveClass(/focus-node/)
       }
     }
   })
