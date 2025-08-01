@@ -1,80 +1,210 @@
-# Complex Lineage Analysis Feature Plan
+# CSV Import Feature - User-Centric Development Plan
 
-## Feature Overview
-Click a node → View its lineage → Creates a partial view of the full graph. The experience should feel seamless, with the node remaining selected and the side panel staying open.
+## High-Level Development Flow
 
-## Implementation Plan
+### Phase 1: Basic UI Entry Point
+**User sees**: Import button on the main canvas
+**User can**: Click button (shows "coming soon" or opens empty modal)
 
-### Iteration 1: Add "View Lineage" Button to Side Panel
-**RED Phase:**
-- Write E2E test that clicks a node and checks for "View Lineage" button in side panel
-- Test button exists with proper test ID
+### Phase 2: File Upload Interface
+**User sees**: Modal/popup with file drop zones
+**User can**: Drag & drop or browse for CSV files
+**Feedback**: File accepted/rejected messages
 
-**GREEN Phase:**
-- Add button to side panel below properties
-- Basic styling
-- Empty click handler (does nothing)
+### Phase 3: Basic CSV Validation
+**User sees**: Success or error messages after file upload
+**User can**: See if their CSV is valid format
+**Errors shown**: File type, empty file, malformed CSV
 
-### Iteration 2: Lineage Extraction with Selection Persistence
-**RED Phase:**
-- Write E2E test that:
-  - Clicks on a node (note its label)
-  - Clicks "View Lineage" button
-  - Tests that a new graph loads
-  - Tests that a node with the same label remains selected
-  - Tests that side panel remains open (doesn't close/reopen)
-  - Tests that "View Lineage" button is NOT visible (to ensure iteration 4 RED phase)
+### Phase 4: Dual File Upload
+**User sees**: Two drop zones (nodes & edges)
+**User can**: Upload both required files
+**Feedback**: Which file is missing, both files ready
 
-**GREEN Phase:**
-- Store full graph reference
-- Implement getLineage() on button click
-- Replace current view with lineage result
-- Find and select the node with same label in new graph
-- Keep side panel open throughout transition
-- Hide "View Lineage" button after first use
+### Phase 5: Column Detection & Display
+**User sees**: List of columns found in each CSV
+**User can**: See preview of their data structure
+**Feedback**: Column count, sample data
 
-### Iteration 3: Visual Distinction for Focus Node
-**RED Phase:**
-- Write E2E test that after viewing lineage:
-  - The selected node has a special visual indicator
-  - This visual indicator is different from regular selection
-  - Test for specific CSS class or style that indicates "focus node"
+### Phase 6: Column Mapping Interface
+**User sees**: Dropdowns to map columns to required fields
+**User can**: Select which columns to use for ID, title, type
+**Feedback**: Mapping validation, missing required mappings
 
-**GREEN Phase:**
-- Add `focusNodeId` state to track which node's lineage is shown
-- Add visual styling in CustomNode component for focus nodes
-- Could be: thicker border, different color, or badge icon
-- Ensure focus styling works alongside selection styling
+### Phase 7: Data Validation & Error Reporting
+**User sees**: Detailed validation results
+**User can**: Understand what's wrong with their data
+**Errors shown**: Invalid types, missing references, duplicates
 
-### Iteration 4: Continuous Lineage Exploration
-**RED Phase:**
-- Write E2E test that:
-  1. Views lineage of node A
-  2. In partial view, selects a different node B
-  3. "View Lineage" button IS visible for node B
-  4. Clicks button and gets lineage from full graph
-  5. Node B becomes new focus node (has focus visual)
-  6. Node A no longer has focus visual
+### Phase 8: Graph Preview & Import
+**User sees**: Preview of valid graph that can be imported
+**User can**: See what will be imported vs excluded
+**Actions**: Import to canvas, download error report
 
-**GREEN Phase:**
-- Show "View Lineage" button for all selected nodes
-- Ensure getLineage() always uses stored full graph
-- Update focusNodeId when viewing new lineage
-- Previous focus node loses special styling
+### Phase 9: Advanced Error Recovery
+**User sees**: Extracted valid subgraph despite errors
+**User can**: Import partial data, fix and re-upload
+**Features**: Non-blocking validation, smart extraction
 
-## Key Design Decisions
-- **Seamless UX**: Side panel stays open, selection persists
-- **Node matching**: Use label (not ID) to find same node after graph change
-- **Visual hierarchy**: Focus node (whose lineage is shown) has distinct styling
-- **Progressive disclosure**: Button hidden initially to ensure proper TDD
+## Detailed Implementation Plan
 
-## Technical Notes
-- State needed: `fullGraph`, `focusNodeId`
-- Match nodes by label when transitioning graphs
-- Side panel state management needs careful handling
+### Iteration 1: Add Import Button
 
-## Success Criteria
-- Smooth user experience (no jarring closes/reopens)
-- Clear visual feedback about which node's lineage is displayed
-- Can explore multiple lineages without returning to full view
-- Each iteration has a true RED phase before GREEN
+#### RED Phase - Test First
+```typescript
+// apps/web/src/app/__tests__/page.test.tsx
+test('displays CSV import button on page', async () => {
+  render(<Home />)
+  const importButton = screen.getByRole('button', { name: /import csv/i })
+  expect(importButton).toBeInTheDocument()
+})
+
+test('shows coming soon message when import button clicked', async () => {
+  render(<Home />)
+  const importButton = screen.getByRole('button', { name: /import csv/i })
+  await userEvent.click(importButton)
+  expect(screen.getByText(/csv import coming soon/i)).toBeInTheDocument()
+})
+```
+
+#### GREEN Phase - Implementation
+- Add button to main page
+- Show toast/alert on click
+- Position button appropriately (floating action button?)
+
+### Iteration 2: Basic Modal/Popup
+
+#### RED Phase - Test First
+```typescript
+// E2E test
+test('opens import modal when button clicked', async ({ page }) => {
+  await page.goto('/')
+  await page.click('button:has-text("Import CSV")')
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await expect(page.getByText('Import Graph from CSV')).toBeVisible()
+})
+
+test('closes modal when cancel clicked', async ({ page }) => {
+  await page.goto('/')
+  await page.click('button:has-text("Import CSV")')
+  await page.click('button:has-text("Cancel")')
+  await expect(page.getByRole('dialog')).not.toBeVisible()
+})
+```
+
+#### GREEN Phase - Implementation
+- Create modal component
+- Wire up open/close logic
+- Add title and cancel button
+
+### Iteration 3: Single File Drop Zone
+
+#### RED Phase - Test First
+```typescript
+// Component test
+test('accepts CSV file drop', async () => {
+  render(<CSVImportModal isOpen={true} />)
+  const dropzone = screen.getByText(/drop.*csv.*here/i)
+  
+  const file = new File(['col1,col2\nval1,val2'], 'test.csv', { type: 'text/csv' })
+  await userEvent.upload(dropzone, file)
+  
+  expect(screen.getByText('test.csv')).toBeInTheDocument()
+})
+
+test('rejects non-CSV files', async () => {
+  render(<CSVImportModal isOpen={true} />)
+  const dropzone = screen.getByText(/drop.*csv.*here/i)
+  
+  const file = new File(['data'], 'test.txt', { type: 'text/plain' })
+  await userEvent.upload(dropzone, file)
+  
+  expect(screen.getByText(/only csv files allowed/i)).toBeInTheDocument()
+})
+```
+
+#### GREEN Phase - Implementation
+- Integrate react-dropzone
+- Configure for CSV only
+- Show file name when uploaded
+- Display error for wrong file type
+
+### Iteration 4: Basic File Validation
+
+#### RED Phase - Test First
+```typescript
+test('shows error for empty CSV file', async () => {
+  render(<CSVImportModal isOpen={true} />)
+  const file = new File([''], 'empty.csv', { type: 'text/csv' })
+  await uploadFile(file)
+  
+  expect(screen.getByText(/file is empty/i)).toBeInTheDocument()
+})
+
+test('shows error for malformed CSV', async () => {
+  render(<CSVImportModal isOpen={true} />)
+  const file = new File(['col1,col2\n"unclosed quote'], 'bad.csv', { type: 'text/csv' })
+  await uploadFile(file)
+  
+  expect(screen.getByText(/invalid csv format/i)).toBeInTheDocument()
+})
+
+test('shows success for valid CSV', async () => {
+  render(<CSVImportModal isOpen={true} />)
+  const file = new File(['col1,col2\nval1,val2'], 'good.csv', { type: 'text/csv' })
+  await uploadFile(file)
+  
+  expect(screen.getByText(/file uploaded successfully/i)).toBeInTheDocument()
+})
+```
+
+#### GREEN Phase - Implementation
+- Integrate PapaParse
+- Parse on file upload
+- Show appropriate success/error messages
+- Keep errors generic (not domain-specific yet)
+
+## Technical Architecture Notes
+
+### Libraries
+- **PapaParse** - CSV parsing
+- **react-dropzone** - File upload UI
+- **Zod** - Data validation
+- **Radix UI Dialog** - Modal component (or similar from shadcn/ui)
+
+### State Management
+- Use React state for file upload flow
+- Consider reducer for complex validation state
+- Store parsed data temporarily in modal component
+
+### Error Handling Strategy
+- Categorize errors early (blocking vs non-blocking)
+- Consistent error message format
+- Accumulate errors for batch display
+
+### File Processing Pipeline
+1. File validation (type, size)
+2. CSV parsing
+3. Structure validation
+4. Domain validation
+5. Graph construction
+6. Import to canvas
+
+## Next Steps After Initial Iterations
+
+Once we have basic file upload working with validation:
+
+5. **Dual file support** - Separate nodes/edges uploads
+6. **Column detection** - Show available columns
+7. **Column mapping UI** - Let user select columns
+8. **Domain validation** - Check node types, references
+9. **Graph preview** - Show what will be imported
+10. **Smart extraction** - Import valid subset
+
+## Notes for Development
+
+- Keep each iteration small and focused
+- Always deliver visible user value
+- Build error handling incrementally
+- Test user interactions, not implementation details
+- Refactor as patterns emerge
