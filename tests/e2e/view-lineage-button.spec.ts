@@ -96,4 +96,76 @@ test.describe('View Lineage Button', () => {
       }
     }
   })
+
+  test('Test 4: Continuous lineage exploration allows viewing lineage of nodes within lineage view', async ({ page }) => {
+    // Step 1: Click on first node (Node A) to open side panel
+    const firstNode = page.locator('.react-flow__node').first()
+    await firstNode.click()
+    
+    // Get Node A's label
+    const sidePanel = page.getByTestId('side-panel')
+    await expect(sidePanel).toBeVisible()
+    const nodeALabel = await sidePanel.locator('h3').textContent()
+    
+    // Step 2: Click View Lineage button to view Node A's lineage
+    const viewLineageButton = page.getByTestId('view-lineage-button')
+    await viewLineageButton.click()
+    await page.waitForTimeout(500)
+    
+    // Verify Node A has focus styling
+    const focusNodeA = page.locator('.react-flow__node').filter({ hasText: nodeALabel }).locator('div').first()
+    await expect(focusNodeA).toHaveClass(/focus-node/)
+    
+    // Step 3: Select a different node (Node B) in the lineage view
+    const allNodes = page.locator('.react-flow__node')
+    const nodeCount = await allNodes.count()
+    
+    // Find a node that's NOT Node A
+    let nodeBElement
+    let nodeBLabel
+    for (let i = 0; i < nodeCount; i++) {
+      const node = allNodes.nth(i)
+      const nodeText = await node.textContent()
+      
+      if (nodeText !== nodeALabel) {
+        nodeBElement = node
+        nodeBLabel = nodeText
+        break
+      }
+    }
+    
+    expect(nodeBElement).toBeDefined()
+    expect(nodeBLabel).toBeDefined()
+    
+    // Click on Node B
+    await nodeBElement.click()
+    
+    // Verify side panel shows Node B
+    await expect(sidePanel.locator('h3')).toHaveText(nodeBLabel)
+    
+    // Step 4: Verify "View Lineage" button IS visible for Node B (different from current behavior)
+    await expect(viewLineageButton).toBeVisible()
+    await expect(viewLineageButton).toHaveText('View Lineage')
+    
+    // Step 5: Click View Lineage for Node B
+    await viewLineageButton.click()
+    await page.waitForTimeout(500)
+    
+    // Step 6: Verify Node B becomes the new focus node
+    const focusNodeB = page.locator('.react-flow__node').filter({ hasText: nodeBLabel }).locator('div').first()
+    await expect(focusNodeB).toHaveClass(/focus-node/)
+    
+    // Step 7: Verify Node A no longer has focus styling (if it exists in new lineage)
+    const possibleNodeA = page.locator('.react-flow__node').filter({ hasText: nodeALabel }).locator('div').first()
+    const nodeAExists = await possibleNodeA.count() > 0
+    
+    if (nodeAExists) {
+      // If Node A exists in Node B's lineage, it should not have focus class
+      await expect(possibleNodeA).not.toHaveClass(/focus-node/)
+    }
+    
+    // Step 8: Verify side panel still shows Node B and remains open
+    await expect(sidePanel).toBeVisible()
+    await expect(sidePanel.locator('h3')).toHaveText(nodeBLabel)
+  })
 })
