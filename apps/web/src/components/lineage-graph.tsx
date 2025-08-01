@@ -69,10 +69,12 @@ interface LineageGraphProps {
   nodes: Node[]
   edges: Edge[]
   edgeType?: 'default' | 'straight' | 'step' | 'smoothstep'
+  onViewLineage?: (nodeId: string) => void
+  isLineageView?: boolean
 }
 
 // Inner component that uses the ReactFlow context
-function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGraphProps) {
+function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep', onViewLineage, isLineageView }: LineageGraphProps) {
   const { fitView } = useReactFlow()
   const [sidePanelVisible, setSidePanelVisible] = useState(false)
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
@@ -92,10 +94,22 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
     setSidePanelVisible(false)
   }
 
-  // Clear selection when nodes change (graph regeneration)
+  // Handle selection when nodes change
   useEffect(() => {
-    setSelectedNode(null)
-    setSidePanelVisible(false)
+    if (selectedNode) {
+      // Check if the selected node exists in the new graph by ID
+      const nodeStillExists = nodes.find(n => n.id === selectedNode.id)
+      
+      if (nodeStillExists) {
+        // Update the reference to the new node object (positions might have changed)
+        setSelectedNode(nodeStillExists)
+        // Side panel stays open
+      } else {
+        // Node doesn't exist in new graph, clear selection
+        setSelectedNode(null)
+        setSidePanelVisible(false)
+      }
+    }
   }, [nodes])
 
   // Memoize nodes conversion to prevent unnecessary re-renders
@@ -215,12 +229,14 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
                 ))}
               </div>
             )}
-            {selectedNode && (
+            {selectedNode && !isLineageView && (
               <div className="mt-6">
                 <button
                   data-testid="view-lineage-button"
                   onClick={() => {
-                    // Empty handler for now
+                    if (onViewLineage && selectedNode) {
+                      onViewLineage(selectedNode.id)
+                    }
                   }}
                   className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
                 >
@@ -235,11 +251,17 @@ function LineageGraphInner({ nodes, edges, edgeType = 'smoothstep' }: LineageGra
   )
 }
 
-export function LineageGraph({ nodes, edges, edgeType = 'smoothstep' }: LineageGraphProps) {
+export function LineageGraph({ nodes, edges, edgeType = 'smoothstep', onViewLineage, isLineageView }: LineageGraphProps) {
   return (
     <div className="w-full" style={{ height: '100vh', minHeight: '600px' }}>
       <ReactFlowProvider>
-        <LineageGraphInner nodes={nodes} edges={edges} edgeType={edgeType} />
+        <LineageGraphInner 
+          nodes={nodes} 
+          edges={edges} 
+          edgeType={edgeType}
+          onViewLineage={onViewLineage}
+          isLineageView={isLineageView}
+        />
       </ReactFlowProvider>
     </div>
   )

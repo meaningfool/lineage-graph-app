@@ -21,36 +21,60 @@ export default function Home() {
   
   // Edge type selection state
   const [selectedEdgeType, setSelectedEdgeType] = useState<EdgeType>('smoothstep')
+  
+  // Store the full graph for lineage operations
+  const [fullGraph, setFullGraph] = useState<any>(null)
+  
+  // State for lineage view
+  const [focusNodeId, setFocusNodeId] = useState<string | null>(null)
 
   // Transform and layout the graph based on current state
-  const { nodes, edges } = useMemo(() => {
-    if (generationCount > 0) {
+  const { nodes, edges, currentGraph } = useMemo(() => {
+    let graph;
+    
+    if (focusNodeId && fullGraph) {
+      // Show lineage view
+      graph = fullGraph.getLineage(focusNodeId)
+    } else if (generationCount > 0) {
       // Generate random parameters for each generation
       const depth = 4 + Math.floor(Math.random() * 5)  // 4-8 layers
       const width = 3 + Math.floor(Math.random() * 8)  // 3-10 nodes
       const seed = Date.now() + generationCount        // Always different seed
       
       // Generate a random graph with varying characteristics
-      const generatedGraph = generateLineageGraph({
+      graph = generateLineageGraph({
         depth,
         width,
         seed
       })
-      return applyGraphLayout(generatedGraph)
+      // Store as full graph when generating new one
+      setFullGraph(graph)
     } else {
       // Use default data when no generations have been triggered
-      const lineageGraph = transformJsonToLineageGraph(nodeData)
-      return applyGraphLayout(lineageGraph)
+      graph = transformJsonToLineageGraph(nodeData)
+      // Store as full graph on initial load
+      if (!fullGraph) {
+        setFullGraph(graph)
+      }
     }
-  }, [generationCount])
+    
+    const layoutResult = applyGraphLayout(graph)
+    return { ...layoutResult, currentGraph: graph }
+  }, [generationCount, focusNodeId, fullGraph])
 
   const handleGenerateGraph = () => {
+    // Reset lineage view when generating new graph
+    setFocusNodeId(null)
     // Increment counter - this will always trigger a new generation
     setGenerationCount(prev => prev + 1)
   }
 
   const handleEdgeTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedEdgeType(event.target.value as EdgeType)
+  }
+  
+  const handleViewLineage = (nodeId: string) => {
+    setFocusNodeId(nodeId)
   }
   
   return (
@@ -83,7 +107,13 @@ export default function Home() {
         </div>
       </div>
       
-      <LineageGraph nodes={nodes} edges={edges} edgeType={selectedEdgeType} />
+      <LineageGraph 
+        nodes={nodes} 
+        edges={edges} 
+        edgeType={selectedEdgeType}
+        onViewLineage={handleViewLineage}
+        isLineageView={!!focusNodeId}
+      />
     </div>
   )
 }
