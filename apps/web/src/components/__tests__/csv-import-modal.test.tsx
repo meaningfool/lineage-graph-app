@@ -195,6 +195,113 @@ describe('CSVImportModal', () => {
     })
   })
 
+  describe('Column Detection & Preview', () => {
+    it('displays columns found in nodes CSV', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Upload both files
+      const nodesInput = screen.getByLabelText(/nodes csv file/i)
+      const nodesFile = new File(['id,title,type,description\n1,Users,input,User data'], 'nodes.csv', { type: 'text/csv' })
+      await user.upload(nodesInput, nodesFile)
+      
+      const edgesInput = screen.getByLabelText(/edges csv file/i)
+      const edgesFile = new File(['source,target\n1,2'], 'edges.csv', { type: 'text/csv' })
+      await user.upload(edgesInput, edgesFile)
+      
+      // Click continue to go to column detection
+      const continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)
+      
+      expect(screen.getByText(/nodes file columns/i)).toBeInTheDocument()
+      expect(screen.getByText('id')).toBeInTheDocument()
+      expect(screen.getByText('title')).toBeInTheDocument()
+      expect(screen.getByText('type')).toBeInTheDocument()
+      expect(screen.getByText('description')).toBeInTheDocument()
+    })
+
+    it('displays columns found in edges CSV', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Upload both files
+      const nodesInput = screen.getByLabelText(/nodes csv file/i)
+      const nodesFile = new File(['id,title\n1,Users'], 'nodes.csv', { type: 'text/csv' })
+      await user.upload(nodesInput, nodesFile)
+      
+      const edgesInput = screen.getByLabelText(/edges csv file/i)
+      const edgesFile = new File(['source,target,weight\n1,2,0.5'], 'edges.csv', { type: 'text/csv' })
+      await user.upload(edgesInput, edgesFile)
+      
+      // Click continue to go to column detection
+      const continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)
+      
+      expect(screen.getByText(/edges file columns/i)).toBeInTheDocument()
+      expect(screen.getByText('source')).toBeInTheDocument()
+      expect(screen.getByText('target')).toBeInTheDocument()
+      expect(screen.getByText('weight')).toBeInTheDocument()
+    })
+
+    it('shows sample data preview', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Upload both files with multiple rows
+      const nodesInput = screen.getByLabelText(/nodes csv file/i)
+      const nodesFile = new File([
+        'id,title,type\n1,Users,input\n2,Orders,input\n3,Revenue,output'
+      ], 'nodes.csv', { type: 'text/csv' })
+      await user.upload(nodesInput, nodesFile)
+      
+      const edgesInput = screen.getByLabelText(/edges csv file/i)
+      const edgesFile = new File(['source,target\n1,2\n2,3'], 'edges.csv', { type: 'text/csv' })
+      await user.upload(edgesInput, edgesFile)
+      
+      // Click continue to go to column detection
+      const continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)
+      
+      // Should show row count and preview
+      expect(screen.getByText(/3.*rows/i)).toBeInTheDocument() // nodes row count
+      expect(screen.getByText(/2.*rows/i)).toBeInTheDocument() // edges row count
+    })
+
+    it('provides navigation back to file upload', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Upload both files and navigate to column detection
+      await uploadBothValidFiles(user)
+      const continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)
+      
+      // Should have back button
+      const backButton = screen.getByRole('button', { name: /back/i })
+      expect(backButton).toBeInTheDocument()
+      
+      // Click back should return to file upload view
+      await user.click(backButton)
+      expect(screen.getByText(/upload nodes csv/i)).toBeInTheDocument()
+      expect(screen.getByText(/upload edges csv/i)).toBeInTheDocument()
+    })
+
+    it('provides continue button to next step', async () => {
+      const user = userEvent.setup()
+      render(<CSVImportModal isOpen={true} onClose={mockOnClose} />)
+      
+      // Upload both files and navigate to column detection
+      await uploadBothValidFiles(user)
+      let continueButton = screen.getByRole('button', { name: /continue/i })
+      await user.click(continueButton)
+      
+      // Should have continue button for next step (column mapping)
+      continueButton = screen.getByRole('button', { name: /continue/i })
+      expect(continueButton).toBeInTheDocument()
+      expect(continueButton).toBeEnabled()
+    })
+  })
+
   describe('Modal Behavior', () => {
     it('does not render when closed', () => {
       render(<CSVImportModal isOpen={false} onClose={mockOnClose} />)
@@ -203,4 +310,15 @@ describe('CSVImportModal', () => {
       expect(screen.queryByText(/upload edges csv/i)).not.toBeInTheDocument()
     })
   })
+
+  // Helper function for tests
+  async function uploadBothValidFiles(user: any) {
+    const nodesInput = screen.getByLabelText(/nodes csv file/i)
+    const nodesFile = new File(['id,title,type\n1,Users,input'], 'nodes.csv', { type: 'text/csv' })
+    await user.upload(nodesInput, nodesFile)
+    
+    const edgesInput = screen.getByLabelText(/edges csv file/i)
+    const edgesFile = new File(['source,target\n1,2'], 'edges.csv', { type: 'text/csv' })
+    await user.upload(edgesInput, edgesFile)
+  }
 })
