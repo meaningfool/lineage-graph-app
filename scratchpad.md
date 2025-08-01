@@ -38,13 +38,20 @@
 **Feedback**: Real-time validation and clear error messages for missing mappings
 **Implementation**: Smart auto-detection algorithm with validation and dropdown mapping interface
 
+### ✅ Phase 7: Data Format Validation (DONE)
+**User sees**: Detailed validation results for data format and structure
+**User can**: Understand what's wrong with their data before import
+**Errors shown**: Missing required fields, invalid node types, duplicate IDs, orphaned edges
+**Feedback**: Clear categorization of critical errors vs warnings
+**Implementation**: Comprehensive validation system with Mini-Iterations 7.1-7.5 completed
+
 ## NEXT ITERATIONS (📋)
 
-### Phase 7: Data Validation & Error Reporting
-**User sees**: Detailed validation results for graph structure
-**User can**: Understand what's wrong with their data relationships
-**Errors shown**: Invalid node references, missing IDs, duplicate entries, orphaned edges
-**Feedback**: Clear categorization of structural vs data issues
+### Phase 7.6: UX Improvements & ID Strategy Refinement
+**User sees**: Streamlined workflow without redundant column detection step
+**User can**: Go directly from upload to mapping with auto-generated node IDs
+**Changes**: Remove column detection screen, implement auto-ID generation from title column
+**Strategy**: Always generate internal IDs from title column (ignore user-provided ID columns)
 
 ### Phase 8: Graph Preview & Import
 **User sees**: Preview of the actual graph that will be imported to canvas
@@ -60,7 +67,103 @@
 
 ## DETAILED TDD IMPLEMENTATION PLANS - PROGRESSIVE APPROACH
 
-### Phase 7 - Data Format Validation (Progressive Mini-Iterations)
+### Phase 7.6 - UX Improvements & ID Strategy Refinement
+
+#### Mini-Iteration 7.6A: Remove Column Detection Screen
+
+**RED Phase 7.6A-1: Update Navigation Flow**
+**File**: `apps/web/src/components/csv-import-modal.tsx`
+**Test Type**: E2E Test
+
+**Tests to update in csv-import-modal.test.tsx:**
+```typescript
+describe('CSV Import Modal - Streamlined Navigation', () => {
+  it('should navigate directly from upload to mapping step', () => {
+    // Given: successful dual file upload
+    // When: files are validated and parsed
+    // Then: should skip column detection and go directly to step 2 (mapping)
+  })
+
+  it('should remove column detection UI elements', () => {
+    // Given: CSV import modal opened with files uploaded
+    // When: navigation occurs
+    // Then: should not display column badges or detection step
+  })
+})
+```
+
+**GREEN Phase 7.6A-2: Implement Streamlined Navigation**
+- Remove column detection step from navigation flow
+- Update step indicators to show: Upload → Mapping → Validation
+- Remove column badge UI and related state management
+
+#### Mini-Iteration 7.6B: Auto-Generated ID Strategy
+
+**RED Phase 7.6B-1: ID Generation Logic**
+**File**: `apps/web/src/utils/id-generation.ts`
+**Test Type**: Unit Test
+
+**Tests to write in id-generation.test.ts:**
+```typescript
+describe('generateNodeIds', () => {
+  it('should generate IDs from title column using slugify', () => {
+    // Given: nodes array with title values like "User Count", "Total Revenue"
+    // When: generateNodeIds called
+    // Then: should return nodes with id: "user-count", "total-revenue"
+  })
+
+  it('should handle duplicate titles by adding numeric suffixes', () => {
+    // Given: nodes with duplicate titles "User Count", "User Count"
+    // When: generateNodeIds called
+    // Then: should generate "user-count", "user-count-2"
+  })
+
+  it('should preserve original data while adding generated IDs', () => {
+    // Given: nodes with various CSV columns
+    // When: generateNodeIds called
+    // Then: should add 'id' field without modifying other properties
+  })
+})
+```
+
+**GREEN Phase 7.6B-2: Implement ID Generation**
+- Create generateNodeIds function with slugify logic
+- Add duplicate handling with numeric suffixes
+- Integrate with existing CSV processing pipeline
+
+**RED Phase 7.6B-3: Update Column Mapping UI**
+**File**: `apps/web/src/components/csv-import-modal.tsx`
+**Test Type**: E2E Test
+
+**Tests to update in csv-import-modal.test.tsx:**
+```typescript
+describe('CSV Import Modal - Auto-Generated IDs', () => {
+  it('should not show ID column mapping option', () => {
+    // Given: CSV import at mapping step
+    // When: mapping interface loads
+    // Then: should not display "Node ID" dropdown selector
+  })
+
+  it('should show auto-generation notice for IDs', () => {
+    // Given: mapping step loaded
+    // When: user views mapping interface
+    // Then: should display "Node IDs will be auto-generated from title column"
+  })
+
+  it('should preview generated IDs in validation step', () => {
+    // Given: completed mapping with title column selected
+    // When: validation step loads
+    // Then: should show "Generated IDs: user-count, total-revenue, ..." preview
+  })
+})
+```
+
+**GREEN Phase 7.6B-4: Update Column Mapping Interface**
+- Remove ID column mapping dropdown from nodes mapping
+- Add informational text about auto-generated IDs
+- Update validation step to show generated ID preview
+
+### Phase 7 - Data Format Validation (Progressive Mini-Iterations) - COMPLETED ✅
 
 #### Mini-Iteration 7.1: Required Fields Validation
 
