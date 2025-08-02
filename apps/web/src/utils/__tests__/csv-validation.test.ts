@@ -210,6 +210,13 @@ describe("Validation Error Categorization", () => {
 		expect(result.isValid).toBe(true); // Warnings don't invalidate
 		expect(result.warnings).toHaveLength(1);
 	});
+
+	it("should catch empty IDs in validateRequiredFields", () => {
+		const nodes = [{ id: "", type: "INPUT", title: "Test" }];
+		const result = validateRequiredFields(nodes, "nodes");
+		expect(result.errors).toHaveLength(1);
+		expect(result.errors[0].message).toBe("Node at row 1 is missing required field: id");
+	});
 });
 
 describe("validateNodeTypes", () => {

@@ -50,18 +50,16 @@ describe("generateNodeIds - ID-based generation", () => {
 		expect(result.nodes[2]).toHaveProperty("id", "new-users-30-day");
 	});
 	
-	it("should handle empty or missing user IDs gracefully", () => {
+	it("should not process nodes with empty IDs", () => {
 		const nodes = [
 			{ id: "", type: "INPUT" },
-			{ id: "   ", type: "STEP" },
-			{ type: "OUTPUT" } as any, // missing id
+			{ id: "valid-id", type: "OUTPUT" }
 		];
 		
-		const result = generateNodeIds(nodes);
-		
-		expect(result.nodes[0]).toHaveProperty("id", "node-1");
-		expect(result.nodes[1]).toHaveProperty("id", "node-2");
-		expect(result.nodes[2]).toHaveProperty("id", "node-3");
+		// Should only process valid nodes (empty IDs should be filtered out by validation)
+		const result = generateNodeIds(nodes.filter(n => n.id && n.id.trim()));
+		expect(result.nodes).toHaveLength(1);
+		expect(result.nodes[0].id).toBe("valid-id");
 	});
 
 	it("should handle case-insensitive duplicate detection", () => {
@@ -140,25 +138,6 @@ describe("generateNodeIds - ID-based generation", () => {
 		expect(result.nodes).toHaveLength(3);
 	});
 
-	it("should handle fallback ID conflicts with existing node IDs", () => {
-		const nodes = [
-			{ id: "node-1", type: "INPUT" }, // Conflicts with fallback pattern
-			{ id: "", type: "STEP" }, // Will need fallback (becomes node-2)
-			{ id: "node-2", type: "OUTPUT" }, // This is a duplicate!
-			{ id: "   ", type: "STEP" }, // Will need fallback (becomes node-3)
-			{ id: "valid", type: "INPUT" },
-		];
-		
-		const result = generateNodeIds(nodes);
-		
-		// node-2 (3rd entry) should be dropped as duplicate
-		expect(result.nodes).toHaveLength(4);
-		expect(result.nodes[0]).toHaveProperty("id", "node-1");
-		expect(result.nodes[1]).toHaveProperty("id", "node-2"); // From empty ID
-		expect(result.nodes[2]).toHaveProperty("id", "node-3"); // From whitespace ID
-		expect(result.nodes[3]).toHaveProperty("id", "valid");
-		expect(result.duplicatesRemoved).toBe(1);
-	});
 });
 
 describe("generateEdgeIds", () => {
