@@ -189,6 +189,30 @@ This project follows strict TDD workflow from `.cursor/rules/001-tdd-workflow.md
 - **Verification**: Always ensure tests fail during RED phase to confirm they're actually testing the new behavior
 - **Still get approval**: Always ask for user confirmation before refactoring commits
 
+#### Critical Phase Transition Rules (MANDATORY)
+
+**Planning-to-Implementation Checkpoint:**
+- **NEVER begin implementation** immediately after completing a plan
+- **ALWAYS stop after planning** and explicitly ask: "May I proceed with implementation?"
+- **Wait for explicit user approval** before starting any RED-GREEN-REFACTOR cycles
+- **Planning completion ≠ implementation permission**
+
+**Micro-Iteration Workflow:**
+- **Commit after every phase**: RED → commit, GREEN → commit, REFACTOR → commit
+- **Ask permission for major phases**: "Ready to start Phase 2?" not just individual steps
+- **Scratchpad strategy**: Use separate `.md` files for complex refactoring plans
+- **Working software guarantee**: Every micro-iteration must end with working application
+
+**Approval Patterns:**
+- **Explicit permission required for**: Starting implementation, beginning new phases, making commits
+- **Implicit continuation allowed for**: Individual RED-GREEN-REFACTOR steps within approved phase
+- **Always clarify scope**: "I'll complete Phase 1 (all micro-iterations 1.1-1.4)" vs. "I'll do just 1.1A"
+
+**Session Continuity:**
+- **Read scratchpad files** at session start to understand current state
+- **Verify test status** before continuing previous work
+- **Document phase completion** in scratchpad for handoffs
+
 ### Testing Approach
 
 #### Testing Strategy Guidelines
@@ -222,6 +246,29 @@ This project uses a **Hybrid Testing Strategy** combining Unit and E2E tests:
 - **Minimal proof testing**: When testing CSS classes, verify presence (e.g., `transition-transform`) not specific values
 - Use regex patterns for dynamic test IDs: `/^property-/`
 - **Test naming convention**: Use `Test N: Descriptive Name` format for easy reference in discussions and debugging
+
+#### Advanced Testing Patterns
+
+**Positive Behavior Testing (MANDATORY):**
+- **Focus on what system should do**, not what it shouldn't do
+- **Avoid "absence testing"**: Don't test that removed features are gone
+- **Test user capabilities**: "User can select ID column" not "Auto-generation notice not shown"
+- **Exception**: Critical business rules where "shouldn't" is the requirement
+
+**Temporary Removal Tests (for refactoring only):**
+- **Pattern**: Create → Verify → Delete after confirmation
+- **Usage**: Only when removing features that could cause confusion
+- **Process**: 
+  1. Add temporary test checking removal
+  2. Implement removal
+  3. Run test to verify removal worked
+  4. **Immediately delete test** after verification
+- **Never keep**: These tests in permanent test suite
+
+**Test Environment Setup:**
+- **React Global Fix**: Add `global.React = React` in test-setup.ts for component testing
+- **Accessibility Warnings**: Expected for Dialog components, safe to ignore in tests
+- **Isolation**: Each test should work independently
 
 #### Data-Driven Testing Strategy
 - **Import source data directly**: `import targetLineageData from 'path/to/data.json'`
@@ -326,9 +373,38 @@ When reorganizing or optimizing existing tests:
    - Document the reorganization benefits and test count changes
 
 ### Commit Strategy
+
+#### Enhanced Micro-Commit Workflow
+- **Commit after every TDD phase**: RED → commit, GREEN → commit, REFACTOR → commit
+- **Descriptive commit messages**: Include context, reasoning, and current state
+- **Phase identification**: Clear RED/GREEN/REFACTOR labels in commit messages
+- **Test status documentation**: Always mention if tests pass/fail and why
+
+#### Commit Message Patterns
+```bash
+# RED Phase Example
+"RED Phase 1.1A: Add failing tests for required Node ID column selector
+
+- Added tests for Node ID column selector visibility with required indicator
+- Added test for continue button disabled when Node ID not selected  
+- Fixed React global setup in test-setup.ts for component testing
+- Tests correctly fail as Node ID selector doesn't exist yet"
+
+# GREEN Phase Example  
+"GREEN Phase 1.1B: Add Node ID column selector to UI
+
+- Updated ColumnMapping interface to include nodeId field
+- Added Node ID dropdown with required indicator and aria-required attribute
+- Updated validation logic to require Node ID selection
+- Updated validation error message to include Node ID field
+- All tests now passing for required Node ID column selector"
+```
+
+#### Commit Strategy Types
 - **Structure commits**: Infrastructure, refactoring, setup (commit separately)
 - **Feature commits**: New functionality, bug fixes (commit after structure)
-- **Test commits**: Always separate from implementation commits
+- **Test commits**: Always separate from implementation commits when possible
+- **Phase commits**: RED-GREEN-REFACTOR micro-commits for complex changes
 - Follow Kent Beck's principle: "Make the change easy, then make the easy change"
 
 #### Commit Message Best Practices
