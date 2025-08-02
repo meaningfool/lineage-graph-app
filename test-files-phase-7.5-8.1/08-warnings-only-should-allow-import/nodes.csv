@@ -1,0 +1,8 @@
+title,type,description
+Connected Input,INPUT,Main data source
+Isolated Input 1,INPUT,Warning - unused input
+Isolated Input 2,INPUT,Warning - another unused input
+Processing Step,STEP,Transforms data
+Connected Output,OUTPUT,Main result
+Isolated Output 1,OUTPUT,Warning - unused output
+Isolated Output 2,OUTPUT,Warning - another unused output

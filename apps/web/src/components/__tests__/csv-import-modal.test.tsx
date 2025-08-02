@@ -821,6 +821,246 @@ describe("CSVImportModal", () => {
 		});
 	});
 
+	describe("CSV Import Modal - Graph Structure Validation", () => {
+		it("should show connectivity warnings for isolated INPUT nodes", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Upload CSV with INPUT node having no outgoing edges
+			const nodesInput = screen.getByLabelText(/nodes csv file/i);
+			const nodesFile = new File(
+				[
+					"id,title,type\nraw-data,Raw Data,INPUT\nprocessed,Processed Data,STEP",
+				],
+				"nodes.csv",
+				{ type: "text/csv" },
+			);
+			await user.upload(nodesInput, nodesFile);
+
+			const edgesInput = screen.getByLabelText(/edges csv file/i);
+			const edgesFile = new File(
+				["source,target\nprocessed,final"],
+				"edges.csv",
+				{ type: "text/csv" },
+			);
+			await user.upload(edgesInput, edgesFile);
+
+			// Navigate to validation step
+			await navigateToValidationStep(user);
+
+			// Then: should display connectivity warning for INPUT node
+			expect(
+				screen.getByText(
+					/INPUT node "raw-data" at row 1 has no outgoing connections/i,
+				),
+			).toBeInTheDocument();
+		});
+
+		it("should show connectivity warnings for isolated OUTPUT nodes", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Upload CSV with OUTPUT node having no incoming edges
+			const nodesInput = screen.getByLabelText(/nodes csv file/i);
+			const nodesFile = new File(
+				[
+					"id,title,type\nsource,Source Data,INPUT\nfinal-metric,Final Metric,OUTPUT",
+				],
+				"nodes.csv",
+				{ type: "text/csv" },
+			);
+			await user.upload(nodesInput, nodesFile);
+
+			const edgesInput = screen.getByLabelText(/edges csv file/i);
+			const edgesFile = new File(
+				["source,target\nsource,intermediate"],
+				"edges.csv",
+				{ type: "text/csv" },
+			);
+			await user.upload(edgesInput, edgesFile);
+
+			// Navigate to validation step
+			await navigateToValidationStep(user);
+
+			// Then: should display connectivity warning for OUTPUT node
+			expect(
+				screen.getByText(
+					/OUTPUT node "final-metric" at row 2 has no incoming connections/i,
+				),
+			).toBeInTheDocument();
+		});
+
+		it("should show critical errors for orphaned STEP nodes", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Upload CSV with STEP node having no connections
+			const nodesInput = screen.getByLabelText(/nodes csv file/i);
+			const nodesFile = new File(
+				[
+					"id,title,type\nsource,Source,INPUT\norphaned-step,Orphaned Step,STEP\ntarget,Target,OUTPUT",
+				],
+				"nodes.csv",
+				{ type: "text/csv" },
+			);
+			await user.upload(nodesInput, nodesFile);
+
+			const edgesInput = screen.getByLabelText(/edges csv file/i);
+			const edgesFile = new File(
+				["source,target\nsource,target"],
+				"edges.csv",
+				{ type: "text/csv" },
+			);
+			await user.upload(edgesInput, edgesFile);
+
+			// Navigate to validation step
+			await navigateToValidationStep(user);
+
+			// Then: should display critical error for orphaned STEP node
+			expect(
+				screen.getByText(
+					/STEP node "orphaned-step" at row 2 has no incoming or outgoing connections/i,
+				),
+			).toBeInTheDocument();
+		});
+
+		it("should allow import with connectivity warnings only", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Upload CSV with warnings but no critical graph structure errors
+			const nodesInput = screen.getByLabelText(/nodes csv file/i);
+			const nodesFile = new File(
+				[
+					"id,title,type\ninput1,Input 1,INPUT\nstep1,Step 1,STEP\noutput1,Output 1,OUTPUT\nisolated-input,Isolated Input,INPUT",
+				],
+				"nodes.csv",
+				{ type: "text/csv" },
+			);
+			await user.upload(nodesInput, nodesFile);
+
+			const edgesInput = screen.getByLabelText(/edges csv file/i);
+			const edgesFile = new File(
+				["source,target\ninput1,step1\nstep1,output1"],
+				"edges.csv",
+				{ type: "text/csv" },
+			);
+			await user.upload(edgesInput, edgesFile);
+
+			// Navigate to validation step
+			await navigateToValidationStep(user);
+
+			// Then: Import button should be enabled with warnings
+			const importButton = screen.getByRole("button", { name: /import/i });
+			expect(importButton).toBeEnabled();
+
+			// Should show warning message about proceeding with warnings
+			expect(
+				screen.getByText(
+					/INPUT node "isolated-input" at row 4 has no outgoing connections/i,
+				),
+			).toBeInTheDocument();
+		});
+
+		it("should prevent import when critical graph structure errors exist", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Upload CSV with critical graph structure errors (orphaned STEP node)
+			const nodesInput = screen.getByLabelText(/nodes csv file/i);
+			const nodesFile = new File(
+				[
+					"id,title,type\nvalid-input,Valid Input,INPUT\norphaned-step,Orphaned Step,STEP",
+				],
+				"nodes.csv",
+				{ type: "text/csv" },
+			);
+			await user.upload(nodesInput, nodesFile);
+
+			const edgesInput = screen.getByLabelText(/edges csv file/i);
+			const edgesFile = new File(
+				["source,target\n"], // Empty edges file
+				"edges.csv",
+				{ type: "text/csv" },
+			);
+			await user.upload(edgesInput, edgesFile);
+
+			// Navigate to validation step
+			await navigateToValidationStep(user);
+
+			// Then: Import button should be disabled due to critical errors
+			const importButton = screen.getByRole("button", { name: /import/i });
+			expect(importButton).toBeDisabled();
+
+			// Should show critical error messages
+			expect(
+				screen.getByText(
+					/STEP node "orphaned-step" at row 2 has no incoming or outgoing connections/i,
+				),
+			).toBeInTheDocument();
+		});
+
+		it("should show graph structure validation section in validation step", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Upload valid CSV data
+			const nodesInput = screen.getByLabelText(/nodes csv file/i);
+			const nodesFile = new File(
+				[
+					"id,title,type\ninput,Input Data,INPUT\nstep,Processing Step,STEP\noutput,Final Output,OUTPUT",
+				],
+				"nodes.csv",
+				{ type: "text/csv" },
+			);
+			await user.upload(nodesInput, nodesFile);
+
+			const edgesInput = screen.getByLabelText(/edges csv file/i);
+			const edgesFile = new File(
+				["source,target\ninput,step\nstep,output"],
+				"edges.csv",
+				{ type: "text/csv" },
+			);
+			await user.upload(edgesInput, edgesFile);
+
+			// Navigate to validation step
+			await navigateToValidationStep(user);
+
+			// Then: should show graph structure validation section
+			expect(
+				screen.getByText(/graph structure validation/i),
+			).toBeInTheDocument();
+		});
+	});
+
+	describe("CSV Import Modal - Required Node ID Column", () => {
+		it("should show required Node ID column selector in mapping step", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Navigate to column mapping step
+			await navigateToColumnMapping(user);
+			
+			// Then: Should display Node ID column selector with required indicator
+			expect(screen.getByLabelText("Node ID Column *")).toBeInTheDocument();
+			expect(screen.getByLabelText("Node ID Column *")).toHaveAttribute("aria-required", "true");
+		});
+
+		it("should disable continue when Node ID not selected", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Given: At mapping step with other fields selected but not ID
+			await navigateToColumnMapping(user);
+			await selectMapping(user, "node-title", "title");
+			await selectMapping(user, "source-node", "source");
+			await selectMapping(user, "target-node", "target");
+			
+			// Then: Continue should be disabled
+			expect(screen.getByRole("button", { name: /continue/i })).toBeDisabled();
+		});
+	});
+
 	// Helper functions for tests
 	async function uploadBothValidFiles(user: any) {
 		const nodesInput = screen.getByLabelText(/nodes csv file/i);

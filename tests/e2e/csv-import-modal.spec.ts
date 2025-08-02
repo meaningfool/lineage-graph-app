@@ -157,7 +157,7 @@ test.describe("CSV Import Modal - Auto-Generated IDs", () => {
 		// Open the modal
 		await page.click('button:has-text("Import CSV")');
 		await expect(page.getByRole("dialog")).toBeVisible();
-		
+
 		// Upload test files and navigate to mapping step
 		const nodesFile = path.join(
 			__dirname,
@@ -183,15 +183,13 @@ test.describe("CSV Import Modal - Auto-Generated IDs", () => {
 		await expect(page.getByText("Column Mapping")).toBeVisible();
 	});
 
-	test("Test 7: should not show ID column mapping option", async ({
-		page,
-	}) => {
+	test("Test 7: should not show ID column mapping option", async ({ page }) => {
 		// Given: CSV import at mapping step
 		// When: mapping interface loads
 		// Then: should not display "Node ID" dropdown selector
 		await expect(page.getByLabel("Node ID column mapping")).not.toBeVisible();
 		await expect(page.getByText("Node ID Column *")).not.toBeVisible();
-		
+
 		// Should still show other required fields
 		await expect(page.getByText("Node Title Column *")).toBeVisible();
 		await expect(page.getByText("Source Node Column *")).toBeVisible();
@@ -207,7 +205,7 @@ test.describe("CSV Import Modal - Auto-Generated IDs", () => {
 		await expect(
 			page.getByText("Node IDs will be auto-generated from title column"),
 		).toBeVisible();
-		
+
 		// Should show it as an info message (check for blue background)
 		await expect(page.locator(".bg-blue-50")).toBeVisible();
 	});
@@ -220,7 +218,7 @@ test.describe("CSV Import Modal - Auto-Generated IDs", () => {
 			'select[aria-label="Node title column mapping"]',
 			"title",
 		);
-		
+
 		// Select required edge mappings
 		await page.selectOption(
 			'select[aria-label="Source node column mapping"]',
@@ -230,11 +228,11 @@ test.describe("CSV Import Modal - Auto-Generated IDs", () => {
 			'select[aria-label="Target node column mapping"]',
 			"target",
 		);
-		
+
 		// Navigate to validation step
 		await page.click('button:has-text("Continue")');
 		await expect(page.getByText("Step 4: Validate Data")).toBeVisible();
-		
+
 		// Should show generated ID preview
 		await expect(page.getByText("Generated IDs:")).toBeVisible();
 		await expect(

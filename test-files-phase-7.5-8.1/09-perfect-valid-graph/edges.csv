@@ -1,0 +1,7 @@
+source,target,description
+raw-user-data,user-aggregation,User data feeds aggregation
+raw-order-data,order-processing,Order data feeds processing
+user-aggregation,data-merge,User metrics to merge
+order-processing,data-merge,Order metrics to merge
+data-merge,final-dashboard,Merged data to dashboard
+data-merge,alert-system,Merged data to alerts

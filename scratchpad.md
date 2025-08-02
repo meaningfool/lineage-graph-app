@@ -45,6 +45,13 @@
 **Feedback**: Clear categorization of critical errors vs warnings
 **Implementation**: Comprehensive validation system with Mini-Iterations 7.1-7.5 completed
 
+### ✅ Phase 8.1: Graph Structure Validation (DONE)
+**User sees**: Graph connectivity validation with lineage-specific rules
+**User can**: Understand graph structure issues before import
+**Errors shown**: Isolated INPUT/OUTPUT nodes (warnings), orphaned STEP nodes (critical errors)
+**Feedback**: Critical errors block import, warnings allow import with notification
+**Implementation**: Node connectivity validation with severity levels (critical/warning)
+
 ## NEXT ITERATIONS (📋)
 
 ### Phase 7.6: UX Improvements & ID Strategy Refinement

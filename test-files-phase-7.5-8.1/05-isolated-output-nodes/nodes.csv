@@ -1,0 +1,5 @@
+title,type,description
+Input Data,INPUT,Source data
+Processing Step,STEP,Processes data
+Connected Output,OUTPUT,This output receives connections
+Isolated Output,OUTPUT,This output has no incoming connections

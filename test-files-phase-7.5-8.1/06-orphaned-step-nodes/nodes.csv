@@ -1,0 +1,7 @@
+title,type,description
+Input Data,INPUT,Source data
+Connected Step,STEP,This step has connections
+Orphaned Step,STEP,This step has no connections at all
+Dead End Step,STEP,This step only receives data but doesn't output
+Floating Step,STEP,This step only outputs data but has no input
+Output Data,OUTPUT,Final result

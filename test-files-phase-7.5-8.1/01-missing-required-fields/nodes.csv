@@ -1,0 +1,5 @@
+title,type,description
+Raw Data,INPUT,Initial data source
+,STEP,Missing ID node
+Process Step,INVALID_TYPE,Invalid node type
+Final Metric,,Missing type field

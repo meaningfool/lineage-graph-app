@@ -1,0 +1,3 @@
+source,target,description
+connected-input,processing-step,Valid connection
+processing-step,final-output,Processing flows to output

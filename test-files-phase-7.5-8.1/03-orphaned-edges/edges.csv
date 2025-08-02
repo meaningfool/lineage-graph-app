@@ -1,0 +1,5 @@
+source,target,description
+raw-data,process-step,Valid connection
+missing-source,process-step,Source node doesn't exist
+process-step,missing-target,Target node doesn't exist
+phantom-node,ghost-node,Both nodes don't exist

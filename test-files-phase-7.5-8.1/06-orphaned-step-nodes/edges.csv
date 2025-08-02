@@ -1,0 +1,5 @@
+source,target,description
+input-data,connected-step,Valid input to step
+connected-step,output-data,Valid step to output
+input-data,dead-end-step,Input to dead end (no output)
+floating-step,output-data,Floating step output (no input)

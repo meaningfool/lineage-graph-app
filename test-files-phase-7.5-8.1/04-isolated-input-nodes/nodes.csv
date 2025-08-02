@@ -1,0 +1,5 @@
+title,type,description
+Connected Input,INPUT,This input connects to something
+Isolated Input,INPUT,This input has no outgoing connections
+Processing Step,STEP,Processes data
+Final Output,OUTPUT,Final result

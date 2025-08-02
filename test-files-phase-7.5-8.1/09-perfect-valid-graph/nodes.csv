@@ -1,0 +1,8 @@
+title,type,description
+Raw User Data,INPUT,User activity logs
+Raw Order Data,INPUT,E-commerce transactions
+User Aggregation,STEP,Aggregate user metrics
+Order Processing,STEP,Process order data
+Data Merge,STEP,Combine user and order data
+Final Dashboard,OUTPUT,Business intelligence dashboard
+Alert System,OUTPUT,Automated alerts

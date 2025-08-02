@@ -1,0 +1,4 @@
+source,target,description
+raw-data,process-step,Valid edge
+,final-metric,Missing source
+missing-node,final-metric,References missing node
