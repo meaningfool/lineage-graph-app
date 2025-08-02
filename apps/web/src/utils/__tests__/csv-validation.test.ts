@@ -5,6 +5,7 @@ import {
 	validateNodeTypes,
 	validateRequiredFields,
 } from "../csv-validation";
+import { generateNodeIds } from "../id-generation";
 
 describe("validateRequiredFields", () => {
 	it("should detect missing node ID with specific node identification", () => {
@@ -400,6 +401,23 @@ describe("validateDuplicateNodeIds", () => {
 		// Then: should treat as different IDs and return success
 		expect(result.isValid).toBe(true);
 		expect(result.errors).toHaveLength(0);
+	});
+});
+
+describe("Node deduplication in validation flow", () => {
+	it("should integrate deduplication into validation pipeline", () => {
+		const nodesWithDuplicates = [
+			{ id: "user-count", originalId: "User Count", type: "INPUT" },
+			{ id: "user-count", originalId: "User Count", type: "OUTPUT" }, // Duplicate
+			{ id: "revenue", originalId: "Revenue", type: "OUTPUT" }
+		];
+		
+		// This should be handled by generateNodeIds, not validation
+		const nodeGenResult = generateNodeIds(nodesWithDuplicates);
+		
+		expect(nodeGenResult.nodes).toHaveLength(2);
+		expect(nodeGenResult.duplicatesRemoved).toBe(1);
+		expect(nodeGenResult.message).toBe("Removed 1 duplicate node");
 	});
 });
 
