@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,6 +10,33 @@ describe("CSVImportModal", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
+
+	// Helper function to navigate to validation step - used by multiple test suites
+	// Assumes files are already uploaded and user is on upload step
+	async function navigateToValidationStep(user: any) {
+		// Step 1: Go from upload to mapping
+		let continueButton = screen.getByRole("button", { name: /continue/i });
+		await user.click(continueButton); // Go to mapping
+
+		// Step 2: Configure required mappings (mapping → validation)
+		// Select Node ID column (required)
+		const nodeIdSelect = screen.getByLabelText(/node id column/i);
+		await user.selectOptions(nodeIdSelect, "id");
+
+		// Select Node Title column (required)  
+		const nodeTitleSelect = screen.getByLabelText(/node title column/i);
+		await user.selectOptions(nodeTitleSelect, "title");
+
+		// Select Source and Target columns (required)
+		const sourceSelect = screen.getByLabelText(/source node column/i);
+		await user.selectOptions(sourceSelect, "source");
+
+		const targetSelect = screen.getByLabelText(/target node column/i);
+		await user.selectOptions(targetSelect, "target");
+
+		continueButton = screen.getByRole("button", { name: /continue/i });
+		await user.click(continueButton); // Go to validation
+	}
 
 	describe("File Drop Zone", () => {
 		it("displays file drop zone when modal is open", () => {
@@ -235,8 +262,8 @@ describe("CSVImportModal", () => {
 		});
 	});
 
-	describe("Column Detection & Preview", () => {
-		it("displays columns found in nodes CSV", async () => {
+	describe("Column Mapping Setup", () => {
+		it("shows column mapping interface after file upload", async () => {
 			const user = userEvent.setup();
 			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
 
@@ -255,18 +282,17 @@ describe("CSVImportModal", () => {
 			});
 			await user.upload(edgesInput, edgesFile);
 
-			// Click continue to go to column detection
+			// Click continue to go to column mapping
 			const continueButton = screen.getByRole("button", { name: /continue/i });
 			await user.click(continueButton);
 
-			expect(screen.getByText(/nodes file columns/i)).toBeInTheDocument();
-			expect(screen.getByText("id")).toBeInTheDocument();
-			expect(screen.getByText("title")).toBeInTheDocument();
-			expect(screen.getByText("type")).toBeInTheDocument();
-			expect(screen.getByText("description")).toBeInTheDocument();
+			// Should show column mapping interface
+			expect(screen.getByText(/column mapping/i)).toBeInTheDocument();
+			expect(screen.getByText(/map your csv columns/i)).toBeInTheDocument();
+			expect(screen.getByLabelText(/node id column/i)).toBeInTheDocument();
 		});
 
-		it("displays columns found in edges CSV", async () => {
+		it("populates column dropdowns with available CSV columns", async () => {
 			const user = userEvent.setup();
 			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
 
@@ -285,17 +311,17 @@ describe("CSVImportModal", () => {
 			);
 			await user.upload(edgesInput, edgesFile);
 
-			// Click continue to go to column detection
+			// Click continue to go to column mapping
 			const continueButton = screen.getByRole("button", { name: /continue/i });
 			await user.click(continueButton);
 
-			expect(screen.getByText(/edges file columns/i)).toBeInTheDocument();
-			expect(screen.getByText("source")).toBeInTheDocument();
-			expect(screen.getByText("target")).toBeInTheDocument();
-			expect(screen.getByText("weight")).toBeInTheDocument();
+			// Check columns are available in dropdowns (node columns in node ID selector)
+			const nodeIdSelect = screen.getByLabelText(/node id column/i);
+			expect(within(nodeIdSelect).getByText("id")).toBeInTheDocument();
+			expect(within(nodeIdSelect).getByText("title")).toBeInTheDocument();
 		});
 
-		it("shows sample data preview", async () => {
+		it("displays required fields in column mapping", async () => {
 			const user = userEvent.setup();
 			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
 
@@ -314,13 +340,13 @@ describe("CSVImportModal", () => {
 			});
 			await user.upload(edgesInput, edgesFile);
 
-			// Click continue to go to column detection
+			// Click continue to go to column mapping
 			const continueButton = screen.getByRole("button", { name: /continue/i });
 			await user.click(continueButton);
 
-			// Should show row count and preview
-			expect(screen.getByText(/3.*rows/i)).toBeInTheDocument(); // nodes row count
-			expect(screen.getByText(/2.*rows/i)).toBeInTheDocument(); // edges row count
+			// Should show required field selectors
+			expect(screen.getByLabelText(/node id column.*\*/i)).toBeInTheDocument();
+			expect(screen.getByLabelText(/node title column.*\*/i)).toBeInTheDocument();
 		});
 
 		it("provides navigation back to file upload", async () => {
@@ -351,7 +377,7 @@ describe("CSVImportModal", () => {
 			let continueButton = screen.getByRole("button", { name: /continue/i });
 			await user.click(continueButton);
 
-			// Should have continue button for next step (column mapping)
+			// Should have continue button for next step (validation)
 			continueButton = screen.getByRole("button", { name: /continue/i });
 			expect(continueButton).toBeInTheDocument();
 			expect(continueButton).toBeEnabled();
@@ -519,13 +545,8 @@ describe("CSVImportModal", () => {
 			});
 			await user.upload(edgesInput, edgesFile);
 
-			// Navigate through steps
-			let continueButton = screen.getByRole("button", { name: /continue/i });
-			await user.click(continueButton); // Go to columns
-			continueButton = screen.getByRole("button", { name: /continue/i });
-			await user.click(continueButton); // Go to mapping
-			continueButton = screen.getByRole("button", { name: /continue/i });
-			await user.click(continueButton); // Go to validation
+			// Navigate to validation step
+			await navigateToValidationStep(user);
 
 			// Then: should display "Step 4: Validate Data" with validation results
 			expect(screen.getByText(/step.*4.*validate.*data/i)).toBeInTheDocument();
@@ -800,16 +821,6 @@ describe("CSVImportModal", () => {
 				screen.getByText(/fix required field errors/i),
 			).toBeInTheDocument();
 		});
-
-		async function navigateToValidationStep(user: any) {
-			// Navigate through all steps to validation
-			let continueButton = screen.getByRole("button", { name: /continue/i });
-			await user.click(continueButton); // Go to columns
-			continueButton = screen.getByRole("button", { name: /continue/i });
-			await user.click(continueButton); // Go to mapping
-			continueButton = screen.getByRole("button", { name: /continue/i });
-			await user.click(continueButton); // Go to validation
-		}
 	});
 
 	describe("Modal Behavior", () => {
