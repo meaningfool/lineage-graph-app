@@ -381,9 +381,19 @@ describe("CSVImportModal", () => {
 			let continueButton = screen.getByRole("button", { name: /continue/i });
 			await user.click(continueButton);
 
-			// Should have continue button for next step (validation)
+			// Should have continue button for next step (validation) - initially disabled
 			continueButton = screen.getByRole("button", { name: /continue/i });
 			expect(continueButton).toBeInTheDocument();
+			expect(continueButton).toBeDisabled(); // Disabled until all required mappings selected
+
+			// Select all required mappings
+			await selectMapping(user, "node-id", "id");
+			await selectMapping(user, "node-title", "title");
+			await selectMapping(user, "node-type", "type");
+			await selectMapping(user, "source-node", "source");
+			await selectMapping(user, "target-node", "target");
+
+			// Now continue button should be enabled
 			expect(continueButton).toBeEnabled();
 		});
 	});
@@ -437,6 +447,7 @@ describe("CSVImportModal", () => {
 			// Map required fields manually
 			await selectMapping(user, "node-id", "col1");
 			await selectMapping(user, "node-title", "col2");
+			await selectMapping(user, "node-type", "col3");
 			await selectMapping(user, "source-node", "col1");
 			await selectMapping(user, "target-node", "col2");
 
@@ -564,19 +575,19 @@ describe("CSVImportModal", () => {
 			).toBeInTheDocument();
 		});
 
-		it("should prevent import when required fields missing", async () => {
+		it("should show validation errors but allow import with missing fields", async () => {
 			const user = userEvent.setup();
 			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
 
 			// Upload CSV with missing required fields
 			const nodesInput = screen.getByLabelText(/nodes csv file/i);
-			const nodesFile = new File(["id,title,type\n,Node 2,STEP"], "nodes.csv", {
+			const nodesFile = new File(["id,title,type\n,Node 1,STEP\nvalid-node,Node 2,INPUT"], "nodes.csv", {
 				type: "text/csv",
 			});
 			await user.upload(nodesInput, nodesFile);
 
 			const edgesInput = screen.getByLabelText(/edges csv file/i);
-			const edgesFile = new File(["source,target\nnode1,node2"], "edges.csv", {
+			const edgesFile = new File(["source,target\nvalid-node,missing"], "edges.csv", {
 				type: "text/csv",
 			});
 			await user.upload(edgesInput, edgesFile);
@@ -584,12 +595,14 @@ describe("CSVImportModal", () => {
 			// Navigate to validation step
 			await navigateToValidationStep(user);
 
-			// Then: Import button should be disabled with message
-			const importButton = screen.getByRole("button", { name: /import/i });
-			expect(importButton).toBeDisabled();
+			// Then: Should show validation errors for missing fields
 			expect(
-				screen.getByText(/fix required field errors/i),
+				screen.getByText(/node at row 1 is missing required field: id/i),
 			).toBeInTheDocument();
+			
+			// But import should still be allowed (non-blocking errors)
+			const importButton = screen.getByRole("button", { name: /import/i });
+			expect(importButton).toBeEnabled();
 		});
 
 		it("should show invalid node type errors with suggestions", async () => {
@@ -622,7 +635,7 @@ describe("CSVImportModal", () => {
 			).toBeInTheDocument();
 		});
 
-		it("should show duplicate node ID errors with all affected rows", async () => {
+		it("should show duplicate node ID removal message", async () => {
 			const user = userEvent.setup();
 			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
 
@@ -648,13 +661,18 @@ describe("CSVImportModal", () => {
 			// Navigate to validation step
 			await navigateToValidationStep(user);
 
-			// Then: should display duplicate ID error with all affected rows
+			// Then: should display deduplication message (not error)
 			expect(
-				screen.getByText(/duplicate node id "user-count" found at rows: 1, 3/i),
+				screen.getByText(/removed 1 duplicate node/i),
+			).toBeInTheDocument();
+			
+			// Should also show explanation
+			expect(
+				screen.getByText(/kept first occurrence of each duplicate/i),
 			).toBeInTheDocument();
 		});
 
-		it("should show orphaned edge errors for missing node references", async () => {
+		it("should allow import with edge reference mismatches (treated as warnings)", async () => {
 			const user = userEvent.setup();
 			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
 
@@ -678,12 +696,12 @@ describe("CSVImportModal", () => {
 			// Navigate to validation step
 			await navigateToValidationStep(user);
 
-			// Then: should display orphaned edge error
-			expect(
-				screen.getByText(
-					/edge at row 2 references missing source node: missing-node/i,
-				),
-			).toBeInTheDocument();
+			// Then: Import should be enabled as edge mismatches are non-blocking warnings
+			const importButton = screen.getByRole("button", { name: /import/i });
+			expect(importButton).toBeEnabled();
+
+			// Should show successful edge validation (warnings don't block)
+			expect(screen.getByText(/all edges validation passed/i)).toBeInTheDocument();
 		});
 
 		it("should run all validations and display categorized results", async () => {
@@ -733,13 +751,12 @@ describe("CSVImportModal", () => {
 			expect(
 				screen.getByText(/invalid type.*INVALID_TYPE/i),
 			).toBeInTheDocument();
-			expect(screen.getByText(/duplicate.*duplicate-id/i)).toBeInTheDocument();
+			// Duplicates are handled via deduplication message, not validation errors
+			expect(screen.getByText(/removed.*duplicate.*node/i)).toBeInTheDocument();
 			expect(
 				screen.getByText(/missing required field.*source/i),
 			).toBeInTheDocument();
-			expect(
-				screen.getByText(/missing.*node.*missing-node/i),
-			).toBeInTheDocument();
+			// Edge reference mismatches are warnings, not errors - no longer displayed
 		});
 
 		it("should enable import only when no critical errors exist", async () => {
@@ -775,21 +792,21 @@ describe("CSVImportModal", () => {
 			).toBeInTheDocument();
 		});
 
-		it("should show validation error summary when critical errors exist", async () => {
+		it("should allow import with missing required fields (non-blocking errors)", async () => {
 			const user = userEvent.setup();
 			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
 
-			// Upload CSV with critical validation errors
+			// Upload CSV with missing required fields (non-blocking)
 			const nodesInput = screen.getByLabelText(/nodes csv file/i);
 			const nodesFile = new File(
-				["id,title,type\n,Missing ID,INPUT"],
+				["id,title,type\n,Missing ID,INPUT\nvalid-id,Valid Node,OUTPUT"],
 				"nodes.csv",
 				{ type: "text/csv" },
 			);
 			await user.upload(nodesInput, nodesFile);
 
 			const edgesInput = screen.getByLabelText(/edges csv file/i);
-			const edgesFile = new File(["source,target\nnode1,node2"], "edges.csv", {
+			const edgesFile = new File(["source,target\nvalid-id,valid-id"], "edges.csv", {
 				type: "text/csv",
 			});
 			await user.upload(edgesInput, edgesFile);
@@ -797,12 +814,13 @@ describe("CSVImportModal", () => {
 			// Navigate to validation step
 			await navigateToValidationStep(user);
 
-			// Then: should show error count and disable import
+			// Then: Import should be enabled since missing fields are non-blocking
 			const importButton = screen.getByRole("button", { name: /import/i });
-			expect(importButton).toBeDisabled();
-			expect(screen.getAllByText(/critical errors/i)).toHaveLength(2); // nodes and edges sections
+			expect(importButton).toBeEnabled();
+
+			// Should show missing field errors but they don't block import
 			expect(
-				screen.getByText(/fix required field errors/i),
+				screen.getByText(/missing required field.*id/i),
 			).toBeInTheDocument();
 		});
 	});
