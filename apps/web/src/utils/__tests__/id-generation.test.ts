@@ -139,4 +139,24 @@ describe("generateNodeIds - ID-based generation", () => {
 		expect(result).toHaveProperty("message", "");
 		expect(result.nodes).toHaveLength(3);
 	});
+
+	it("should handle fallback ID conflicts with existing node IDs", () => {
+		const nodes = [
+			{ id: "node-1", type: "INPUT" }, // Conflicts with fallback pattern
+			{ id: "", type: "STEP" }, // Will need fallback (becomes node-2)
+			{ id: "node-2", type: "OUTPUT" }, // This is a duplicate!
+			{ id: "   ", type: "STEP" }, // Will need fallback (becomes node-3)
+			{ id: "valid", type: "INPUT" },
+		];
+		
+		const result = generateNodeIds(nodes);
+		
+		// node-2 (3rd entry) should be dropped as duplicate
+		expect(result.nodes).toHaveLength(4);
+		expect(result.nodes[0]).toHaveProperty("id", "node-1");
+		expect(result.nodes[1]).toHaveProperty("id", "node-2"); // From empty ID
+		expect(result.nodes[2]).toHaveProperty("id", "node-3"); // From whitespace ID
+		expect(result.nodes[3]).toHaveProperty("id", "valid");
+		expect(result.duplicatesRemoved).toBe(1);
+	});
 });
