@@ -405,27 +405,28 @@ describe("validateDuplicateNodeIds", () => {
 
 describe("validateEdgeReferences", () => {
 	it("should detect orphaned edge with missing source node", () => {
-		// Given: edge at row 2 with source 'missing-node' not in nodes
+		// Given: edge at row 2 with source 'missing-node' not in nodes (after computed ID processing)
 		const nodes = [
 			{ id: "node1", title: "Node 1", type: "INPUT" },
 			{ id: "node2", title: "Node 2", type: "OUTPUT" },
 		];
 		const edges = [
-			{ source: "node1", target: "node2" },
-			{ source: "node2", target: "node1" },
-			{ source: "missing-node", target: "node2" }, // row 3 (index 2)
+			{ source: "node1", target: "node2", computedSource: "node1", computedTarget: "node2" },
+			{ source: "node2", target: "node1", computedSource: "node2", computedTarget: "node1" },
+			{ source: "missing-node", target: "node2", computedSource: "missing-node", computedTarget: "node2" }, // row 3 (index 2)
 		];
 
 		// When: validateEdgeReferences called
 		const result = validateEdgeReferences(edges, nodes);
 
-		// Then: should return error with specific details
-		expect(result.isValid).toBe(false);
-		expect(result.errors).toHaveLength(1);
-		expect(result.errors[0]).toEqual({
-			type: "ORPHANED_EDGE_SOURCE",
-			severity: "critical",
-			message: "Edge at row 3 references missing source node: missing-node",
+		// Then: should return warning (not error) with specific details
+		expect(result.isValid).toBe(true); // Warnings don't invalidate
+		expect(result.errors).toHaveLength(0); // No critical errors
+		expect(result.warnings).toHaveLength(1);
+		expect(result.warnings[0]).toEqual({
+			type: "UNMATCHED_EDGE_SOURCE",
+			severity: "warning",
+			message: "Edge at row 3 references unmatched source node: missing-node (computed: missing-node)",
 			rowIndex: 2,
 			field: "source",
 			missingNodeId: "missing-node",
@@ -434,26 +435,27 @@ describe("validateEdgeReferences", () => {
 	});
 
 	it("should detect orphaned edge with missing target node", () => {
-		// Given: edge with target node not found in nodes
+		// Given: edge with target node not found in nodes (after computed ID processing)
 		const nodes = [
 			{ id: "node1", title: "Node 1", type: "INPUT" },
 			{ id: "node2", title: "Node 2", type: "OUTPUT" },
 		];
 		const edges = [
-			{ source: "node1", target: "node2" },
-			{ source: "node1", target: "missing-target" }, // row 2 (index 1)
+			{ source: "node1", target: "node2", computedSource: "node1", computedTarget: "node2" },
+			{ source: "node1", target: "missing-target", computedSource: "node1", computedTarget: "missing-target" }, // row 2 (index 1)
 		];
 
 		// When: validateEdgeReferences called
 		const result = validateEdgeReferences(edges, nodes);
 
-		// Then: should return appropriate error with target identification
-		expect(result.isValid).toBe(false);
-		expect(result.errors).toHaveLength(1);
-		expect(result.errors[0]).toEqual({
-			type: "ORPHANED_EDGE_TARGET",
-			severity: "critical",
-			message: "Edge at row 2 references missing target node: missing-target",
+		// Then: should return appropriate warning with target identification
+		expect(result.isValid).toBe(true); // Warnings don't invalidate
+		expect(result.errors).toHaveLength(0); // No critical errors
+		expect(result.warnings).toHaveLength(1);
+		expect(result.warnings[0]).toEqual({
+			type: "UNMATCHED_EDGE_TARGET",
+			severity: "warning",
+			message: "Edge at row 2 references unmatched target node: missing-target (computed: missing-target)",
 			rowIndex: 1,
 			field: "target",
 			missingNodeId: "missing-target",
@@ -462,33 +464,34 @@ describe("validateEdgeReferences", () => {
 	});
 
 	it("should detect multiple orphaned edges with different missing nodes", () => {
-		// Given: multiple edges with various missing node references
+		// Given: multiple edges with various missing node references (after computed ID processing)
 		const nodes = [{ id: "valid-node", title: "Valid Node", type: "INPUT" }];
 		const edges = [
-			{ source: "missing-source", target: "valid-node" }, // row 1
-			{ source: "valid-node", target: "missing-target" }, // row 2
-			{ source: "another-missing", target: "also-missing" }, // row 3
+			{ source: "missing-source", target: "valid-node", computedSource: "missing-source", computedTarget: "valid-node" }, // row 1
+			{ source: "valid-node", target: "missing-target", computedSource: "valid-node", computedTarget: "missing-target" }, // row 2
+			{ source: "another-missing", target: "also-missing", computedSource: "another-missing", computedTarget: "also-missing" }, // row 3
 		];
 
 		// When: validateEdgeReferences called
 		const result = validateEdgeReferences(edges, nodes);
 
-		// Then: should return multiple errors for all missing references
-		expect(result.isValid).toBe(false);
-		expect(result.errors).toHaveLength(4);
+		// Then: should return multiple warnings for all missing references
+		expect(result.isValid).toBe(true); // Warnings don't invalidate
+		expect(result.errors).toHaveLength(0); // No critical errors
+		expect(result.warnings).toHaveLength(4);
 
-		// Check specific error messages
-		expect(result.errors[0].message).toBe(
-			"Edge at row 1 references missing source node: missing-source",
+		// Check specific warning messages
+		expect(result.warnings[0].message).toBe(
+			"Edge at row 1 references unmatched source node: missing-source (computed: missing-source)",
 		);
-		expect(result.errors[1].message).toBe(
-			"Edge at row 2 references missing target node: missing-target",
+		expect(result.warnings[1].message).toBe(
+			"Edge at row 2 references unmatched target node: missing-target (computed: missing-target)",
 		);
-		expect(result.errors[2].message).toBe(
-			"Edge at row 3 references missing source node: another-missing",
+		expect(result.warnings[2].message).toBe(
+			"Edge at row 3 references unmatched source node: another-missing (computed: another-missing)",
 		);
-		expect(result.errors[3].message).toBe(
-			"Edge at row 3 references missing target node: also-missing",
+		expect(result.warnings[3].message).toBe(
+			"Edge at row 3 references unmatched target node: also-missing (computed: also-missing)",
 		);
 	});
 
