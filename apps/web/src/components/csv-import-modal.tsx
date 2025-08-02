@@ -45,6 +45,7 @@ interface ColumnMapping {
 	sourceNode: string;
 	targetNode: string;
 	useIdAsLabels: boolean;
+	nodeLabel: string;
 }
 
 export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
@@ -68,6 +69,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 		sourceNode: "",
 		targetNode: "",
 		useIdAsLabels: true,
+		nodeLabel: "",
 	});
 
 	// Validation state
@@ -227,6 +229,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 						col.toLowerCase() === "target",
 				) || "",
 			useIdAsLabels: true,
+			nodeLabel: "",
 		};
 
 		setColumnMapping(newMapping);
@@ -596,6 +599,34 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 											Use ID as labels
 										</label>
 									</div>
+
+									{/* Conditional Node Label Column selector */}
+									{!columnMapping.useIdAsLabels && (
+										<div className="space-y-2">
+											<label
+												htmlFor="node-label"
+												className="font-medium text-sm"
+											>
+												Node Label Column
+											</label>
+											<select
+												id="node-label"
+												aria-label="Node label column mapping"
+												className="w-full rounded-md border p-2 text-sm"
+												value={columnMapping.nodeLabel}
+												onChange={(e) =>
+													handleMappingChange("nodeLabel", e.target.value)
+												}
+											>
+												<option value="">Select column...</option>
+												{nodesParseResult?.meta.fields?.map((column) => (
+													<option key={column} value={column}>
+														{column}
+													</option>
+												))}
+											</select>
+										</div>
+									)}
 								</div>
 
 								{/* Edges Mapping */}

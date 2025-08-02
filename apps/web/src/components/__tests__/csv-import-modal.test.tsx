@@ -1114,6 +1114,58 @@ describe("CSVImportModal", () => {
 			// Then: Checkbox should be unchecked
 			expect(useIdAsLabelsCheckbox).not.toBeChecked();
 		});
+
+		it("should show Node Label Column selector when 'Use ID as labels' is unchecked", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Navigate to column mapping step
+			await navigateToColumnMapping(user);
+			
+			// When: User unchecks the "Use ID as labels" checkbox
+			const useIdAsLabelsCheckbox = screen.getByLabelText(/use id as labels/i);
+			await user.click(useIdAsLabelsCheckbox);
+			
+			// Then: Node Label Column selector should appear
+			expect(screen.getByLabelText(/node label column/i)).toBeInTheDocument();
+		});
+
+		it("should hide Node Label Column selector when 'Use ID as labels' is checked", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Navigate to column mapping step  
+			await navigateToColumnMapping(user);
+			
+			// Given: Checkbox starts checked, so label selector should be hidden
+			expect(screen.queryByLabelText(/node label column/i)).not.toBeInTheDocument();
+			
+			// When: User unchecks then re-checks the checkbox
+			const useIdAsLabelsCheckbox = screen.getByLabelText(/use id as labels/i);
+			await user.click(useIdAsLabelsCheckbox); // Uncheck
+			await user.click(useIdAsLabelsCheckbox); // Re-check
+			
+			// Then: Node Label Column selector should be hidden again
+			expect(screen.queryByLabelText(/node label column/i)).not.toBeInTheDocument();
+		});
+
+		it("should populate Node Label Column selector with available CSV columns", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Navigate to column mapping step
+			await navigateToColumnMapping(user);
+			
+			// When: User unchecks the "Use ID as labels" checkbox
+			const useIdAsLabelsCheckbox = screen.getByLabelText(/use id as labels/i);
+			await user.click(useIdAsLabelsCheckbox);
+			
+			// Then: Node Label Column selector should have available columns
+			const labelSelector = screen.getByLabelText(/node label column/i);
+			expect(within(labelSelector).getByText("id")).toBeInTheDocument();
+			expect(within(labelSelector).getByText("title")).toBeInTheDocument();
+			expect(within(labelSelector).getByText("type")).toBeInTheDocument();
+		});
 	});
 
 	// Helper functions for tests
