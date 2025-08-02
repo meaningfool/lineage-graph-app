@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/dialog";
 import {
 	type ValidationResult,
-	validateDuplicateNodeIds,
 	validateEdgeReferences,
 	validateNodeTypes,
 	validateRequiredFields,
@@ -281,9 +280,6 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 		// Run node type validation
 		const nodeTypesValidation = validateNodeTypes(mappedNodes);
 
-		// Run duplicate node ID validation
-		const duplicateNodesValidation = validateDuplicateNodeIds(mappedNodes);
-
 		// Run edge reference validation
 		const edgeReferencesValidation = validateEdgeReferences(
 			mappedEdges,
@@ -294,12 +290,10 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 		const combinedNodesValidation: ValidationResult = {
 			isValid:
 				nodesRequiredFieldsValidation.isValid &&
-				nodeTypesValidation.isValid &&
-				duplicateNodesValidation.isValid,
+				nodeTypesValidation.isValid,
 			errors: [
 				...nodesRequiredFieldsValidation.errors,
 				...nodeTypesValidation.errors,
-				...duplicateNodesValidation.errors,
 			],
 		};
 
