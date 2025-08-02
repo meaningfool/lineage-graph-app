@@ -23,7 +23,7 @@ interface ParseResult {
   errors: Papa.ParseError[]
 }
 
-type Step = 'upload' | 'columns' | 'mapping' | 'validation'
+type Step = 'upload' | 'mapping' | 'validation'
 
 interface ColumnMapping {
   nodeId: string
@@ -399,63 +399,6 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
             </>
           )}
 
-          {currentStep === 'columns' && (
-            <>
-              {/* Column Detection View */}
-              <div className="space-y-6">
-                <div className="text-center">
-                  <h3 className="text-lg font-medium">Column Detection</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Review the columns found in your CSV files
-                  </p>
-                </div>
-
-                {/* Nodes File Columns */}
-                {nodesParseResult && (
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium">Nodes File Columns</h4>
-                    <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg">
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {nodesParseResult.meta.fields?.map((column, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-xs rounded"
-                          >
-                            {column}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {nodesParseResult.data.length} rows found
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Edges File Columns */}
-                {edgesParseResult && (
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium">Edges File Columns</h4>
-                    <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg">
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {edgesParseResult.meta.fields?.map((column, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 text-xs rounded"
-                          >
-                            {column}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {edgesParseResult.data.length} rows found
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
 
           {currentStep === 'mapping' && (
             <>
@@ -693,15 +636,13 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
             Cancel
           </Button>
           
-          {(currentStep === 'columns' || currentStep === 'mapping' || currentStep === 'validation') && (
+          {(currentStep === 'mapping' || currentStep === 'validation') && (
             <Button 
               variant="outline" 
               onClick={() => {
                 if (currentStep === 'validation') {
                   setCurrentStep('mapping')
                 } else if (currentStep === 'mapping') {
-                  setCurrentStep('columns')
-                } else {
                   setCurrentStep('upload')
                 }
               }}
@@ -713,14 +654,6 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
           {currentStep === 'upload' && (
             <Button 
               disabled={!nodesFile || !edgesFile || isProcessingNodes || isProcessingEdges || !!nodesError || !!edgesError}
-              onClick={() => setCurrentStep('columns')}
-            >
-              Continue
-            </Button>
-          )}
-          
-          {currentStep === 'columns' && (
-            <Button 
               onClick={() => {
                 setCurrentStep('mapping')
                 // Auto-detect mappings when navigating to mapping step
