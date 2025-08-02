@@ -180,6 +180,12 @@ This project follows strict TDD workflow from `.cursor/rules/001-tdd-workflow.md
 - **Test verification**: Use `--headed --timeout=10000` for immediate visual feedback
 - **Never batch debug**: Fix one failing test completely before running others
 
+**Test Suite Health Monitoring:**
+- **Mass test failures (>10 tests)**: Usually indicates architectural misalignment, not individual bugs
+- **Root cause investigation**: Look for missing imports, interface changes, or deprecated function calls
+- **Systematic fixes**: Update tests in logical groups (e.g., all validation tests, all ID generation tests)
+- **Complete rewrites**: When function signatures change significantly, rewrite tests completely rather than incremental fixes
+
 **Refactoring Adaptation:**
 - **Still follow RED-GREEN cycle**: Even when refactoring, update tests first to see them fail, then implement
 - **RED phase for refactoring**: Update test expectations to match intended new behavior, verify tests fail
@@ -212,6 +218,14 @@ This project follows strict TDD workflow from `.cursor/rules/001-tdd-workflow.md
 - **Read scratchpad files** at session start to understand current state
 - **Verify test status** before continuing previous work
 - **Document phase completion** in scratchpad for handoffs
+
+**Mid-Implementation Recovery Patterns:**
+When resuming work on partially completed features:
+1. **Test Status Check**: Run existing tests to understand current state
+2. **Failing Test Analysis**: If many tests fail, investigate for architectural issues vs individual bugs
+3. **Phase Alignment**: Determine if you're in middle of horizontal slice that needs completion
+4. **User Communication**: Explicitly ask if app needs to be functional before continuing
+5. **Priority Assessment**: Fix broken functionality before adding new features
 
 ### Testing Approach
 
@@ -307,6 +321,7 @@ When starting new features, always follow this sequence:
 2. **USER-CENTRIC PLANNING**: Plan iterations from user perspective
    - Define each iteration by "User sees" and "User can" statements
    - Ensure every iteration delivers visible user value
+   - **CRITICAL**: Use vertical slicing, not horizontal slicing
    - Keep detailed planning only for immediate next steps (first 3-4 iterations)
    - Document the plan in scratchpad.md as a living document
 
@@ -314,6 +329,24 @@ When starting new features, always follow this sequence:
    - Each iteration should be small enough to complete in one session
    - Always start with the simplest possible user interaction (e.g., just a button)
    - Build complexity gradually, maintaining working software at every step
+
+#### Vertical vs Horizontal Slicing (CRITICAL LESSON)
+
+**❌ AVOID Horizontal Slicing (Anti-Pattern):**
+- Phase 1: All UI changes
+- Phase 2: All backend changes  
+- **Problem**: App becomes non-functional between phases, tests fail inconsistently
+
+**✅ USE Vertical Slicing (Best Practice):**
+- Phase 1: Basic ID field + minimal backend support → WORKING
+- Phase 2: Add checkbox + backend integration → WORKING  
+- Phase 3: Add validation + edge matching → WORKING
+
+**Vertical Slice Guidelines:**
+- Each phase must maintain a fully functional application
+- UI and backend changes should be synchronized within each phase
+- Test suite should remain mostly green between phases
+- Users can test and provide feedback after each complete slice
 
 #### Feature Planning Guidelines
 - **Plan complex features** in scratchpad.md with clear iterations before starting
@@ -379,6 +412,20 @@ When reorganizing or optimizing existing tests:
 - **Descriptive commit messages**: Include context, reasoning, and current state
 - **Phase identification**: Clear RED/GREEN/REFACTOR labels in commit messages
 - **Test status documentation**: Always mention if tests pass/fail and why
+
+#### Interface Evolution Strategy
+When changing function signatures or return types:
+
+**Complete Rewrite Approach (Preferred):**
+- Rewrite all tests for the new interface from scratch
+- Change function implementation to match new tests
+- Advantage: Clean, comprehensive test coverage for new behavior
+- Use when: Fundamental changes to function behavior or return structure
+
+**Incremental Update Approach (Use Sparingly):**
+- Update tests one by one to match new interface
+- More error-prone and time-consuming
+- Use when: Minor parameter additions or simple return type extensions
 
 #### Commit Message Patterns
 ```bash
@@ -571,3 +618,39 @@ When working with complex changes or multiple files:
 1. Modify schema in `apps/server/src/db/`
 2. Generate and run migrations
 3. Update tRPC procedures as needed
+
+## Lessons Learned
+
+### Critical Anti-Patterns to Avoid
+
+1. **Horizontal Phase Separation**: Never separate UI and backend changes into different phases
+   - Results in non-functional app states between phases
+   - Causes mass test failures and user confusion
+   - Always use vertical slicing for feature development
+
+2. **Ignoring Mass Test Failures**: When >10 tests fail simultaneously
+   - Usually indicates architectural misalignment, not bugs
+   - Investigate root causes: missing imports, interface changes, deprecated functions
+   - Don't fix tests individually - address the underlying architectural issue
+
+3. **Incremental Test Updates for Major Changes**: When function signatures change significantly
+   - Complete test rewrites are faster and more reliable than incremental updates
+   - Provides cleaner, more comprehensive test coverage
+   - Reduces debugging time and potential for missed edge cases
+
+### Successful Patterns to Replicate
+
+1. **Complete Interface Rewrites**: When changing function return types
+   - Rewrite all tests from scratch for new interface
+   - Implement new function to match rewritten tests
+   - Results in cleaner, more maintainable code
+
+2. **Systematic Validation Updates**: When changing validation behavior
+   - Update validation logic first
+   - Update all related tests as a group
+   - Ensure consistent behavior across test suite
+
+3. **Explicit User Communication**: During complex refactoring
+   - Always explain when app becomes temporarily non-functional
+   - Ask for explicit approval before major architecture changes
+   - Document lessons learned for future planning sessions
