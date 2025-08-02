@@ -132,9 +132,9 @@ export function validateEdgeReferences(
 	edges: Record<string, any>[],
 	nodes: Record<string, any>[],
 ): ValidationResult {
-	const errors: ValidationError[] = [];
+	const warnings: ValidationError[] = [];
 
-	// Create a set of valid node IDs for fast lookup
+	// Create a set of valid computed node IDs for fast lookup
 	const validNodeIds = new Set<string>();
 	nodes.forEach((node) => {
 		if (node.id && typeof node.id === "string" && node.id.trim() !== "") {
@@ -142,43 +142,35 @@ export function validateEdgeReferences(
 		}
 	});
 
-	// Check each edge for missing node references
+	// Check each edge for missing node references using computed IDs
 	edges.forEach((edge, index) => {
-		// Check source node reference
-		if (
-			edge.source &&
-			typeof edge.source === "string" &&
-			edge.source.trim() !== ""
-		) {
-			const sourceId = edge.source.trim();
-			if (!validNodeIds.has(sourceId)) {
-				errors.push({
-					type: "ORPHANED_EDGE_SOURCE",
-					severity: "critical",
-					message: `Edge at row ${index + 1} references missing source node: ${sourceId}`,
+		// Check source node reference using computed ID
+		if (edge.computedSource && edge.computedSource.trim() !== "") {
+			const computedSourceId = edge.computedSource.trim();
+			if (!validNodeIds.has(computedSourceId)) {
+				warnings.push({
+					type: "UNMATCHED_EDGE_SOURCE",
+					severity: "warning",
+					message: `Edge at row ${index + 1} references unmatched source node: ${edge.source} (computed: ${computedSourceId})`,
 					rowIndex: index,
 					field: "source",
-					missingNodeId: sourceId,
+					missingNodeId: computedSourceId,
 					dataType: "edges",
 				});
 			}
 		}
 
-		// Check target node reference
-		if (
-			edge.target &&
-			typeof edge.target === "string" &&
-			edge.target.trim() !== ""
-		) {
-			const targetId = edge.target.trim();
-			if (!validNodeIds.has(targetId)) {
-				errors.push({
-					type: "ORPHANED_EDGE_TARGET",
-					severity: "critical",
-					message: `Edge at row ${index + 1} references missing target node: ${targetId}`,
+		// Check target node reference using computed ID
+		if (edge.computedTarget && edge.computedTarget.trim() !== "") {
+			const computedTargetId = edge.computedTarget.trim();
+			if (!validNodeIds.has(computedTargetId)) {
+				warnings.push({
+					type: "UNMATCHED_EDGE_TARGET",
+					severity: "warning",
+					message: `Edge at row ${index + 1} references unmatched target node: ${edge.target} (computed: ${computedTargetId})`,
 					rowIndex: index,
 					field: "target",
-					missingNodeId: targetId,
+					missingNodeId: computedTargetId,
 					dataType: "edges",
 				});
 			}
@@ -186,7 +178,8 @@ export function validateEdgeReferences(
 	});
 
 	return {
-		isValid: errors.length === 0,
-		errors,
+		isValid: true, // Warnings don't make validation invalid
+		errors: [], // No critical errors, only warnings
+		warnings,
 	};
 }
