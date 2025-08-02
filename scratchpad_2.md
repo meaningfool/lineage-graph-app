@@ -198,7 +198,60 @@ it("TEMP: should remove auto-generation notice", async () => {
 ### Current Test Status:
 - **CSV Import Modal**: 14 failing, 33 passing (47 total) - **significant improvement**
 - **Progress**: Down from 21+ failing tests at session start
-- **Next Phase**: Continue to Phase 3 (Validation System Polish)
+- **Next Phase**: Continue Phase 2 with validation pipeline fixes
+
+### Continuing Phase 2: Validation Pipeline Reconstruction
+
+## Context: Complete Data Processing Pipeline Design
+
+Based on analysis, the CSV import system should implement a **4-stage pipeline** with **smart error handling**:
+
+### **Pipeline Stages:**
+
+1. **Raw Data Validation**: Check required columns are present in both files
+   - Missing required columns → **Critical + Blocking** (stop pipeline immediately)
+   - Report: "Missing required column: 'id' in nodes file"
+
+2. **Individual Item Processing**: For each node/edge, process and validate individual records
+   - Slugify user-provided IDs (both nodes and edges)
+   - Validate node types (INPUT, STEP, OUTPUT) 
+   - Empty ID field → **Non-critical + Non-blocking** (drop item, continue processing)
+   - Invalid node type → **Non-critical + Non-blocking** (drop item, continue processing)
+   - Report: "Node at row 3 dropped: empty ID field"
+
+3. **Processed Data Validation**: Cross-reference validation on clean data
+   - Check edge source/target references match processed node IDs
+   - Missing edge references → **Non-critical + Non-blocking** (drop edge, continue)
+   - Report: "Edge at row 5 dropped: source 'unknown-node' not found"
+
+4. **Graph Structure Validation**: Validate graph topology rules
+   - **OUTPUT nodes**: ≥1 outgoing edge, 0 incoming edges
+   - **STEP nodes**: ≥1 incoming edge AND ≥1 outgoing edge  
+   - **INPUT nodes**: ≥1 incoming edge, 0 outgoing edges
+   - Topology violations → **Non-critical + Blocking** (block import, collect all violations)
+   - Report: "INPUT node 'raw-data' at row 1 has no outgoing connections (warning)"
+   - Report: "STEP node 'orphaned-calc' at row 7 has no connections (critical - blocks import)"
+
+### **Error Categories:**
+
+- **Critical + Blocking**: Missing required columns → Stop pipeline immediately
+- **Non-critical + Non-blocking**: Invalid individual records → Drop items, continue pipeline  
+- **Non-critical + Blocking**: Graph structure violations → Complete pipeline, block final import
+
+### **Current State Analysis:**
+
+**✅ Already Implemented:**
+- All validation functions exist and are well-tested (34 unit tests)
+- Basic pipeline structure in place
+- Graph structure validation implemented
+- Comprehensive UI integration testing
+
+**🔧 Needs Refinement:**
+- Error categorization system (critical vs non-critical, blocking vs non-blocking)
+- Pipeline integration and orchestration
+- Stage-by-stage data flow with proper error aggregation
+- Type column marked as mandatory in UI
+
 
 ### Micro-Iteration 2.1: Update generateNodeIds Function
 
@@ -443,6 +496,224 @@ it("should show warnings for unmatched edges", async () => {
 - Ensure comprehensive coverage of new ID-based logic
 - Verify edge computation tests cover all scenarios
 - Remove any duplicate validation tests that are no longer relevant
+
+### Micro-Iteration 2.5: Implement Error Categorization System
+*Goal: Add critical/non-critical + blocking/non-blocking error categories to validation pipeline*
+
+**Specific Files to Modify:**
+- `apps/web/src/utils/csv-validation.ts` - Add error severity types
+- `apps/web/src/components/csv-import-modal.tsx` - Update validation state
+- `apps/web/src/utils/__tests__/csv-validation.test.ts` - Add error category tests
+
+**RED Phase 2.5A: Write tests for error categorization** [COMMIT]
+```typescript
+// Add to csv-validation.test.ts
+describe("Validation Error Categorization", () => {
+  it("should categorize missing columns as critical+blocking", () => {
+    const result = validateRequiredFields([], ["id", "type"], "nodes");
+    expect(result.severity).toBe("critical");
+    expect(result.blocking).toBe(true);
+  });
+  
+  it("should categorize empty individual IDs as non-critical+non-blocking", () => {
+    const nodes = [{ id: "", type: "INPUT", title: "Test" }];
+    const result = validateRequiredFields(nodes, ["id", "type"], "nodes");
+    expect(result.severity).toBe("non-critical");
+    expect(result.blocking).toBe(false);
+  });
+});
+```
+
+**GREEN Phase 2.5B: Add error categorization to validation functions** [COMMIT]
+- Add `severity: 'critical' | 'non-critical'` to ValidationResult interface
+- Add `blocking: boolean` to ValidationResult interface  
+- Update all validation functions to return severity and blocking properties
+- Missing columns → critical + blocking
+- Individual item errors → non-critical + non-blocking
+
+**REFACTOR Phase 2.5C: Update validation pipeline to handle error categories** [COMMIT]
+- Update validation aggregation logic to respect blocking behavior
+- Add early termination for critical+blocking errors
+- Update UI to display error categories with appropriate styling
+
+### Micro-Iteration 2.6: Fix generateNodeIds to Properly Reject Empty IDs
+*Goal: Remove fallback ID generation, make empty IDs produce validation errors instead*
+
+**Specific Files to Modify:**
+- `apps/web/src/utils/id-generation.ts` - Remove fallback logic (lines 70-77)
+- `apps/web/src/utils/__tests__/id-generation.test.ts` - Update empty ID test expectations
+- `apps/web/src/utils/csv-validation.ts` - Move empty ID checking to validateRequiredFields
+
+**RED Phase 2.6A: Update tests to expect empty ID validation errors** [COMMIT]
+```typescript
+// Update id-generation.test.ts
+it("should not process nodes with empty IDs", () => {
+  const nodes = [
+    { id: "", type: "INPUT" },
+    { id: "valid-id", type: "OUTPUT" }
+  ];
+  
+  // Should only process valid nodes
+  const result = generateNodeIds(nodes.filter(n => n.id.trim()));
+  expect(result.nodes).toHaveLength(1);
+  expect(result.nodes[0].id).toBe("valid-id");
+});
+
+// Add to csv-validation.test.ts  
+it("should catch empty IDs in validateRequiredFields", () => {
+  const nodes = [{ id: "", type: "INPUT", title: "Test" }];
+  const result = validateRequiredFields(nodes, ["id"], "nodes");
+  expect(result.errors).toContain("Node at row 1 is missing required field: id");
+});
+```
+
+**GREEN Phase 2.6B: Remove fallback ID generation from generateNodeIds** [COMMIT]
+- Remove lines 70-77 that generate "node-1", "node-2" fallbacks
+- Update function to only process nodes with valid (non-empty) IDs
+- Move empty ID detection to validateRequiredFields stage
+
+**REFACTOR Phase 2.6C: Update validation pipeline to catch empty IDs early** [COMMIT]
+- Enhance validateRequiredFields to check for empty/whitespace-only values
+- Update runValidation to filter out nodes with validation errors before processing
+- Test edge cases (whitespace, null, undefined values)
+
+### Micro-Iteration 2.7: Mark Type Column as Mandatory in UI
+*Goal: Update column mapping UI to show type column as required*
+
+**Specific Files to Modify:**
+- `apps/web/src/components/csv-import-modal.tsx` - Add required indicator to type mapping
+- `apps/web/src/components/__tests__/csv-import-modal.test.tsx` - Add type column requirement tests
+
+**RED Phase 2.7A: Write tests for required type column UI** [COMMIT]
+```typescript
+// Add to csv-import-modal.test.tsx
+it("should show type column as required in mapping step", async () => {
+  await navigateToColumnMapping(user);
+  expect(screen.getByLabelText("Node Type Column *")).toBeInTheDocument();
+  expect(screen.getByLabelText("Node Type Column *")).toHaveAttribute("aria-required", "true");
+});
+
+it("should disable continue when type column not selected", async () => {
+  await navigateToColumnMapping(user);
+  await selectMapping(user, "node-id", "id");
+  await selectMapping(user, "source-node", "source");
+  await selectMapping(user, "target-node", "target");
+  // Don't select type column
+  
+  expect(screen.getByRole("button", { name: /continue/i })).toBeDisabled();
+});
+```
+
+**GREEN Phase 2.7B: Update column mapping UI to require type column** [COMMIT]
+- Add required indicator (*) to type column mapping dropdown
+- Add aria-required="true" attribute to type column selector
+- Update validation logic to require type column selection
+- Update continue button disabled state logic
+
+**REFACTOR Phase 2.7C: Verify type column requirement integration** [COMMIT]
+- Test all validation paths include type column checking
+- Ensure consistent styling with other required fields
+- Test error messaging for missing type column selection
+
+### Micro-Iteration 2.8: Create Pipeline Integration Test Suite
+*Goal: Add comprehensive tests for complete 4-stage validation pipeline*
+
+**Specific Files to Create/Modify:**
+- `apps/web/src/utils/__tests__/csv-pipeline.test.ts` - NEW comprehensive pipeline tests
+- `apps/web/src/components/__tests__/csv-import-modal.test.tsx` - Add pipeline flow tests
+
+**RED Phase 2.8A: Write comprehensive pipeline integration tests** [COMMIT]
+```typescript
+// Create csv-pipeline.test.ts
+describe("Complete CSV Validation Pipeline", () => {
+  it("should run all 4 validation stages in correct order", () => {
+    // Test: Raw Data → Processing → Processed Data → Graph Structure
+  });
+  
+  it("should stop at stage 1 for critical+blocking errors", () => {
+    // Test missing required columns stops pipeline
+  });
+  
+  it("should filter problematic items and continue for non-critical errors", () => {
+    // Test empty IDs, invalid types get dropped but pipeline continues
+  });
+  
+  it("should aggregate all errors and warnings from all stages", () => {
+    // Test complete error collection and categorization
+  });
+  
+  it("should block import for graph structure violations", () => {
+    // Test non-critical+blocking graph errors prevent final import
+  });
+});
+```
+
+**GREEN Phase 2.8B: Implement pipeline orchestration function** [COMMIT]
+- Create `runCompleteValidationPipeline()` function in csv-validation.ts
+- Implement proper stage-by-stage execution with error handling
+- Add comprehensive error aggregation across all stages
+- Integrate with existing validation functions
+
+**REFACTOR Phase 2.8C: Update CSV import modal to use new pipeline** [COMMIT]
+- Replace current validation logic with new pipeline function
+- Update validation state to handle multi-stage error results
+- Test complete user workflow with new pipeline
+
+### Micro-Iteration 2.9: Add Graph Structure Validation UI Section
+*Goal: Display graph structure validation results in dedicated UI section*
+
+**Specific Files to Modify:**
+- `apps/web/src/components/csv-import-modal.tsx` - Add third validation section
+- `apps/web/src/components/__tests__/csv-import-modal.test.tsx` - Add graph section tests
+
+**RED Phase 2.9A: Write tests for graph structure validation UI** [COMMIT]
+```typescript
+// Add to csv-import-modal.test.tsx
+it("should show Graph Structure Validation section", async () => {
+  await uploadFilesWithGraphStructureIssues(user);
+  await navigateToValidationStep(user);
+  
+  expect(screen.getByText("Graph Structure Validation")).toBeInTheDocument();
+  expect(screen.getByText(/INPUT node.*no outgoing connections/)).toBeInTheDocument();
+  expect(screen.getByText(/STEP node.*no connections.*critical/)).toBeInTheDocument();
+});
+
+it("should allow import with structure warnings but block with critical errors", async () => {
+  // Test blocking vs non-blocking graph structure errors
+});
+```
+
+**GREEN Phase 2.9B: Add Graph Structure Validation section to UI** [COMMIT]
+- Add third validation results section after Nodes and Edges sections
+- Display graph structure errors with warning vs critical styling
+- Update validation results state to include graph structure results
+- Ensure consistent visual hierarchy with existing sections
+
+**REFACTOR Phase 2.9C: Final validation UI polish and integration** [COMMIT]
+- Test complete validation UI with all three sections
+- Verify error categorization displays correctly
+- Test import button behavior with different error combinations
+- Ensure responsive design and accessibility compliance
+
+### Test Audit 3: E2E Test Review and Validation Pipeline Verification
+*Goal: Ensure E2E tests cover validation pipeline and identify gaps*
+
+**Analysis Phase**: Review existing E2E tests for validation coverage
+- Check if E2E tests validate the CSV import validation pipeline
+- Identify missing E2E test coverage for validation scenarios
+- Document gaps between unit tests and E2E tests
+
+**Action Items for Later**:
+- Create E2E tests for complete CSV import validation workflow
+- Add E2E tests for error handling and validation UI
+- Ensure E2E tests would catch validation pipeline issues
+
+### Success Criteria for Phase 2 Completion:
+- **All CSV import modal tests pass** (0 failing, all 47 passing)
+- **Two-stage validation pipeline working** (raw → process → validate)
+- **Graph structure validation integrated** and displayed in UI
+- **Smart error handling** (blocking vs non-blocking errors)
+- **Working CSV import feature** end-to-end
 
 ---
 
