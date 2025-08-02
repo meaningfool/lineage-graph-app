@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateNodeIds } from "../id-generation";
+import { generateNodeIds, generateEdgeIds } from "../id-generation";
 
 describe("generateNodeIds - ID-based generation", () => {
 	it("should generate IDs from user ID field using slugify", () => {
@@ -158,5 +158,107 @@ describe("generateNodeIds - ID-based generation", () => {
 		expect(result.nodes[2]).toHaveProperty("id", "node-3"); // From whitespace ID
 		expect(result.nodes[3]).toHaveProperty("id", "valid");
 		expect(result.duplicatesRemoved).toBe(1);
+	});
+});
+
+describe("generateEdgeIds", () => {
+	it("should slugify edge source and target IDs for matching", () => {
+		const edges = [
+			{ source: "User Count", target: "Total Revenue" },
+			{ source: "Raw Data", target: "User Count" },
+		];
+		
+		const result = generateEdgeIds(edges);
+		
+		expect(result[0]).toEqual({
+			source: "User Count",
+			target: "Total Revenue", 
+			computedSource: "user-count",
+			computedTarget: "total-revenue"
+		});
+		expect(result[1]).toEqual({
+			source: "Raw Data",
+			target: "User Count",
+			computedSource: "raw-data", 
+			computedTarget: "user-count"
+		});
+	});
+	
+	it("should handle empty or missing source/target values", () => {
+		const edges = [
+			{ source: "", target: "Revenue" },
+			{ source: "Users", target: "   " },
+			{ source: "Valid" }, // missing target
+		];
+		
+		const result = generateEdgeIds(edges);
+		
+		expect(result[0].computedSource).toBe("");
+		expect(result[0].computedTarget).toBe("revenue");
+		expect(result[1].computedSource).toBe("users");
+		expect(result[1].computedTarget).toBe("");
+		expect(result[2].computedSource).toBe("valid");
+		expect(result[2].computedTarget).toBe("");
+	});
+
+	it("should handle special characters in edge IDs", () => {
+		const edges = [
+			{ source: "Revenue ($USD)", target: "User % Growth" },
+			{ source: "New Users (30-day)", target: "MRR / ARR Ratio" },
+		];
+		
+		const result = generateEdgeIds(edges);
+		
+		expect(result[0]).toEqual({
+			source: "Revenue ($USD)",
+			target: "User % Growth",
+			computedSource: "revenue-usd",
+			computedTarget: "user-growth"
+		});
+		expect(result[1]).toEqual({
+			source: "New Users (30-day)",
+			target: "MRR / ARR Ratio",
+			computedSource: "new-users-30-day",
+			computedTarget: "mrr-arr-ratio"
+		});
+	});
+
+	it("should preserve all original edge properties", () => {
+		const edges = [
+			{
+				source: "Input Data",
+				target: "Processed Output",
+				edgeType: "transformation",
+				weight: 0.8,
+				customProperty: "value123"
+			},
+		];
+		
+		const result = generateEdgeIds(edges);
+		
+		expect(result[0]).toEqual({
+			source: "Input Data",
+			target: "Processed Output",
+			computedSource: "input-data",
+			computedTarget: "processed-output",
+			edgeType: "transformation",
+			weight: 0.8,
+			customProperty: "value123"
+		});
+	});
+
+	it("should handle case-insensitive computation", () => {
+		const edges = [
+			{ source: "user count", target: "TOTAL REVENUE" },
+			{ source: "User Count", target: "Total Revenue" },
+		];
+		
+		const result = generateEdgeIds(edges);
+		
+		// Both should produce the same computed IDs (case-insensitive)
+		expect(result[0].computedSource).toBe("user-count");
+		expect(result[0].computedTarget).toBe("total-revenue");
+		expect(result[1].computedSource).toBe("user-count");
+		expect(result[1].computedTarget).toBe("total-revenue");
 	});
 });
