@@ -23,6 +23,7 @@ import {
 	validateRequiredFields,
 } from "@/utils/csv-validation";
 import { generateNodeIds, generateEdgeIds } from "@/utils/id-generation";
+import { validateNodeConnectivity, type GraphValidationResult } from "@/utils/graph-structure-validation";
 
 interface CSVImportModalProps {
 	isOpen: boolean;
@@ -75,9 +76,11 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 	const [validationResult, setValidationResult] = useState<{
 		nodes: ValidationResult | null;
 		edges: ValidationResult | null;
+		graph: GraphValidationResult | null;
 	}>({
 		nodes: null,
 		edges: null,
+		graph: null,
 	});
 
 	// Generated nodes for preview
@@ -291,6 +294,12 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 			processedNodes,
 		);
 
+		// Run graph structure validation
+		const graphStructureValidation = validateNodeConnectivity(
+			processedNodes,
+			processedEdges,
+		);
+
 		// Combine all validation results with error categorization
 		const combinedNodesValidation: ValidationResult = {
 			isValid:
@@ -324,17 +333,19 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 		setValidationResult({
 			nodes: combinedNodesValidation,
 			edges: combinedEdgesValidation,
+			graph: graphStructureValidation,
 		});
 	}, [nodesParseResult, edgesParseResult, columnMapping]);
 
 	// Check if validation has blocking errors that prevent import
 	const hasValidationErrors = useMemo(() => {
-		if (!validationResult.nodes || !validationResult.edges) return true;
+		if (!validationResult.nodes || !validationResult.edges || !validationResult.graph) return true;
 		
-		// Block import only if there are blocking errors
+		// Block import only if there are blocking errors from any validation stage
 		return (
 			validationResult.nodes.blocking ||
-			validationResult.edges.blocking
+			validationResult.edges.blocking ||
+			validationResult.graph.blocking
 		);
 	}, [validationResult]);
 

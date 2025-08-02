@@ -16,6 +16,8 @@ export interface GraphValidationError {
 export interface GraphValidationResult {
 	isValid: boolean;
 	errors: GraphValidationError[];
+	severity: "critical" | "non-critical";
+	blocking: boolean;
 }
 
 export interface NodeData {
@@ -149,5 +151,7 @@ export function validateNodeConnectivity(
 	return {
 		isValid: errors.length === 0,
 		errors,
+		severity: "non-critical", // Graph structure issues are non-critical (individual node problems)
+		blocking: errors.length > 0, // But they block import (can't build valid lineage graph)
 	};
 }
