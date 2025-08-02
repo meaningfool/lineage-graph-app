@@ -23,7 +23,6 @@ import {
 	validateNodeTypes,
 	validateRequiredFields,
 } from "@/utils/csv-validation";
-import { generateNodeIds } from "@/utils/id-generation";
 
 interface CSVImportModalProps {
 	isOpen: boolean;
@@ -254,16 +253,14 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 	const runValidation = useCallback(() => {
 		if (!nodesParseResult || !edgesParseResult) return;
 
-		// Map CSV data using column mappings (without ID)
-		const mappedNodesWithoutIds = nodesParseResult.data.map((row) => ({
+		// Map CSV data using user-provided column mappings (with user-provided IDs)
+		const mappedNodes = nodesParseResult.data.map((row) => ({
+			id: row[columnMapping.nodeId],
 			title: row[columnMapping.nodeTitle],
 			type: row[columnMapping.nodeType],
 		}));
 
-		// Generate IDs from titles
-		const mappedNodes = generateNodeIds(mappedNodesWithoutIds);
-
-		// Store generated nodes for preview
+		// Store mapped nodes for preview
 		setGeneratedNodes(mappedNodes);
 
 		const mappedEdges = edgesParseResult.data.map((row) => ({
@@ -716,11 +713,11 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 									</p>
 								</div>
 
-								{/* Generated IDs Preview */}
+								{/* Node IDs Preview */}
 								{generatedNodes.length > 0 && (
 									<div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/50">
 										<h4 className="flex items-center gap-2 font-medium text-blue-800 dark:text-blue-200">
-											Generated IDs:
+											Node IDs:
 										</h4>
 										<div className="mt-2 flex flex-wrap gap-2">
 											{generatedNodes.slice(0, 10).map((node, index) => (
