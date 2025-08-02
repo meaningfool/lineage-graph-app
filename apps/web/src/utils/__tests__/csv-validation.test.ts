@@ -144,6 +144,74 @@ describe("validateRequiredFields", () => {
 	});
 });
 
+describe("Validation Error Categorization", () => {
+	it("should categorize missing columns as critical+blocking", () => {
+		// Given: completely missing data columns (raw data validation failure)
+		const emptyNodes: any[] = [];
+		const requiredFields = ["id", "type"];
+		
+		// When: validateRequiredFields called with missing columns
+		const result = validateRequiredFields(emptyNodes, "nodes");
+		
+		// Then: should return critical+blocking error
+		expect(result.severity).toBe("critical");
+		expect(result.blocking).toBe(true);
+		expect(result.isValid).toBe(false);
+	});
+	
+	it("should categorize empty individual IDs as non-critical+non-blocking", () => {
+		// Given: nodes with empty individual ID fields
+		const nodes = [
+			{ id: "", type: "INPUT", title: "Test" },
+			{ id: "valid-id", type: "OUTPUT", title: "Valid" }
+		];
+		
+		// When: validateRequiredFields called
+		const result = validateRequiredFields(nodes, "nodes");
+		
+		// Then: should return non-critical+non-blocking error
+		expect(result.severity).toBe("non-critical");
+		expect(result.blocking).toBe(false);
+		expect(result.isValid).toBe(false);
+		expect(result.errors).toHaveLength(1);
+		expect(result.errors[0].message).toBe("Node at row 1 is missing required field: id");
+	});
+	
+	it("should categorize invalid node types as non-critical+non-blocking", () => {
+		// Given: nodes with invalid individual type fields
+		const nodes = [
+			{ id: "node1", type: "INVALID_TYPE", title: "Test" },
+			{ id: "node2", type: "INPUT", title: "Valid" }
+		];
+		
+		// When: validateNodeTypes called
+		const result = validateNodeTypes(nodes);
+		
+		// Then: should return non-critical+non-blocking error
+		expect(result.severity).toBe("non-critical");
+		expect(result.blocking).toBe(false);
+		expect(result.isValid).toBe(false);
+		expect(result.errors).toHaveLength(1);
+	});
+	
+	it("should categorize edge reference mismatches as non-critical+non-blocking", () => {
+		// Given: edges with missing node references
+		const nodes = [{ id: "valid-node", title: "Valid", type: "INPUT" }];
+		const edges = [
+			{ source: "missing-node", target: "valid-node", computedSource: "missing-node", computedTarget: "valid-node" }
+		];
+		
+		// When: validateEdgeReferences called
+		const result = validateEdgeReferences(edges, nodes);
+		
+		// Then: should return non-critical+non-blocking warning
+		expect(result.severity).toBe("non-critical");
+		expect(result.blocking).toBe(false);
+		expect(result.isValid).toBe(true); // Warnings don't invalidate
+		expect(result.warnings).toHaveLength(1);
+	});
+});
+
 describe("validateNodeTypes", () => {
 	it("should detect invalid node type with specific node identification", () => {
 		// Given: node at index 1 with type 'PROCESSING' (invalid)

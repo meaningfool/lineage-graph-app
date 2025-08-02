@@ -16,6 +16,8 @@ export interface ValidationResult {
 	isValid: boolean;
 	errors: ValidationError[];
 	warnings?: ValidationError[];
+	severity: "critical" | "non-critical";
+	blocking: boolean;
 }
 
 // Required fields for different data types
@@ -31,6 +33,22 @@ export function validateRequiredFields(
 	const errors: ValidationError[] = [];
 	const requiredFields = REQUIRED_FIELDS[dataType];
 
+	// Critical+Blocking: Completely missing data (empty array indicates missing columns)
+	if (data.length === 0) {
+		return {
+			isValid: false,
+			errors: [{
+				type: "MISSING_DATA",
+				severity: "critical",
+				message: `No ${dataType} data found - check that required columns exist`,
+				dataType,
+			}],
+			severity: "critical",
+			blocking: true,
+		};
+	}
+
+	// Non-critical+Non-blocking: Individual missing fields
 	data.forEach((item, index) => {
 		requiredFields.forEach((field) => {
 			// Check if field is missing or empty (including empty strings)
@@ -50,9 +68,14 @@ export function validateRequiredFields(
 		});
 	});
 
+	// Individual missing fields are non-critical+non-blocking (drop items and continue)
+	const severity = errors.length > 0 ? "non-critical" : "non-critical";
+	
 	return {
 		isValid: errors.length === 0,
 		errors,
+		severity,
+		blocking: false, // Individual field errors are non-blocking
 	};
 }
 
@@ -87,6 +110,8 @@ export function validateNodeTypes(
 	return {
 		isValid: errors.length === 0,
 		errors,
+		severity: "non-critical", // Individual type errors are non-critical
+		blocking: false, // Invalid types are non-blocking (drop items and continue)
 	};
 }
 
@@ -125,6 +150,8 @@ export function validateDuplicateNodeIds(
 	return {
 		isValid: errors.length === 0,
 		errors,
+		severity: "non-critical", // Duplicates are non-critical (handled by deduplication)
+		blocking: false, // Duplicates are non-blocking (handled by deduplication)
 	};
 }
 
@@ -181,5 +208,7 @@ export function validateEdgeReferences(
 		isValid: true, // Warnings don't make validation invalid
 		errors: [], // No critical errors, only warnings
 		warnings,
+		severity: "non-critical", // Edge reference mismatches are non-critical
+		blocking: false, // Edge mismatches are non-blocking (drop edges and continue)
 	};
 }
