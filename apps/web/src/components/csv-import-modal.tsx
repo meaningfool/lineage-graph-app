@@ -44,6 +44,7 @@ interface ColumnMapping {
 	nodeType: string;
 	sourceNode: string;
 	targetNode: string;
+	useIdAsLabels: boolean;
 }
 
 export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
@@ -66,6 +67,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 		nodeType: "",
 		sourceNode: "",
 		targetNode: "",
+		useIdAsLabels: true,
 	});
 
 	// Validation state
@@ -193,6 +195,11 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 		const edgeColumns = edgesParseResult.meta.fields || [];
 
 		const newMapping: ColumnMapping = {
+			nodeId:
+				nodeColumns.find(
+					(col) =>
+						col.toLowerCase().includes("id") || col.toLowerCase() === "id",
+				) || "",
 			nodeTitle:
 				nodeColumns.find(
 					(col) =>
@@ -219,6 +226,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 						col.toLowerCase().includes("to") ||
 						col.toLowerCase() === "target",
 				) || "",
+			useIdAsLabels: true,
 		};
 
 		setColumnMapping(newMapping);
@@ -232,7 +240,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 		columnMapping.targetNode;
 
 	// Handle mapping field changes
-	const handleMappingChange = (field: keyof ColumnMapping, value: string) => {
+	const handleMappingChange = (field: keyof ColumnMapping, value: string | boolean) => {
 		setColumnMapping((prev) => ({
 			...prev,
 			[field]: value,
@@ -527,7 +535,8 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 											</label>
 											<select
 												id="node-title"
-												aria-label="Node title column mapping"
+												aria-label="Node Title Column *"
+												aria-required="true"
 												className="w-full rounded-md border p-2 text-sm"
 												value={columnMapping.nodeTitle}
 												onChange={(e) =>
@@ -568,6 +577,25 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 											</select>
 										</div>
 									</div>
+
+									{/* Use ID as labels checkbox */}
+									<div className="flex items-center space-x-2">
+										<input
+											type="checkbox"
+											id="use-id-as-labels"
+											checked={columnMapping.useIdAsLabels}
+											onChange={(e) =>
+												handleMappingChange("useIdAsLabels", e.target.checked)
+											}
+											className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+										/>
+										<label
+											htmlFor="use-id-as-labels"
+											className="text-sm font-medium text-gray-700 dark:text-gray-300"
+										>
+											Use ID as labels
+										</label>
+									</div>
 								</div>
 
 								{/* Edges Mapping */}
@@ -584,7 +612,8 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 											</label>
 											<select
 												id="source-node"
-												aria-label="Source node column mapping"
+												aria-label="Source Node Column *"
+												aria-required="true"
 												className="w-full rounded-md border p-2 text-sm"
 												value={columnMapping.sourceNode}
 												onChange={(e) =>
@@ -609,7 +638,8 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 											</label>
 											<select
 												id="target-node"
-												aria-label="Target node column mapping"
+												aria-label="Target Node Column *"
+												aria-required="true"
 												className="w-full rounded-md border p-2 text-sm"
 												value={columnMapping.targetNode}
 												onChange={(e) =>

@@ -1061,14 +1061,58 @@ describe("CSVImportModal", () => {
 			const user = userEvent.setup();
 			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
 
-			// Given: At mapping step with other fields selected but not ID
-			await navigateToColumnMapping(user);
-			await selectMapping(user, "node-title", "title");
-			await selectMapping(user, "source-node", "source");
-			await selectMapping(user, "target-node", "target");
+			// Upload files with columns that won't auto-detect ID field
+			const nodesInput = screen.getByLabelText(/nodes csv file/i);
+			const nodesFile = new File(["name,label,category\nUser Count,Users,metric"], "nodes.csv", {
+				type: "text/csv",
+			});
+			await user.upload(nodesInput, nodesFile);
+
+			const edgesInput = screen.getByLabelText(/edges csv file/i);
+			const edgesFile = new File(["from,to\nuser-count,orders"], "edges.csv", {
+				type: "text/csv",
+			});
+			await user.upload(edgesInput, edgesFile);
+
+			// Navigate to mapping step
+			const continueButton = screen.getByRole("button", { name: /continue/i });
+			await user.click(continueButton);
+
+			// Select other required fields but leave Node ID empty
+			await selectMapping(user, "node-title", "name");
+			await selectMapping(user, "source-node", "from");
+			await selectMapping(user, "target-node", "to");
 			
-			// Then: Continue should be disabled
+			// Then: Continue should be disabled because Node ID is required but not selected
 			expect(screen.getByRole("button", { name: /continue/i })).toBeDisabled();
+		});
+
+		it("should show 'Use ID as labels' checkbox (default checked)", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Navigate to column mapping step
+			await navigateToColumnMapping(user);
+			
+			// Then: Should display "Use ID as labels" checkbox that is checked by default
+			const useIdAsLabelsCheckbox = screen.getByLabelText(/use id as labels/i);
+			expect(useIdAsLabelsCheckbox).toBeInTheDocument();
+			expect(useIdAsLabelsCheckbox).toBeChecked();
+		});
+
+		it("should allow unchecking 'Use ID as labels' checkbox", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Navigate to column mapping step
+			await navigateToColumnMapping(user);
+			
+			// When: User unchecks the "Use ID as labels" checkbox
+			const useIdAsLabelsCheckbox = screen.getByLabelText(/use id as labels/i);
+			await user.click(useIdAsLabelsCheckbox);
+			
+			// Then: Checkbox should be unchecked
+			expect(useIdAsLabelsCheckbox).not.toBeChecked();
 		});
 	});
 
@@ -1091,12 +1135,8 @@ describe("CSVImportModal", () => {
 		// Upload both files
 		await uploadBothValidFiles(user);
 
-		// Navigate to columns step
-		let continueButton = screen.getByRole("button", { name: /continue/i });
-		await user.click(continueButton);
-
-		// Navigate to mapping step
-		continueButton = screen.getByRole("button", { name: /continue/i });
+		// Navigate to mapping step (upload → mapping)
+		const continueButton = screen.getByRole("button", { name: /continue/i });
 		await user.click(continueButton);
 	}
 
