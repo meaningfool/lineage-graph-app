@@ -39,6 +39,7 @@ interface ParseResult {
 type Step = "upload" | "mapping" | "validation";
 
 interface ColumnMapping {
+	nodeId: string;
 	nodeTitle: string;
 	nodeType: string;
 	sourceNode: string;
@@ -60,6 +61,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 		null,
 	);
 	const [columnMapping, setColumnMapping] = useState<ColumnMapping>({
+		nodeId: "",
 		nodeTitle: "",
 		nodeType: "",
 		sourceNode: "",
@@ -224,6 +226,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 
 	// Check if required mappings are complete
 	const isValidMapping =
+		columnMapping.nodeId &&
 		columnMapping.nodeTitle &&
 		columnMapping.sourceNode &&
 		columnMapping.targetNode;
@@ -491,6 +494,32 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 									<div className="grid grid-cols-1 gap-4">
 										<div className="space-y-2">
 											<label
+												htmlFor="node-id"
+												className="font-medium text-sm"
+											>
+												Node ID Column *
+											</label>
+											<select
+												id="node-id"
+												aria-label="Node ID Column *"
+												aria-required="true"
+												className="w-full rounded-md border p-2 text-sm"
+												value={columnMapping.nodeId}
+												onChange={(e) =>
+													handleMappingChange("nodeId", e.target.value)
+												}
+											>
+												<option value="">Select column...</option>
+												{nodesParseResult?.meta.fields?.map((column) => (
+													<option key={column} value={column}>
+														{column}
+													</option>
+												))}
+											</select>
+										</div>
+
+										<div className="space-y-2">
+											<label
 												htmlFor="node-title"
 												className="font-medium text-sm"
 											>
@@ -605,7 +634,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 											Required fields missing
 										</p>
 										<p className="mt-1 text-amber-600 text-xs dark:text-amber-400">
-											Please map all required fields: Node Title,
+											Please map all required fields: Node ID, Node Title,
 											Source Node, and Target Node
 										</p>
 									</div>
