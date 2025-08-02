@@ -59,27 +59,19 @@ export function generateNodeIds(nodes: NodeWithId[]): GenerateNodeIdsResult {
 	const seenIds = new Set<string>();
 	const processedNodes: ProcessedNode[] = [];
 	let duplicatesRemoved = 0;
-	let emptyIdCounter = 0;
 
 	for (const node of nodes) {
-		// Handle empty or missing IDs
+		// Only process nodes with valid IDs (empty IDs should be caught by validation)
 		const userProvidedId = node.id?.trim();
-		let computedId: string;
-		let originalId: string;
-
+		
 		if (!userProvidedId) {
-			// Use fallback ID for empty IDs
-			// Keep generating until we find one that's not taken
-			do {
-				emptyIdCounter++;
-				computedId = `node-${emptyIdCounter}`;
-			} while (seenIds.has(computedId));
-			originalId = "";
-		} else {
-			// Generate ID from user-provided ID using slugify
-			computedId = slugify(userProvidedId);
-			originalId = userProvidedId;
+			// Skip nodes with empty IDs - these should be caught by validation
+			continue;
 		}
+
+		// Generate ID from user-provided ID using slugify
+		const computedId = slugify(userProvidedId);
+		const originalId = userProvidedId;
 
 		// Check for duplicates (case-insensitive via slugified ID)
 		if (seenIds.has(computedId)) {

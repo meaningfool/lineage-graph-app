@@ -218,34 +218,71 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 			type: row[columnMapping.nodeType],
 		}));
 
+		const mappedEdges = edgesParseResult.data.map((row) => ({
+			source: row[columnMapping.sourceNode],
+			target: row[columnMapping.targetNode],
+		}));
+
+		// Run raw data validation BEFORE processing
+		const nodesRequiredFieldsValidation = validateRequiredFields(
+			mappedNodes,
+			"nodes",
+		);
+		const edgesRequiredFieldsValidation = validateRequiredFields(
+			mappedEdges,
+			"edges",
+		);
+
+		// Run node type validation on raw data
+		const nodeTypesValidation = validateNodeTypes(mappedNodes);
+
+		// Only proceed with ID generation if no blocking errors
+		if (nodesRequiredFieldsValidation.blocking || edgesRequiredFieldsValidation.blocking || nodeTypesValidation.blocking) {
+			// Stop pipeline due to blocking errors - don't generate IDs
+			const combinedNodesValidation: ValidationResult = {
+				isValid: false,
+				errors: [
+					...nodesRequiredFieldsValidation.errors,
+					...nodeTypesValidation.errors,
+				],
+				severity: "critical",
+				blocking: true,
+			};
+
+			const combinedEdgesValidation: ValidationResult = {
+				isValid: false,
+				errors: [...edgesRequiredFieldsValidation.errors],
+				severity: edgesRequiredFieldsValidation.severity,
+				blocking: edgesRequiredFieldsValidation.blocking,
+			};
+
+			setValidationResult({
+				nodes: combinedNodesValidation,
+				edges: combinedEdgesValidation,
+			});
+			return;
+		}
+
+		// Filter out problematic nodes/edges (non-blocking errors) before processing
+		const validNodes = mappedNodes.filter(node => 
+			node.id && node.id.trim() && 
+			["INPUT", "STEP", "OUTPUT"].includes(node.type?.toUpperCase())
+		);
+		const validEdges = mappedEdges.filter(edge => 
+			edge.source && edge.source.trim() && 
+			edge.target && edge.target.trim()
+		);
+
 		// Generate IDs and handle deduplication
-		const nodeGenResult = generateNodeIds(mappedNodes);
+		const nodeGenResult = generateNodeIds(validNodes);
 		const processedNodes = nodeGenResult.nodes;
 
 		// Store processed nodes for preview and deduplication message
 		setGeneratedNodes(processedNodes);
 		setDeduplicationMessage(nodeGenResult.message);
 
-		const mappedEdges = edgesParseResult.data.map((row) => ({
-			source: row[columnMapping.sourceNode],
-			target: row[columnMapping.targetNode],
-		}));
-
 		// Generate computed IDs for edges
-		const processedEdges = generateEdgeIds(mappedEdges);
-
-		// Run required fields validation
-		const nodesRequiredFieldsValidation = validateRequiredFields(
-			processedNodes,
-			"nodes",
-		);
-		const edgesRequiredFieldsValidation = validateRequiredFields(
-			processedEdges,
-			"edges",
-		);
-
-		// Run node type validation
-		const nodeTypesValidation = validateNodeTypes(processedNodes);
+		const processedEdges = generateEdgeIds(validEdges);
 
 		// Run edge reference validation
 		const edgeReferencesValidation = validateEdgeReferences(
