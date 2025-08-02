@@ -22,6 +22,7 @@ import {
 	validateNodeTypes,
 	validateRequiredFields,
 } from "@/utils/csv-validation";
+import { generateNodeIds, generateEdgeIds } from "@/utils/id-generation";
 
 interface CSVImportModalProps {
 	isOpen: boolean;
@@ -81,6 +82,9 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 
 	// Generated nodes for preview
 	const [generatedNodes, setGeneratedNodes] = useState<any[]>([]);
+	
+	// Deduplication results
+	const [deduplicationMessage, setDeduplicationMessage] = useState<string>("");
 
 	const validateCSV = useCallback(
 		async (file: File, fileType: "nodes" | "edges") => {
@@ -259,31 +263,39 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 			type: row[columnMapping.nodeType],
 		}));
 
-		// Store mapped nodes for preview
-		setGeneratedNodes(mappedNodes);
+		// Generate IDs and handle deduplication
+		const nodeGenResult = generateNodeIds(mappedNodes);
+		const processedNodes = nodeGenResult.nodes;
+
+		// Store processed nodes for preview and deduplication message
+		setGeneratedNodes(processedNodes);
+		setDeduplicationMessage(nodeGenResult.message);
 
 		const mappedEdges = edgesParseResult.data.map((row) => ({
 			source: row[columnMapping.sourceNode],
 			target: row[columnMapping.targetNode],
 		}));
 
+		// Generate computed IDs for edges
+		const processedEdges = generateEdgeIds(mappedEdges);
+
 		// Run required fields validation
 		const nodesRequiredFieldsValidation = validateRequiredFields(
-			mappedNodes,
+			processedNodes,
 			"nodes",
 		);
 		const edgesRequiredFieldsValidation = validateRequiredFields(
-			mappedEdges,
+			processedEdges,
 			"edges",
 		);
 
 		// Run node type validation
-		const nodeTypesValidation = validateNodeTypes(mappedNodes);
+		const nodeTypesValidation = validateNodeTypes(processedNodes);
 
 		// Run edge reference validation
 		const edgeReferencesValidation = validateEdgeReferences(
-			mappedEdges,
-			mappedNodes,
+			processedEdges,
+			processedNodes,
 		);
 
 		// Combine all validation results
@@ -728,6 +740,21 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 												</span>
 											)}
 										</div>
+									</div>
+								)}
+
+								{/* Deduplication Message */}
+								{deduplicationMessage && (
+									<div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/50">
+										<div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+											<CheckCircle className="h-4 w-4" />
+											<span className="text-sm font-medium">
+												{deduplicationMessage}
+											</span>
+										</div>
+										<p className="mt-1 text-amber-700 text-xs dark:text-amber-300">
+											Kept first occurrence of each duplicate ID.
+										</p>
 									</div>
 								)}
 
