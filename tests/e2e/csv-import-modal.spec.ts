@@ -208,8 +208,8 @@ test.describe("CSV Import Modal - Auto-Generated IDs", () => {
 			page.getByText("Node IDs will be auto-generated from title column"),
 		).toBeVisible();
 		
-		// Should show it as an info message
-		await expect(page.locator(".bg-blue-50, .bg-blue-950/50")).toBeVisible();
+		// Should show it as an info message (check for blue background)
+		await expect(page.locator(".bg-blue-50")).toBeVisible();
 	});
 
 	test("Test 9: should preview generated IDs in validation step", async ({

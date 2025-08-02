@@ -23,6 +23,7 @@ import {
 	validateNodeTypes,
 	validateRequiredFields,
 } from "@/utils/csv-validation";
+import { generateNodeIds } from "@/utils/id-generation";
 
 interface CSVImportModalProps {
 	isOpen: boolean;
@@ -38,7 +39,6 @@ interface ParseResult {
 type Step = "upload" | "mapping" | "validation";
 
 interface ColumnMapping {
-	nodeId: string;
 	nodeTitle: string;
 	nodeType: string;
 	sourceNode: string;
@@ -60,7 +60,6 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 		null,
 	);
 	const [columnMapping, setColumnMapping] = useState<ColumnMapping>({
-		nodeId: "",
 		nodeTitle: "",
 		nodeType: "",
 		sourceNode: "",
@@ -75,6 +74,9 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 		nodes: null,
 		edges: null,
 	});
+
+	// Generated nodes for preview
+	const [generatedNodes, setGeneratedNodes] = useState<any[]>([]);
 
 	const validateCSV = useCallback(
 		async (file: File, fileType: "nodes" | "edges") => {
@@ -189,11 +191,6 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 		const edgeColumns = edgesParseResult.meta.fields || [];
 
 		const newMapping: ColumnMapping = {
-			nodeId:
-				nodeColumns.find(
-					(col) =>
-						col.toLowerCase().includes("id") || col.toLowerCase() === "id",
-				) || "",
 			nodeTitle:
 				nodeColumns.find(
 					(col) =>
@@ -227,7 +224,6 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 
 	// Check if required mappings are complete
 	const isValidMapping =
-		columnMapping.nodeId &&
 		columnMapping.nodeTitle &&
 		columnMapping.sourceNode &&
 		columnMapping.targetNode;
@@ -244,12 +240,17 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 	const runValidation = useCallback(() => {
 		if (!nodesParseResult || !edgesParseResult) return;
 
-		// Map CSV data using column mappings
-		const mappedNodes = nodesParseResult.data.map((row) => ({
-			id: row[columnMapping.nodeId],
+		// Map CSV data using column mappings (without ID)
+		const mappedNodesWithoutIds = nodesParseResult.data.map((row) => ({
 			title: row[columnMapping.nodeTitle],
 			type: row[columnMapping.nodeType],
 		}));
+
+		// Generate IDs from titles
+		const mappedNodes = generateNodeIds(mappedNodesWithoutIds);
+
+		// Store generated nodes for preview
+		setGeneratedNodes(mappedNodes);
 
 		const mappedEdges = edgesParseResult.data.map((row) => ({
 			source: row[columnMapping.sourceNode],
@@ -477,29 +478,17 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 								<div className="space-y-4">
 									<h4 className="font-medium text-sm">Node Fields</h4>
 
-									<div className="grid grid-cols-1 gap-4">
-										<div className="space-y-2">
-											<label htmlFor="node-id" className="font-medium text-sm">
-												Node ID Column *
-											</label>
-											<select
-												id="node-id"
-												aria-label="Node ID column mapping"
-												className="w-full rounded-md border p-2 text-sm"
-												value={columnMapping.nodeId}
-												onChange={(e) =>
-													handleMappingChange("nodeId", e.target.value)
-												}
-											>
-												<option value="">Select column...</option>
-												{nodesParseResult?.meta.fields?.map((column) => (
-													<option key={column} value={column}>
-														{column}
-													</option>
-												))}
-											</select>
-										</div>
+									{/* Auto-generation notice */}
+									<div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950/50">
+										<p className="font-medium text-blue-800 text-sm dark:text-blue-200">
+											Node IDs will be auto-generated from title column
+										</p>
+										<p className="mt-1 text-blue-600 text-xs dark:text-blue-400">
+											IDs will be created automatically using a slug format (e.g., "User Count" → "user-count")
+										</p>
+									</div>
 
+									<div className="grid grid-cols-1 gap-4">
 										<div className="space-y-2">
 											<label
 												htmlFor="node-title"
@@ -616,7 +605,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 											Required fields missing
 										</p>
 										<p className="mt-1 text-amber-600 text-xs dark:text-amber-400">
-											Please map all required fields: Node ID, Node Title,
+											Please map all required fields: Node Title,
 											Source Node, and Target Node
 										</p>
 									</div>
@@ -624,7 +613,6 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 
 								{!columnMapping.sourceNode &&
 									!columnMapping.targetNode &&
-									columnMapping.nodeId &&
 									columnMapping.nodeTitle && (
 										<div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/50">
 											<p className="font-medium text-amber-800 text-sm dark:text-amber-200">
@@ -647,6 +635,30 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 										Review data validation results before import
 									</p>
 								</div>
+
+								{/* Generated IDs Preview */}
+								{generatedNodes.length > 0 && (
+									<div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/50">
+										<h4 className="flex items-center gap-2 font-medium text-blue-800 dark:text-blue-200">
+											Generated IDs:
+										</h4>
+										<div className="mt-2 flex flex-wrap gap-2">
+											{generatedNodes.slice(0, 10).map((node, index) => (
+												<span
+													key={index}
+													className="rounded bg-blue-100 px-2 py-1 text-blue-800 text-xs dark:bg-blue-900/50 dark:text-blue-200"
+												>
+													{node.id}
+												</span>
+											))}
+											{generatedNodes.length > 10 && (
+												<span className="text-blue-600 text-xs dark:text-blue-400">
+													... and {generatedNodes.length - 10} more
+												</span>
+											)}
+										</div>
+									</div>
+								)}
 
 								{/* Validation Results */}
 								<div className="space-y-4">
