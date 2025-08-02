@@ -492,16 +492,6 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 								<div className="space-y-4">
 									<h4 className="font-medium text-sm">Node Fields</h4>
 
-									{/* Auto-generation notice */}
-									<div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950/50">
-										<p className="font-medium text-blue-800 text-sm dark:text-blue-200">
-											Node IDs will be auto-generated from title column
-										</p>
-										<p className="mt-1 text-blue-600 text-xs dark:text-blue-400">
-											IDs will be created automatically using a slug format (e.g., "User Count" → "user-count")
-										</p>
-									</div>
-
 									<div className="grid grid-cols-1 gap-4">
 										<div className="space-y-2">
 											<label
