@@ -191,51 +191,6 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 		multiple: false,
 	});
 
-	// Auto-detect column mappings when navigating to mapping step
-	const autoDetectMappings = useCallback(() => {
-		if (!nodesParseResult || !edgesParseResult) return;
-
-		const nodeColumns = nodesParseResult.meta.fields || [];
-		const edgeColumns = edgesParseResult.meta.fields || [];
-
-		const newMapping: ColumnMapping = {
-			nodeId:
-				nodeColumns.find(
-					(col) =>
-						col.toLowerCase().includes("id") || col.toLowerCase() === "id",
-				) || "",
-			nodeTitle:
-				nodeColumns.find(
-					(col) =>
-						col.toLowerCase().includes("title") ||
-						col.toLowerCase().includes("name") ||
-						col.toLowerCase() === "title",
-				) || "",
-			nodeType:
-				nodeColumns.find(
-					(col) =>
-						col.toLowerCase().includes("type") || col.toLowerCase() === "type",
-				) || "",
-			sourceNode:
-				edgeColumns.find(
-					(col) =>
-						col.toLowerCase().includes("source") ||
-						col.toLowerCase().includes("from") ||
-						col.toLowerCase() === "source",
-				) || "",
-			targetNode:
-				edgeColumns.find(
-					(col) =>
-						col.toLowerCase().includes("target") ||
-						col.toLowerCase().includes("to") ||
-						col.toLowerCase() === "target",
-				) || "",
-			useIdAsLabels: true,
-			nodeLabel: "",
-		};
-
-		setColumnMapping(newMapping);
-	}, [nodesParseResult, edgesParseResult]);
 
 	// Check if required mappings are complete
 	const isValidMapping =
@@ -298,7 +253,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 			processedNodes,
 		);
 
-		// Combine all validation results
+		// Combine all validation results with error categorization
 		const combinedNodesValidation: ValidationResult = {
 			isValid:
 				nodesRequiredFieldsValidation.isValid &&
@@ -307,6 +262,10 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 				...nodesRequiredFieldsValidation.errors,
 				...nodeTypesValidation.errors,
 			],
+			severity: nodesRequiredFieldsValidation.severity === "critical" || nodeTypesValidation.severity === "critical" 
+				? "critical" 
+				: "non-critical",
+			blocking: nodesRequiredFieldsValidation.blocking || nodeTypesValidation.blocking,
 		};
 
 		const combinedEdgesValidation: ValidationResult = {
@@ -317,6 +276,11 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 				...edgesRequiredFieldsValidation.errors,
 				...edgeReferencesValidation.errors,
 			],
+			warnings: edgeReferencesValidation.warnings || [],
+			severity: edgesRequiredFieldsValidation.severity === "critical" || edgeReferencesValidation.severity === "critical"
+				? "critical"
+				: "non-critical", 
+			blocking: edgesRequiredFieldsValidation.blocking || edgeReferencesValidation.blocking,
 		};
 
 		setValidationResult({
@@ -325,12 +289,14 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 		});
 	}, [nodesParseResult, edgesParseResult, columnMapping]);
 
-	// Check if validation has critical errors
+	// Check if validation has blocking errors that prevent import
 	const hasValidationErrors = useMemo(() => {
 		if (!validationResult.nodes || !validationResult.edges) return true;
+		
+		// Block import only if there are blocking errors
 		return (
-			validationResult.nodes.errors.length > 0 ||
-			validationResult.edges.errors.length > 0
+			validationResult.nodes.blocking ||
+			validationResult.edges.blocking
 		);
 	}, [validationResult]);
 
@@ -892,8 +858,6 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 							}
 							onClick={() => {
 								setCurrentStep("mapping");
-								// Auto-detect mappings when navigating to mapping step
-								autoDetectMappings();
 							}}
 						>
 							Continue
