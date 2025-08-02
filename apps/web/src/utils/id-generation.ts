@@ -9,6 +9,19 @@ interface NodeWithId {
 	[key: string]: any;
 }
 
+interface EdgeWithIds {
+	source?: string;
+	target?: string;
+	[key: string]: any;
+}
+
+interface ProcessedEdge extends EdgeWithIds {
+	source: string;
+	target: string;
+	computedSource: string;
+	computedTarget: string;
+}
+
 interface ProcessedNode extends NodeWithId {
 	id: string;
 	originalId: string;
@@ -98,4 +111,31 @@ export function generateNodeIds(nodes: NodeWithId[]): GenerateNodeIdsResult {
 		duplicatesRemoved,
 		message,
 	};
+}
+
+/**
+ * Generates computed IDs for edges based on their source and target fields
+ * Applies same slugify logic to edge source and target for consistent matching with nodes
+ * @param edges - Array of edges with source and target properties
+ * @returns Array of edges with additional computedSource and computedTarget fields
+ */
+export function generateEdgeIds(edges: EdgeWithIds[]): ProcessedEdge[] {
+	return edges.map((edge) => {
+		// Handle source ID
+		const sourceId = edge.source?.trim();
+		const computedSource = sourceId ? slugify(sourceId) : "";
+
+		// Handle target ID  
+		const targetId = edge.target?.trim();
+		const computedTarget = targetId ? slugify(targetId) : "";
+
+		// Return edge with all original properties plus computed IDs
+		return {
+			...edge,
+			source: edge.source || "",
+			target: edge.target || "",
+			computedSource,
+			computedTarget,
+		};
+	});
 }
