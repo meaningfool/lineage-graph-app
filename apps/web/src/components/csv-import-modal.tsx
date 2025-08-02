@@ -196,6 +196,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 	const isValidMapping =
 		columnMapping.nodeId &&
 		columnMapping.nodeTitle &&
+		columnMapping.nodeType &&
 		columnMapping.sourceNode &&
 		columnMapping.targetNode;
 
@@ -556,11 +557,12 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 												htmlFor="node-type"
 												className="font-medium text-sm"
 											>
-												Node Type Column
+												Node Type Column *
 											</label>
 											<select
 												id="node-type"
-												aria-label="Node type column mapping"
+												aria-label="Node Type Column *"
+												aria-required="true"
 												className="w-full rounded-md border p-2 text-sm"
 												value={columnMapping.nodeType}
 												onChange={(e) =>
@@ -691,7 +693,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 											Required fields missing
 										</p>
 										<p className="mt-1 text-amber-600 text-xs dark:text-amber-400">
-											Please map all required fields: Node ID, Node Title,
+											Please map all required fields: Node ID, Node Title, Node Type,
 											Source Node, and Target Node
 										</p>
 									</div>

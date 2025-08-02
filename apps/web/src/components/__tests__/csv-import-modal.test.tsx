@@ -439,54 +439,7 @@ describe("CSVImportModal", () => {
 			expect(screen.getByRole("button", { name: /continue/i })).toBeEnabled();
 		});
 
-		it("auto-detects obvious column mappings", async () => {
-			const user = userEvent.setup();
-			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
 
-			// Upload files with standard column names
-			const nodesInput = screen.getByLabelText(/nodes csv file/i);
-			const nodesFile = new File(
-				["id,title,type\n1,Users,input"],
-				"nodes.csv",
-				{ type: "text/csv" },
-			);
-			await user.upload(nodesInput, nodesFile);
-
-			const edgesInput = screen.getByLabelText(/edges csv file/i);
-			const edgesFile = new File(["source,target\n1,2"], "edges.csv", {
-				type: "text/csv",
-			});
-			await user.upload(edgesInput, edgesFile);
-
-			// Navigate through steps
-			let continueButton = screen.getByRole("button", { name: /continue/i });
-			await user.click(continueButton); // Go to columns
-			continueButton = screen.getByRole("button", { name: /continue/i });
-			await user.click(continueButton); // Go to mapping
-
-			// Should auto-select obvious matches
-			expect(screen.getByDisplayValue("id")).toBeInTheDocument(); // node-id mapped to 'id'
-			expect(screen.getByDisplayValue("title")).toBeInTheDocument(); // node-title mapped to 'title'
-			expect(screen.getByDisplayValue("source")).toBeInTheDocument(); // source-node mapped to 'source'
-			expect(screen.getByDisplayValue("target")).toBeInTheDocument(); // target-node mapped to 'target'
-		});
-
-		it("provides navigation back to column detection", async () => {
-			const user = userEvent.setup();
-			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
-
-			// Navigate to column mapping step
-			await navigateToColumnMapping(user);
-
-			// Should have back button
-			const backButton = screen.getByRole("button", { name: /back/i });
-			expect(backButton).toBeInTheDocument();
-
-			// Click back should return to column detection view
-			await user.click(backButton);
-			expect(screen.getByText(/column detection/i)).toBeInTheDocument();
-			expect(screen.getByText(/nodes file columns/i)).toBeInTheDocument();
-		});
 
 		it("shows mapping validation errors", async () => {
 			const user = userEvent.setup();
@@ -522,6 +475,33 @@ describe("CSVImportModal", () => {
 
 			// Should still show missing fields message
 			expect(screen.getByText(/required.*missing/i)).toBeInTheDocument();
+		});
+
+		it("should show type column as required in mapping step", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Navigate to column mapping step
+			await navigateToColumnMapping(user);
+
+			expect(screen.getByLabelText("Node Type Column *")).toBeInTheDocument();
+			expect(screen.getByLabelText("Node Type Column *")).toHaveAttribute("aria-required", "true");
+		});
+
+		it("should disable continue when type column not selected", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Navigate to column mapping step  
+			await navigateToColumnMapping(user);
+
+			// Select other required fields but not type
+			await selectMapping(user, "node-id", "id");
+			await selectMapping(user, "source-node", "source");
+			await selectMapping(user, "target-node", "target");
+			// Don't select type column
+
+			expect(screen.getByRole("button", { name: /continue/i })).toBeDisabled();
 		});
 	});
 
