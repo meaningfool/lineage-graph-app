@@ -1,15 +1,23 @@
 /**
- * Generates unique IDs for nodes based on their title column
- * Uses slugify logic to convert titles to kebab-case IDs
+ * Generates unique IDs for nodes based on their user-provided ID field
+ * Uses slugify logic to convert IDs to kebab-case
+ * Removes duplicates by keeping first occurrence
  */
 
-interface NodeWithTitle {
-	title?: string;
+interface NodeWithId {
+	id?: string;
 	[key: string]: any;
 }
 
-interface NodeWithId extends NodeWithTitle {
+interface ProcessedNode extends NodeWithId {
 	id: string;
+	originalId: string;
+}
+
+export interface GenerateNodeIdsResult {
+	nodes: ProcessedNode[];
+	duplicatesRemoved: number;
+	message: string;
 }
 
 /**
@@ -29,38 +37,62 @@ function slugify(text: string): string {
 }
 
 /**
- * Generates unique IDs for nodes based on their title property
- * Handles duplicates by appending numeric suffixes
- * @param nodes - Array of nodes with title property
- * @returns Array of nodes with generated ID property
+ * Generates unique IDs for nodes based on their user-provided ID property
+ * Handles duplicates by keeping first occurrence and dropping subsequent ones
+ * @param nodes - Array of nodes with user-provided ID property
+ * @returns Object containing processed nodes array, duplicate count, and message
  */
-export function generateNodeIds(nodes: NodeWithTitle[]): NodeWithId[] {
-	const idCounts = new Map<string, number>();
+export function generateNodeIds(nodes: NodeWithId[]): GenerateNodeIdsResult {
+	const seenIds = new Set<string>();
+	const processedNodes: ProcessedNode[] = [];
+	let duplicatesRemoved = 0;
+	let nodeCounter = 0;
 
-	return nodes.map((node, index) => {
-		// Handle empty or missing titles
-		const title = node.title?.trim();
+	for (const node of nodes) {
+		// Handle empty or missing IDs
+		const userProvidedId = node.id?.trim();
 		let baseId: string;
+		let originalId: string;
 
-		if (!title) {
-			// Use fallback ID for empty titles
-			baseId = `node-${index + 1}`;
+		if (!userProvidedId) {
+			// Use fallback ID for empty IDs
+			nodeCounter++;
+			baseId = `node-${nodeCounter}`;
+			originalId = "";
 		} else {
-			// Generate ID from title using slugify
-			baseId = slugify(title);
+			// Generate ID from user-provided ID using slugify
+			baseId = slugify(userProvidedId);
+			originalId = userProvidedId;
 		}
 
-		// Handle duplicates
-		const count = idCounts.get(baseId) || 0;
-		idCounts.set(baseId, count + 1);
+		// Check for duplicates (case-insensitive)
+		if (seenIds.has(baseId)) {
+			duplicatesRemoved++;
+			continue; // Skip duplicate, don't add to results
+		}
 
-		// Generate final ID with suffix if needed
-		const id = count === 0 ? baseId : `${baseId}-${count + 1}`;
+		// Mark this ID as seen
+		seenIds.add(baseId);
 
-		// Return new object with generated ID, preserving all original properties
-		return {
+		// Add to processed nodes with all original properties preserved
+		processedNodes.push({
 			...node,
-			id,
-		};
-	});
+			id: baseId,
+			originalId: originalId,
+		});
+	}
+
+	// Generate appropriate message
+	let message = "";
+	if (duplicatesRemoved === 1) {
+		message = "Removed 1 duplicate node";
+	} else if (duplicatesRemoved > 1) {
+		message = `Removed ${duplicatesRemoved} duplicate nodes`;
+	}
+
+	return {
+		nodes: processedNodes,
+		duplicatesRemoved,
+		message,
+	};
 }
