@@ -265,13 +265,4 @@ describe("CSV Import Feature", () => {
 		expect(importButton).toBeInTheDocument();
 	});
 
-	it("shows coming soon message when import button clicked", async () => {
-		render(<Home />);
-
-		const importButton = screen.getByRole("button", { name: /import csv/i });
-		fireEvent.click(importButton);
-
-		// Check that the message appears
-		expect(screen.getByText(/csv import coming soon/i)).toBeInTheDocument();
-	});
 });

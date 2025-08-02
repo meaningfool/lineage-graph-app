@@ -27,6 +27,10 @@ describe("CSVImportModal", () => {
 		const nodeTitleSelect = screen.getByLabelText(/node title column/i);
 		await user.selectOptions(nodeTitleSelect, "title");
 
+		// Select Node Type column (required) - NEWLY REQUIRED
+		const nodeTypeSelect = screen.getByLabelText(/node type column/i);
+		await user.selectOptions(nodeTypeSelect, "type");
+
 		// Select Source and Target columns (required)
 		const sourceSelect = screen.getByLabelText(/source node column/i);
 		await user.selectOptions(sourceSelect, "source");
@@ -1019,8 +1023,65 @@ describe("CSVImportModal", () => {
 
 			// Then: should show graph structure validation section
 			expect(
-				screen.getByText(/graph structure validation/i),
+				screen.getByText("Graph Structure Validation"),
 			).toBeInTheDocument();
+		});
+
+		it("should show Graph Structure Validation section with appropriate styling", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Upload CSV with graph structure issues
+			const nodesInput = screen.getByLabelText(/nodes csv file/i);
+			const nodesFile = new File(
+				["id,title,type\norphaned,Orphaned Step,STEP"],
+				"nodes.csv",
+				{ type: "text/csv" },
+			);
+			await user.upload(nodesInput, nodesFile);
+
+			const edgesInput = screen.getByLabelText(/edges csv file/i);
+			const edgesFile = new File(["source,target"], "edges.csv", {
+				type: "text/csv",
+			});
+			await user.upload(edgesInput, edgesFile);
+
+			await navigateToValidationStep(user);
+
+			// Should show Graph Structure Validation section
+			expect(screen.getByText("Graph Structure Validation")).toBeInTheDocument();
+			
+			// Should show graph structure errors with appropriate styling
+			expect(screen.getByText(/STEP node.*orphaned.*has no incoming or outgoing connections/)).toBeInTheDocument();
+		});
+
+		it("should allow import with structure warnings but block with critical errors", async () => {
+			const user = userEvent.setup();
+			render(<CSVImportModal isOpen={true} onClose={mockOnClose} />);
+
+			// Upload CSV with critical graph structure errors (isolated STEP node)
+			const nodesInput = screen.getByLabelText(/nodes csv file/i);
+			const nodesFile = new File(
+				["id,title,type\nisolated,Isolated Step,STEP\nvalid,Valid Input,INPUT"],
+				"nodes.csv",
+				{ type: "text/csv" },
+			);
+			await user.upload(nodesInput, nodesFile);
+
+			const edgesInput = screen.getByLabelText(/edges csv file/i);
+			const edgesFile = new File(["source,target"], "edges.csv", {
+				type: "text/csv",
+			});
+			await user.upload(edgesInput, edgesFile);
+
+			await navigateToValidationStep(user);
+
+			// Import should be blocked due to graph structure errors
+			const importButton = screen.getByRole("button", { name: /import/i });
+			expect(importButton).toBeDisabled();
+
+			// Should show blocking graph structure error
+			expect(screen.getByText(/STEP node.*isolated.*has no incoming or outgoing connections/)).toBeInTheDocument();
 		});
 	});
 

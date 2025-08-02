@@ -856,6 +856,36 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 										</div>
 									)}
 
+									{validationResult.graph && (
+										<div className="rounded-lg border p-4">
+											<h4 className="flex items-center gap-2 font-medium">
+												<FileText className="h-4 w-4" />
+												Graph Structure Validation
+											</h4>
+
+											{validationResult.graph.isValid ? (
+												<div className="mt-2 flex items-center gap-2 text-green-600">
+													<CheckCircle className="h-4 w-4" />
+													<span className="text-sm">
+														All graph structure validation passed
+													</span>
+												</div>
+											) : (
+												<div className="mt-2 space-y-2">
+													{validationResult.graph.errors.map((error, index) => (
+														<div
+															key={index}
+															className="flex items-center gap-2 text-red-600"
+														>
+															<AlertCircle className="h-4 w-4" />
+															<span className="text-sm">{error.message}</span>
+														</div>
+													))}
+												</div>
+											)}
+										</div>
+									)}
+
 									{hasValidationErrors && (
 										<div className="rounded-lg border border-red-200 bg-red-50 p-4">
 											<div className="flex items-center gap-2 text-red-800">
