@@ -103,4 +103,16 @@ Thumbs.db
 *.sqlite3
 
 # Local development
-.turbo 
+.turbo
+
+# Test results and reports
+playwright-report/
+test-results/
+coverage/
+.nyc_output/
+
+# Playwright
+playwright/.cache/
+
+# Vitest
+vitest.config.*.timestamp-* 
