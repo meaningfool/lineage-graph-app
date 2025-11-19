@@ -1,4 +1,0 @@
-title,type,description
-Raw Data,INPUT,Initial data source
-Process Step,STEP,Processing logic
-Final Metric,OUTPUT,Final calculation

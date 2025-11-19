@@ -1,5 +1,0 @@
-id,title,type
-,Node Missing ID,INPUT
-duplicate-id,Node 1,INVALID_TYPE
-duplicate-id,Node 2,OUTPUT
-valid-node,Valid Node,STEP

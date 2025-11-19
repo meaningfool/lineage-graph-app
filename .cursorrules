@@ -1,0 +1,117 @@
+# Data Lineage App - Cursor Rules
+
+## 🚨 CRITICAL: ALWAYS CHECK BEFORE ACTING
+- **BEFORE ANY CHANGE**: Ask "Does this need test discussion first?"
+- **BEFORE ANY COMMIT**: Ask "Are structure and feature changes separated?"
+- **BEFORE ANY IMPLEMENTATION**: Get user validation
+
+## 🚨 CRITICAL: QUESTIONS vs ACTIONS
+- **WHEN USER ASKS A QUESTION**: Answer the question only - do NOT implement, code, or act based on the answer
+- **WHEN USER ASKS TO ACT**: Only then proceed with implementation, coding, or actions
+- **NEVER ASSUME**: Don't assume the user wants you to proceed after answering a question
+
+## 🚨 CRITICAL: SPECIFIC REQUESTS
+- **WHEN USER ASKS FOR SOMETHING SPECIFIC**: Do exactly that thing, nothing else
+- **IF CAN'T FIND/DO THE SPECIFIC THING**: Tell the user you couldn't do it and ask for alternatives
+- **DON'T TAKE INITIATIVE**: Don't substitute with something else without asking
+- **BE HONEST**: If you can't find digraph-js, say "I couldn't find digraph-js" - don't look at graphology instead
+
+## Communication Protocol
+- **ALWAYS** explain what I'm going to do before doing it
+- Wait for user validation before proceeding with any changes
+- Discuss test behavior and expectations before writing tests
+- **QUESTIONS**: Answer thoroughly but don't act
+- **EXPLORATION**: Provide analysis and insights but don't implement
+- **RESEARCH**: Share findings but don't create files or run commands
+- **ACTIONS**: Only when explicitly requested with action words like "implement", "create", "add", "do", etc.
+
+## 🚨 CRITICAL TDD WORKFLOW RULES
+
+### **BEFORE ANY TEST WRITING:**
+1. **Identify the specific feature** you're implementing
+2. **Write ONLY tests for that specific feature** - do not modify unrelated tests
+3. **Run tests immediately** after writing them to verify they fail (Red phase)
+4. **If tests don't fail** - the tests are useless or testing the wrong thing
+5. **If tests pass** - you're testing against mocked data instead of real implementation
+
+### **TDD WORKFLOW (MANDATORY):**
+1. **Red Phase**: Write tests for the specific feature → Run tests → Verify they FAIL
+2. **Green Phase**: Implement the minimal solution → Run tests → Verify they PASS  
+3. **Refactor Phase**: Clean up code while keeping tests passing
+
+### **WORKFLOW PRINCIPLES:**
+- **Test Discussion First**: Always discuss the test behavior and expectations before writing any test
+- **Red Phase**: Ensure tests fail initially before implementing
+- **Validation Required**: Get user approval before making tests pass
+- **Separate Commits**: Structure changes and feature changes must be in separate commits
+
+### **TEST VALIDATION CHECKLIST:**
+- [ ] Tests are written for the specific feature only
+- [ ] Tests run and FAIL before implementation
+- [ ] Tests are testing real behavior, not mocked data
+- [ ] Tests verify user-visible behavior
+- [ ] No unrelated tests were modified
+
+### **COMMON TDD MISTAKES TO AVOID:**
+- ❌ Writing tests that pass immediately (testing mocked data)
+- ❌ Modifying unrelated tests during feature development
+- ❌ Implementing before verifying tests fail
+- ❌ Testing implementation details instead of user behavior
+
+### **TDD PRINCIPLES (See tdd.md for details):**
+- **Behavioral Testing Focus**: Tests describe user behavior and expected outcomes
+- **Frugality Principle**: Only implement what is strictly necessary
+- **Red-Green-Refactor Cycle**: Write failing test → Make it pass → Refactor
+- **Structure vs Feature Separation**: Separate infrastructure changes from feature implementation
+- **Commit Strategy**: "Make the change easy, then make the easy change" (Kent Beck)
+- **Development Process**: Identify iterations, write tests first, implement minimally, refactor when needed
+
+
+## Commit Type Guidelines
+- **feat**: New functionality that adds behavior (requires tests)
+- **refactor**: Code changes that don't add new behavior (styling, restructuring, optimization)
+- **fix**: Bug fixes
+- **docs**: Documentation changes
+- **style**: Code style changes (formatting, etc.)
+- **test**: Adding or modifying tests
+- **chore**: Maintenance tasks
+
+## Important: Styling Changes Are Refactors
+- **UI/UX improvements** = `refactor` (not `feat`)
+- **Layout changes** = `refactor` (not `feat`)
+- **Styling updates** = `refactor` (not `feat`)
+- **Only new functionality** = `feat` (requires tests)
+
+## Git Workflow
+- **ALWAYS** work with git at the root level
+- **NEVER** initialize git repositories in subdirectories
+- **ALWAYS** commit changes at the root level
+- **Structure vs Feature**: Separate structure commits from feature commits
+
+## Development Commands
+- Start development: `pnpm dev` (runs all apps)
+- Start specific app: `pnpm --filter <app-name> dev`
+- Build all: `pnpm build` (builds all apps)
+- Install dependencies: `pnpm install` (from root)
+
+## Code Organization
+- Keep submodules self-contained
+- Shared utilities should be in packages/ directory
+- Each app should have its own environment configuration
+- Use workspace-aware commands for cross-app operations
+
+## Error Prevention
+- Before initializing git, check current directory with `pwd`
+- Verify you're in the root directory before running git commands
+- Use `git status` to confirm you're working at the right level
+
+## Best Practices
+- Always check the current working directory before making changes
+- Use relative paths from root when referencing files
+- Commit meaningful changes with descriptive messages
+- Test changes in the context of the full workspace
+
+## Cursor Rules Management
+- **WHEN USER ASKS TO ADD A RULE**: Add the rule to `.cursorrules` file immediately
+- **RULE ADDITION**: Use `search_replace` to add new rules to the appropriate section
+- **RULE ORGANIZATION**: Place rules in logical sections (CRITICAL, Communication, etc.) 

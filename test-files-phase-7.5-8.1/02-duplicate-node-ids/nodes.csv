@@ -1,6 +1,0 @@
-title,type,description
-Raw Data,INPUT,Initial data source
-User Count,STEP,Count of users
-Order Data,INPUT,Order information
-User Count,OUTPUT,Duplicate ID - should cause error
-Final Metric,OUTPUT,Final calculation

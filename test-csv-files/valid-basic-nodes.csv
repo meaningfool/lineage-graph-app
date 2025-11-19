@@ -1,6 +1,0 @@
-id,title,type
-users,Users,INPUT
-sessions,Sessions,INPUT
-user-count,User Count,STEP
-conversion-rate,Conversion Rate,STEP
-revenue,Revenue,OUTPUT

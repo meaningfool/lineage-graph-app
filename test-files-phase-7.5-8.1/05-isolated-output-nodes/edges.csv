@@ -1,3 +1,0 @@
-source,target,description
-input-data,processing-step,Input flows to processing
-processing-step,connected-output,Processing flows to connected output

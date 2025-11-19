@@ -1,4 +1,0 @@
-source,target
-node1,node2
-missing-node,node1
-node2,another-missing-node

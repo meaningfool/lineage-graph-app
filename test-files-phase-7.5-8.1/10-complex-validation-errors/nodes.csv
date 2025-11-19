@@ -1,7 +1,0 @@
-title,type,description
-,INPUT,Missing title
-Valid Input,INVALID,Invalid node type
-Duplicate Node,STEP,First instance
-Duplicate Node,OUTPUT,Second instance - should cause duplicate error
-,STEP,Missing title and will be orphaned
-Good Node,OUTPUT,This one is fine

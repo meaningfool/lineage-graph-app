@@ -1,7 +1,0 @@
-title,type,description
-Valid Input,INPUT,Connected input
-Isolated Input,INPUT,Warning - no outgoing connections
-Connected Step,STEP,Valid processing step
-Orphaned Step,STEP,Critical error - no connections
-Valid Output,OUTPUT,Connected output
-Isolated Output,OUTPUT,Warning - no incoming connections

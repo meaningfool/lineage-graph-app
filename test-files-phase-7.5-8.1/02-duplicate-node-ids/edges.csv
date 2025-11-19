@@ -1,4 +1,0 @@
-source,target,description
-raw-data,user-count,Data flows to user count
-order-data,user-count,Orders contribute to count
-user-count,final-metric,Count feeds final metric
