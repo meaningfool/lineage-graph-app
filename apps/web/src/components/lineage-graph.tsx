@@ -1,7 +1,5 @@
-"use client"
-
-import React from 'react'
-import ReactFlow, { Handle, Position, Background } from 'reactflow'
+import React, { useMemo } from 'react'
+import ReactFlow, { Handle, Position, Background, ReactFlowProvider } from 'reactflow'
 import type { Node, Edge } from 'reactflow'
 import 'reactflow/dist/style.css'
 
@@ -39,6 +37,7 @@ function CustomNode({ data }: { data: NodeData }) {
   )
 }
 
+// Define nodeTypes outside component to prevent recreation on every render
 const nodeTypes = {
   custom: CustomNode,
 }
@@ -49,14 +48,14 @@ interface LineageGraphProps {
 }
 
 export function LineageGraph({ nodes, edges }: LineageGraphProps) {
-  // Convert nodes to use custom type
-  const customNodes = nodes.map(node => ({
+  // Memoize nodes conversion to prevent unnecessary re-renders
+  const customNodes = useMemo(() => nodes.map(node => ({
     ...node,
     type: 'custom'
-  }))
+  })), [nodes])
 
-  // Update edges to use smoothstep for balanced routing and flow
-  const customEdges = edges.map(edge => ({
+  // Memoize edges conversion to prevent unnecessary re-renders
+  const customEdges = useMemo(() => edges.map(edge => ({
     ...edge,
     type: 'smoothstep', // Use smoothstep for balanced structure and flow
     animated: false, // Remove animation
@@ -67,31 +66,41 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
       height: 12,
       color: '#6b7280',
     },
-  }))
+  })), [edges])
 
   console.log('LineageGraph nodes:', customNodes)
   console.log('LineageGraph edges:', customEdges)
 
+  if (!customNodes.length) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-gray-500">No nodes to display</div>
+      </div>
+    )
+  }
+
   return (
-    <div className="w-full h-full">
-      <ReactFlow
-        nodes={customNodes}
-        edges={customEdges}
-        nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.1}
-        maxZoom={2}
-        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background 
-          variant="dots" as const
-          gap={20} 
-          size={1.5} 
-          color="#9ca3af"
-        />
-      </ReactFlow>
+    <div className="w-full" style={{ height: '100vh', minHeight: '600px' }}>
+      <ReactFlowProvider>
+        <ReactFlow
+          nodes={customNodes}
+          edges={customEdges}
+          nodeTypes={nodeTypes}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+          minZoom={0.1}
+          maxZoom={2}
+          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background
+            variant={"dots" as any}
+            gap={20}
+            size={1.5}
+            color="#9ca3af"
+          />
+        </ReactFlow>
+      </ReactFlowProvider>
     </div>
   )
 } 

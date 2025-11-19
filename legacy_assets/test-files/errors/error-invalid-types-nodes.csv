@@ -1,0 +1,5 @@
+id,title,type
+node1,Node 1,INPUT
+node2,Node 2,PROCESSING
+node3,Node 3,CALCULATION
+node4,Node 4,OUTPUT
