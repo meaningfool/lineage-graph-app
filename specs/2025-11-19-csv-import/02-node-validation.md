@@ -67,8 +67,9 @@ CSV Import
     node-1,Valid Node,STEP
     node-2,Invalid Node,UNKNOWN
     ```
-*   **Expected Behavior**: Import succeeds with 1 node. Error summary shown: "1 row dropped: Row 2 - Invalid type 'UNKNOWN'. Valid types: INPUT, STEP, OUTPUT".
+*   **Expected Behavior**: Import succeeds with 1 node. Error summary shown: "1 row dropped: node-2 - Invalid type 'UNKNOWN'. Valid types: INPUT, STEP, OUTPUT".
 *   **Green**: Implement row validation logic. Filter invalid rows. Add error reporting UI.
+*   **Refinement**: Updated warning messages to use row ID instead of row number for better user experience.
 
 ### Cycle 3: Deduplication
 *   **Red**: E2E test uploading a CSV with duplicate IDs. Expect 1 node on graph and a warning "Row 3: Duplicate ID 'node-1'".

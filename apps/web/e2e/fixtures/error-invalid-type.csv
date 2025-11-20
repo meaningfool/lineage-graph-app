@@ -1,0 +1,3 @@
+id,title,type
+node-1,Valid Node,STEP
+node-2,Invalid Node,UNKNOWN

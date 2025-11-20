@@ -18,11 +18,13 @@ interface CSVImportModalProps {
 export function CSVImportModal({ onImport }: CSVImportModalProps) {
     const [isOpen, setIsOpen] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
+    const [warnings, setWarnings] = React.useState<string[]>([]);
 
-    // Clear error when modal is closed
+    // Clear error and warnings when modal is closed
     React.useEffect(() => {
         if (!isOpen) {
             setError(null);
+            setWarnings([]);
         }
     }, [isOpen]);
 
@@ -31,6 +33,7 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
             const file = acceptedFiles[0];
             if (file) {
                 setError(null); // Clear previous errors
+                setWarnings([]); // Clear previous warnings
 
                 Papa.parse(file, {
                     header: true,
@@ -47,19 +50,51 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                             return;
                         }
 
-                        // Simple mapping: id, title -> label, type
-                        // We filter out empty rows
+                        // Row-Level Validation: Validate node types
+                        const validTypes = ["INPUT", "STEP", "OUTPUT"];
+                        const validationWarnings: string[] = [];
+                        let droppedCount = 0;
+
                         const nodes = results.data
-                            .filter((row: any) => row.id && (row.label || row.title))
-                            .map((row: any) => ({
-                                id: row.id,
-                                type: "custom", // Use custom type for proper rendering
-                                data: { label: row.label || row.title },
-                                position: { x: 0, y: 0 }, // Default position, layout will handle it
-                            }));
+                            .map((row: any, index: number) => {
+                                // Check if required fields are present
+                                if (!row.id || !row.title) {
+                                    return null;
+                                }
+
+                                // Validate node type
+                                const normalizedType = row.type?.toUpperCase();
+                                if (!normalizedType || !validTypes.includes(normalizedType)) {
+                                    droppedCount++;
+                                    validationWarnings.push(
+                                        `${row.id}: Invalid type '${row.type || ""}'. Valid types: INPUT, STEP, OUTPUT`
+                                    );
+                                    return null;
+                                }
+
+                                return {
+                                    id: row.id,
+                                    type: "custom",
+                                    data: { label: row.title },
+                                    position: { x: 0, y: 0 },
+                                };
+                            })
+                            .filter((node): node is NonNullable<typeof node> => node !== null);
+
+                        // Set warnings if any rows were dropped
+                        if (droppedCount > 0) {
+                            setWarnings([
+                                `${droppedCount} row${droppedCount > 1 ? "s" : ""} dropped`,
+                                ...validationWarnings,
+                            ]);
+                        }
 
                         onImport(nodes);
-                        setIsOpen(false);
+
+                        // Don't auto-close if there are warnings (so user can see them)
+                        if (droppedCount === 0) {
+                            setIsOpen(false);
+                        }
                     },
                     error: (parseError) => {
                         console.error("CSV Parse Error:", parseError);
@@ -94,6 +129,14 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                 {error && (
                     <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
                         {error}
+                    </div>
+                )}
+                {warnings.length > 0 && (
+                    <div className="rounded-md bg-yellow-500/15 p-3 text-sm text-yellow-700 dark:text-yellow-400">
+                        <div className="font-semibold mb-1">{warnings[0]}</div>
+                        {warnings.slice(1).map((warning, index) => (
+                            <div key={index} className="text-xs mt-1">{warning}</div>
+                        ))}
                     </div>
                 )}
                 <div

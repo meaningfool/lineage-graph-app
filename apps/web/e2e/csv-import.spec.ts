@@ -94,4 +94,34 @@ test.describe("CSV Import", () => {
             await expect(modal).not.toContainText("Missing required columns");
         });
     });
+
+    // ========== ROW-LEVEL ERRORS (NON-BLOCKING) ==========
+    test.describe("Row-Level Validation", () => {
+        test("should drop rows with invalid node types and show summary", async ({ page }) => {
+            // 1. Click "Import CSV" button
+            const importButton = page.getByRole("button", { name: "Import CSV" });
+            await importButton.click();
+
+            const modal = page.getByRole("dialog");
+            await expect(modal).toBeVisible();
+
+            // 2. Upload file with one valid and one invalid node
+            const fixturePath = path.join(__dirname, "fixtures", "error-invalid-type.csv");
+            const fileInput = page.locator('input[type="file"]');
+            await fileInput.setInputFiles(fixturePath);
+
+            // 3. Expect import to succeed with partial data
+            // Modal should show a warning summary about dropped rows
+            await expect(modal).toContainText("1 row dropped");
+            await expect(modal).toContainText("node-2: Invalid type");
+
+            // 4. Close modal to complete import
+            await page.keyboard.press("Escape");
+
+            // 5. Verify only the valid node was imported
+            await expect(page.locator(".react-flow__node")).toHaveCount(1);
+            await expect(page.locator(".react-flow__node").filter({ hasText: "Valid Node" })).toBeVisible();
+            await expect(page.locator(".react-flow__node").filter({ hasText: "Invalid Node" })).not.toBeVisible();
+        });
+    });
 });

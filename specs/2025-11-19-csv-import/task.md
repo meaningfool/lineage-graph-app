@@ -13,8 +13,8 @@ We are building the CSV Import feature using strict TDD (Red/Green) cycles.
     - [x] **Spec**: `02-node-validation.md` <!-- id: 6 -->
     - [x] **Cycle 1: Missing Columns (RED)**: Create failing test for file-level validation <!-- id: 7 -->
     - [x] **Cycle 1: Missing Columns (GREEN)**: Implement column validation <!-- id: 8 -->
-    - [ ] **Cycle 2: Invalid Types (RED)**: Create failing test for row-level validation <!-- id: 9 -->
-    - [ ] **Cycle 2: Invalid Types (GREEN)**: Implement type validation and error UI <!-- id: 10 -->
+    - [x] **Cycle 2: Invalid Types (RED)**: Create failing test for row-level validation <!-- id: 9 -->
+    - [x] **Cycle 2: Invalid Types (GREEN)**: Implement type validation and error UI <!-- id: 10 -->
     - [ ] **Cycle 3: Deduplication (RED)**: Create failing test for duplicate IDs <!-- id: 11 -->
     - [ ] **Cycle 3: Deduplication (GREEN)**: Implement deduplication logic <!-- id: 12 -->
     - [ ] **Green**: Implement validation logic (port from `legacy_assets`) and update Node components <!-- id: 11 -->
