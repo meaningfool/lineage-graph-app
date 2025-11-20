@@ -7,6 +7,10 @@ We use a strict **Spec-Driven Workflow** to manage features and context.
 *   **Policy**: Read `specs/README.md` for the official rules.
 *   **Active Specs**: Check the `specs/` directory for chronological feature folders (e.g., `specs/2025-11-19-cleanup-codebase/`).
 *   **Branch Safety**: The spec folder implies the branch name. If you are about to commit code and the current branch does not match the active spec folder, **STOP** and ask the user if they want to create/switch to the correct branch first.
+*   **Merge Protocol**: When merging a feature branch, you MUST include the contents of `learnings.md` in the merge commit message.
+*   **Documentation Rules**:
+    *   **`research.md`**: Log ALL technical findings, debugging steps, and issues here.
+    *   **`learnings.md`**: RESERVED for the USER. Do not write to this file unless explicitly dictated by the user. It is for high-level, editorialized insights only.
 
 ## 🚀 How to Start
 When starting a new chat, the agent should:
@@ -18,4 +22,4 @@ When starting a new chat, the agent should:
 ## 🧠 Key Context
 *   **Framework**: Next.js 15, React 19, Tailwind v4.
 *   **Testing**: Vitest (Unit/Component), Playwright (E2E).
-*   **State**: We are currently cleaning up the codebase before implementing CSV Import.
+*   **State**: We are currently implementing the CSV Import feature.

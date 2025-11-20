@@ -33,8 +33,8 @@ specs/
     *   **Chat 3**: Verifies work, marks item as `[x]` in `task.md`, and creates `02-next-phase.md`.
 
 4.  **Capture Knowledge**:
-    *   **`research.md`**: Systematically log technical findings, trade-offs, and analysis.
-    *   **`learnings.md`**: Curate specific, high-value insights you want to preserve or share later.
+    *   **`research.md`**: Log ALL technical findings, debugging steps, trade-offs, and analysis here.
+    *   **`learnings.md`**: RESERVED for the USER. Do not write to this file unless explicitly dictated by the user. It is for high-level, editorialized insights only.
 
 5.  **Commit**:
     *   Always commit the `specs/` files along with the code changes. This preserves the "Why" and "How" alongside the "What".
