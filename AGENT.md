@@ -11,6 +11,9 @@ We use a strict **Spec-Driven Workflow** to manage features and context.
 *   **Documentation Rules**:
     *   **`research.md`**: Log ALL technical findings, debugging steps, and issues here.
     *   **`learnings.md`**: RESERVED for the USER. Do not write to this file unless explicitly dictated by the user. It is for high-level, editorialized insights only.
+*   **Implementation Plan Rules**:
+    *   Implementation plans (e.g., `02-node-validation.md`) MUST explicitly list which **existing tests need updates**, not just new tests to create.
+    *   When a change affects existing behavior, document what changes in each test and why (e.g., "Add: Click Close button; Change: Error in results step").
 
 ## 🚀 How to Start
 When starting a new chat, the agent should:
