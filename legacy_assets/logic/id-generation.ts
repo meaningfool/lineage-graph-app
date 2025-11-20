@@ -63,7 +63,7 @@ export function generateNodeIds(nodes: NodeWithId[]): GenerateNodeIdsResult {
 	for (const node of nodes) {
 		// Only process nodes with valid IDs (empty IDs should be caught by validation)
 		const userProvidedId = node.id?.trim();
-		
+
 		if (!userProvidedId) {
 			// Skip nodes with empty IDs - these should be caught by validation
 			continue;
@@ -117,7 +117,7 @@ export function generateEdgeIds(edges: EdgeWithIds[]): ProcessedEdge[] {
 		const sourceId = edge.source?.trim();
 		const computedSource = sourceId ? slugify(sourceId) : "";
 
-		// Handle target ID  
+		// Handle target ID
 		const targetId = edge.target?.trim();
 		const computedTarget = targetId ? slugify(targetId) : "";
 

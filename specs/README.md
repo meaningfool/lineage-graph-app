@@ -24,8 +24,8 @@ specs/
 
 2.  **Plan the Feature**:
     *   **`task.md`**: Create the high-level roadmap (Vertical Slices). This is the Table of Contents.
-    *   **`research.md`**: Log any initial analysis or findings here.
-    *   **`01-initial-setup.md`**: Create the detailed plan for the first slice.
+    *   **`research.md`**: Log *only* raw research notes, analysis, and context. **DO NOT** put plans, tasks, or recommendations here.
+    *   **`01-initial-setup.md`**: Create the detailed plan for the first slice. This is where strategies and tasks go.
 
 3.  **Iterate (Multi-Chat Support)**:
     *   **Chat 1**: Creates the plan and maybe starts coding.

@@ -37,12 +37,14 @@ export function validateRequiredFields(
 	if (data.length === 0) {
 		return {
 			isValid: false,
-			errors: [{
-				type: "MISSING_DATA",
-				severity: "critical",
-				message: `No ${dataType} data found - check that required columns exist`,
-				dataType,
-			}],
+			errors: [
+				{
+					type: "MISSING_DATA",
+					severity: "critical",
+					message: `No ${dataType} data found - check that required columns exist`,
+					dataType,
+				},
+			],
 			severity: "critical",
 			blocking: true,
 		};
@@ -70,7 +72,7 @@ export function validateRequiredFields(
 
 	// Individual missing fields are non-critical+non-blocking (drop items and continue)
 	const severity = errors.length > 0 ? "non-critical" : "non-critical";
-	
+
 	return {
 		isValid: errors.length === 0,
 		errors,
