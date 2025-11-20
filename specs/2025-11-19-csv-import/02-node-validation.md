@@ -72,7 +72,7 @@ CSV Import
 *   **Refinement**: Updated warning messages to use row ID instead of row number for better user experience.
 
 ### Cycle 3: Deduplication
-*   **Red**: E2E test uploading a CSV with duplicate IDs. Expect 1 node on graph and a warning "Row 3: Duplicate ID 'node-1'".
+*   **Red**: E2E test uploading a CSV with duplicate IDs. Expect 2 nodes on graph and a warning "node-1: Duplicate ID".
 *   **Fixture**: `error-duplicate-ids.csv`
     ```csv
     id,title,type
@@ -80,8 +80,63 @@ CSV Import
     node-2,Second Node,STEP
     node-1,Duplicate Node,OUTPUT
     ```
-*   **Expected Behavior**: Import succeeds with 2 nodes. Warning shown: "1 row dropped: Row 3 - Duplicate ID 'node-1'".
+*   **Expected Behavior**: Import succeeds with 2 nodes. Warning shown: "1 row dropped: node-1: Duplicate ID".
 *   **Green**: Implement `Map`-based deduplication.
+*   **Note**: Test includes fresh page navigation to avoid state pollution from previous tests.
+
+### Cycle 4: Multi-Step Wizard UX
+*   **Goal**: Improve UX by separating upload UI from results/feedback.
+*   **Current Behavior**: Upload → validation → warnings/errors show in same view → user can upload again without closing.
+*   **New Behavior**: Upload → validation → **transition to results step** → user clicks "Close" to dismiss modal.
+
+#### Test Updates (Existing Tests)
+
+**All 5 existing tests need updates:**
+
+1. **"should upload a valid CSV and display nodes"** (Valid Files)
+   - **Add**: After upload, verify results view shows success state
+   - **Add**: Click "Close" button to dismiss modal
+   - **Keep**: Verify nodes appear on graph
+
+2. **"should reject file with missing required columns"** (File-Level Validation)
+   - **Add**: After upload, verify results view shows error
+   - **Change**: Error should be in results step, not upload step
+   - **Add**: Verify "Close" button is present
+
+3. **"should clear error message when modal is closed and reopened"** (File-Level Validation)
+   - **Add**: After seeing error in results, click "Close"
+   - **Keep**: Verify modal closes
+   - **Keep**: Verify error is gone on reopen
+
+4. **"should drop rows with invalid node types and show summary"** (Row-Level Validation)
+   - **Add**: After upload, verify results view shows warnings
+   - **Add**: Click "Close" (instead of Escape) to dismiss
+   - **Keep**: Verify filtered nodes on graph
+
+5. **"should deduplicate rows with duplicate IDs and show warning"** (Row-Level Validation)
+   - **Add**: After upload, verify results view shows warnings
+   - **Add**: Click "Close" (instead of Escape) to dismiss
+   - **Keep**: Verify deduplicated nodes on graph
+
+#### New Tests
+
+**No new tests needed** - all scenarios are covered by updated existing tests.
+
+#### Implementation Changes
+
+**1. Add Wizard State** (`csv-import-modal.tsx`):
+```tsx
+const [currentStep, setCurrentStep] = useState<'upload' | 'results'>('upload');
+```
+
+**2. Conditional Rendering**:
+- Step 1: Show dropzone
+- Step 2: Show results (success/warnings/errors) + Close button
+
+**3. State Transitions**:
+- After file processed → `setCurrentStep('results')`
+- On Close button → `setIsOpen(false)` + `setCurrentStep('upload')`
+- On modal close → Reset to `'upload'`
 
 ## Verification
 *   **Automated**: New E2E tests for each cycle.

@@ -19,12 +19,14 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
     const [isOpen, setIsOpen] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [warnings, setWarnings] = React.useState<string[]>([]);
+    const [currentStep, setCurrentStep] = React.useState<'upload' | 'results'>('upload');
 
-    // Clear error and warnings when modal is closed
+    // Clear error, warnings, and reset step when modal is closed
     React.useEffect(() => {
         if (!isOpen) {
             setError(null);
             setWarnings([]);
+            setCurrentStep('upload');
         }
     }, [isOpen]);
 
@@ -47,13 +49,15 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
 
                         if (missingColumns.length > 0) {
                             setError(`Missing required columns: ${missingColumns.join(", ")}`);
+                            setCurrentStep('results');
                             return;
                         }
 
-                        // Row-Level Validation: Validate node types
+                        // Row-Level Validation: Validate node types and deduplicate
                         const validTypes = ["INPUT", "STEP", "OUTPUT"];
                         const validationWarnings: string[] = [];
                         let droppedCount = 0;
+                        const seenIds = new Map<string, boolean>();
 
                         const nodes = results.data
                             .map((row: any, index: number) => {
@@ -61,6 +65,16 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                                 if (!row.id || !row.title) {
                                     return null;
                                 }
+
+                                // Check for duplicate IDs
+                                if (seenIds.has(row.id)) {
+                                    droppedCount++;
+                                    validationWarnings.push(
+                                        `${row.id}: Duplicate ID`
+                                    );
+                                    return null;
+                                }
+                                seenIds.set(row.id, true);
 
                                 // Validate node type
                                 const normalizedType = row.type?.toUpperCase();
@@ -91,14 +105,13 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
 
                         onImport(nodes);
 
-                        // Don't auto-close if there are warnings (so user can see them)
-                        if (droppedCount === 0) {
-                            setIsOpen(false);
-                        }
+                        // Transition to results step (don't auto-close anymore)
+                        setCurrentStep('results');
                     },
                     error: (parseError) => {
                         console.error("CSV Parse Error:", parseError);
                         setError("Failed to parse CSV file");
+                        setCurrentStep('results');
                     },
                 });
             }
@@ -124,39 +137,50 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Upload CSV</DialogTitle>
+                    <DialogTitle>{currentStep === 'upload' ? 'Upload CSV' : 'Import Results'}</DialogTitle>
                 </DialogHeader>
-                {error && (
-                    <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                        {error}
+
+                {currentStep === 'upload' ? (
+                    // Step 1: Upload
+                    <div
+                        {...getRootProps()}
+                        className={`
+                            border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-colors
+                            ${isDragActive ? "border-primary bg-primary/10" : "border-muted-foreground/25 hover:border-primary"}
+                        `}
+                    >
+                        <input {...getInputProps()} />
+                        {isDragActive ? (
+                            <p>Drop the CSV file here...</p>
+                        ) : (
+                            <p>Drag & drop a CSV file here, or click to select</p>
+                        )}
+                    </div>
+                ) : (
+                    // Step 2: Results
+                    <div className="space-y-4">
+                        {error ? (
+                            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                                {error}
+                            </div>
+                        ) : warnings.length > 0 ? (
+                            <div className="rounded-md bg-yellow-500/15 p-3 text-sm text-yellow-700 dark:text-yellow-400">
+                                <div className="font-semibold mb-1">{warnings[0]}</div>
+                                {warnings.slice(1).map((warning, index) => (
+                                    <div key={index} className="text-xs mt-1">{warning}</div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="rounded-md bg-green-500/15 p-3 text-sm text-green-700 dark:text-green-400">
+                                Import successful
+                            </div>
+                        )}
+
+                        <div className="flex justify-end">
+                            <Button data-testid="import-close-button" onClick={() => setIsOpen(false)}>Close</Button>
+                        </div>
                     </div>
                 )}
-                {warnings.length > 0 && (
-                    <div className="rounded-md bg-yellow-500/15 p-3 text-sm text-yellow-700 dark:text-yellow-400">
-                        <div className="font-semibold mb-1">{warnings[0]}</div>
-                        {warnings.slice(1).map((warning, index) => (
-                            <div key={index} className="text-xs mt-1">{warning}</div>
-                        ))}
-                    </div>
-                )}
-                <div
-                    {...getRootProps()}
-                    className={`
-            border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-colors
-            ${isDragActive ? "border-primary bg-primary/10" : "border-muted-foreground/25 hover:border-primary"}
-          `}
-                >
-                    <input {...getInputProps()} />
-                    {isDragActive ? (
-                        <p>Drop the CSV file here...</p>
-                    ) : (
-                        <p>Drag & drop a CSV file here, or click to select</p>
-                    )}
-                </div>
-                {/* We don't strictly need a confirm button if we import on drop, 
-                    but the test might look for one if we designed it that way. 
-                    For this simple phase, import-on-drop is fine. 
-                    The test checks for modal visibility then uploads. */}
             </DialogContent>
         </Dialog>
     );

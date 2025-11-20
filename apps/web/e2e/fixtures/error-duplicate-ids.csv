@@ -1,0 +1,4 @@
+id,title,type
+node-1,First Node,INPUT
+node-2,Second Node,STEP
+node-1,Duplicate Node,OUTPUT

@@ -32,16 +32,18 @@ test.describe("CSV Import", () => {
             const fileInput = page.locator('input[type="file"]');
             await fileInput.setInputFiles(fixturePath);
 
-            // 4. Verify Graph Update
-            // The modal should close or we might need to click "Import".
-            // Assuming auto-import on drop for this simple phase, or a confirm button.
-            // Let's assume there's an "Import" button in the modal to confirm.
-            const confirmButton = modal.getByRole("button", { name: "Import" });
-            if (await confirmButton.isVisible()) {
-                await confirmButton.click();
-            }
+            // 4. Verify we're now in the results step
+            await expect(modal).toContainText("Import successful");
 
-            // 5. Check for new nodes
+            // 5. Click Close button to dismiss modal
+            const closeButton = page.getByTestId("import-close-button");
+            await expect(closeButton).toBeVisible();
+            await closeButton.click();
+
+            // 7. Modal should close
+            await expect(modal).not.toBeVisible();
+
+            // 8. Check for new nodes on graph
             await expect(page.locator(".react-flow__node").filter({ hasText: "First Node" })).toBeVisible();
             await expect(page.locator(".react-flow__node").filter({ hasText: "Second Node" })).toBeVisible();
         });
@@ -62,10 +64,18 @@ test.describe("CSV Import", () => {
             const fileInput = page.locator('input[type="file"]');
             await fileInput.setInputFiles(fixturePath);
 
-            // 3. Expect error message
+            // 3. Expect to transition to results step with error
             await expect(modal).toContainText("Missing required columns: type");
 
-            // 4. Verify no nodes were imported
+            // 4. Verify Close button is present
+            const closeButton = page.getByTestId("import-close-button");
+            await expect(closeButton).toBeVisible();
+
+            // 5. Close modal
+            await closeButton.click();
+            await expect(modal).not.toBeVisible();
+
+            // 6. Verify no nodes were imported
             await expect(page.locator(".react-flow__node")).toHaveCount(0);
         });
 
@@ -79,11 +89,12 @@ test.describe("CSV Import", () => {
             const fileInput = page.locator('input[type="file"]');
             await fileInput.setInputFiles(fixturePath);
 
-            // 2. Verify error is shown
+            // 2. Verify error is shown in results step
             await expect(modal).toContainText("Missing required columns: type");
 
-            // 3. Close the modal
-            await page.keyboard.press("Escape");
+            // 3. Close the modal using Close button
+            const closeButton = page.getByTestId("import-close-button");
+            await closeButton.click();
             await expect(modal).not.toBeVisible();
 
             // 4. Reopen the modal
@@ -111,17 +122,58 @@ test.describe("CSV Import", () => {
             await fileInput.setInputFiles(fixturePath);
 
             // 3. Expect import to succeed with partial data
-            // Modal should show a warning summary about dropped rows
+            // Modal should transition to results step showing warnings
             await expect(modal).toContainText("1 row dropped");
             await expect(modal).toContainText("node-2: Invalid type");
 
-            // 4. Close modal to complete import
-            await page.keyboard.press("Escape");
+            // 4. Close modal using Close button
+            const closeButton = page.getByTestId("import-close-button");
+            await expect(closeButton).toBeVisible();
+            await closeButton.click();
+            await expect(modal).not.toBeVisible();
 
             // 5. Verify only the valid node was imported
             await expect(page.locator(".react-flow__node")).toHaveCount(1);
             await expect(page.locator(".react-flow__node").filter({ hasText: "Valid Node" })).toBeVisible();
             await expect(page.locator(".react-flow__node").filter({ hasText: "Invalid Node" })).not.toBeVisible();
+        });
+
+        test("should deduplicate rows with duplicate IDs and show warning", async ({ page }) => {
+            // 1. Ensure fresh page state
+            await page.goto("/");
+            await page.waitForLoadState("networkidle");
+
+            // 2. Click "Import CSV" button
+            const importButton = page.getByRole("button", { name: "Import CSV" });
+            await expect(importButton).toBeVisible();
+            await importButton.click();
+
+            // 3. Wait for modal to open
+            const modal = page.getByRole("dialog");
+            await expect(modal).toBeVisible();
+
+            // 2. Upload file with duplicate IDs
+            const fixturePath = path.join(__dirname, "fixtures", "error-duplicate-ids.csv");
+            const fileInput = page.locator('input[type="file"]');
+            await fileInput.setInputFiles(fixturePath);
+
+            // 3. Expect import to succeed with deduplicated data
+            // Modal should transition to results step showing warnings
+            await expect(modal).toContainText("1 row dropped");
+            await expect(modal).toContainText("node-1: Duplicate ID");
+
+            // 4. Close modal using Close button
+            const closeButton = page.getByTestId("import-close-button");
+            await expect(closeButton).toBeVisible();
+            await closeButton.click();
+            await expect(modal).not.toBeVisible();
+
+            // 5. Verify only 2 unique nodes were imported (first occurrence of each ID)
+            await expect(page.locator(".react-flow__node")).toHaveCount(2);
+            await expect(page.locator(".react-flow__node").filter({ hasText: "First Node" })).toBeVisible();
+            await expect(page.locator(".react-flow__node").filter({ hasText: "Second Node" })).toBeVisible();
+            // The duplicate "Duplicate Node" should not appear
+            await expect(page.locator(".react-flow__node").filter({ hasText: "Duplicate Node" })).not.toBeVisible();
         });
     });
 });
