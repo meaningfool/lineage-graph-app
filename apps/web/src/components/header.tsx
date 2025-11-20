@@ -2,8 +2,13 @@
 import Link from "next/link";
 
 import { ModeToggle } from "./mode-toggle";
+import { CSVImportModal } from "./csv-import-modal";
 
-export default function Header() {
+interface HeaderProps {
+	onImport: (nodes: any[]) => void;
+}
+
+export default function Header({ onImport }: HeaderProps) {
 	const links = [{ to: "/", label: "Home" }];
 
 	return (
@@ -19,6 +24,7 @@ export default function Header() {
 					})}
 				</nav>
 				<div className="flex items-center gap-2">
+					<CSVImportModal onImport={onImport} />
 					<ModeToggle />
 				</div>
 			</div>
