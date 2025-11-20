@@ -8,24 +8,26 @@ import Header from "@/components/header"; // We might need to move Header here o
 
 export default function Home() {
 	// Load node data from file
-	const defaultNodes: Node[] = nodeData.nodes.map((node) => ({
-		id: node.id,
-		type: "custom",
-		position: { x: 0, y: 0 }, // Will be overridden by layout
-		data: {
-			label: node.label,
-			properties: node.properties,
-		},
-	}));
+	// TODO: Remove this once we have a proper data loading mechanism
+	// For now, we start with an empty graph
+	// const defaultNodes: Node[] = nodeData.nodes.map((node) => ({
+	// 	id: node.id,
+	// 	type: "custom",
+	// 	position: { x: 0, y: 0 }, // Will be overridden by layout
+	// 	data: {
+	// 		label: node.label,
+	// 		properties: node.properties,
+	// 	},
+	// }));
 
-	const defaultEdges: Edge[] = nodeData.edges.map((edge) => ({
-		...edge,
-		type: "smoothstep",
-	}));
+	// const defaultEdges: Edge[] = nodeData.edges.map((edge) => ({
+	// 	...edge,
+	// 	type: "smoothstep",
+	// }));
 
-	// Initialize state with default data
-	const [nodes, setNodes] = useState<Node[]>(defaultNodes);
-	const [edges, setEdges] = useState<Edge[]>(defaultEdges);
+	// Initialize state with empty data
+	const [nodes, setNodes] = useState<Node[]>([]);
+	const [edges, setEdges] = useState<Edge[]>([]);
 
 	// Apply layout whenever nodes/edges change (or initially)
 	// For now, we'll just layout the current state

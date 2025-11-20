@@ -17,15 +17,37 @@ interface CSVImportModalProps {
 
 export function CSVImportModal({ onImport }: CSVImportModalProps) {
     const [isOpen, setIsOpen] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
+
+    // Clear error when modal is closed
+    React.useEffect(() => {
+        if (!isOpen) {
+            setError(null);
+        }
+    }, [isOpen]);
 
     const onDrop = useCallback(
         (acceptedFiles: File[]) => {
             const file = acceptedFiles[0];
             if (file) {
+                setError(null); // Clear previous errors
+
                 Papa.parse(file, {
                     header: true,
                     complete: (results) => {
-                        // Simple mapping: id, label
+                        // File-Level Validation: Check for required columns
+                        const requiredColumns = ["id", "title", "type"];
+                        const headers = results.meta.fields || [];
+                        const missingColumns = requiredColumns.filter(
+                            (col) => !headers.includes(col)
+                        );
+
+                        if (missingColumns.length > 0) {
+                            setError(`Missing required columns: ${missingColumns.join(", ")}`);
+                            return;
+                        }
+
+                        // Simple mapping: id, title -> label, type
                         // We filter out empty rows
                         const nodes = results.data
                             .filter((row: any) => row.id && (row.label || row.title))
@@ -39,8 +61,9 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                         onImport(nodes);
                         setIsOpen(false);
                     },
-                    error: (error) => {
-                        console.error("CSV Parse Error:", error);
+                    error: (parseError) => {
+                        console.error("CSV Parse Error:", parseError);
+                        setError("Failed to parse CSV file");
                     },
                 });
             }
@@ -68,6 +91,11 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                 <DialogHeader>
                     <DialogTitle>Upload CSV</DialogTitle>
                 </DialogHeader>
+                {error && (
+                    <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                        {error}
+                    </div>
+                )}
                 <div
                     {...getRootProps()}
                     className={`
