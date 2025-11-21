@@ -5,7 +5,7 @@ This file serves as the "Context Anchor" for AI agents working on this project.
 ## 📂 Spec-Driven Workflow
 We use a strict **Spec-Driven Workflow** to manage features and context.
 *   **Policy**: Read `specs/README.md` for the official rules.
-*   **Active Specs**: Check the `specs/` directory for chronological feature folders (e.g., `specs/2025-11-19-cleanup-codebase/`).
+*   **Active Specs**: Check the `specs/` directory for chronological feature folders. **RULE**: Each feature branch MUST have its own dedicated folder (e.g., `specs/2025-11-21-edge-import/`). Do NOT reuse old folders for new branches.
 *   **Branch Safety**: The spec folder implies the branch name. If you are about to commit code and the current branch does not match the active spec folder, **STOP** and ask the user if they want to create/switch to the correct branch first.
 *   **Merge Protocol**: When merging a feature branch, you MUST include the contents of `learnings.md` in the merge commit message.
 *   **Documentation Rules**:
