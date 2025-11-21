@@ -40,5 +40,9 @@ specs/
     *   Always commit the `specs/` files along with the code changes. This preserves the "Why" and "How" alongside the "What".
 
 ## Naming Conventions
-*   **Branch Folders**: `YYYY-MM-DD-[feature-slug]` (e.g., `2025-11-19-csv-import`).
+*   **Branch Folders**: `YYYY-MM-DD-[feature-slug]` (e.g.,- `2025-11-19-csv-import/`: Initial CSV import with basic node validation
+- `2025-11-21-edge-import/`: Dual CSV import for nodes + edges with referential integrity
+- `2025-11-21-column-mapping/`: **[PLANNED]** Column mapping wizard for flexible CSV schemas
+- `2025-11-21-node-properties/`: **[PLANNED]** Import and display node properties (2 cycles)
+- `2025-11-21-graph-validation/`: **[PLANNED]** Lineage graph validation with visual feedback)
 *   **Plan Files**: `[sequence]-[description].md` (e.g., `01-ui-skeleton.md`, `02-api-integration.md`).
