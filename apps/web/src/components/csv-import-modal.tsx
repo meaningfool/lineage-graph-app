@@ -29,6 +29,8 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
     const [edgeColumns, setEdgeColumns] = React.useState<string[]>([]);
     const [mapping, setMapping] = React.useState<{
         id?: string;
+        title?: string;
+        type?: string;
     }>({});
 
     // Clear state when modal is closed
@@ -100,11 +102,6 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                 setEdgeColumns(eCols);
             }
 
-            // Pre-select 'id' if present (optional convenience, but strictly we want manual mapping or just empty)
-            // For TDD strictness, let's leave it empty or simple.
-            // If I leave it empty, existing tests (standard files) will require me to select 'id'.
-            // My updated existing tests DO select 'id'. So it's fine to start empty.
-
             setCurrentStep('mapping');
         } catch (err) {
             console.error("Header Parse Error:", err);
@@ -125,8 +122,7 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
             ]);
 
             // --- NODES VALIDATION ---
-            // Cycle 1: We still check for standard columns because we haven't implemented the functional mapping logic yet.
-            // The mapping state is available but unused in parsing for now.
+            // Cycle 2: We still check for standard columns because functional mapping is Cycle 3.
             const nodesRequiredColumns = ["id", "title", "type"];
             const nodesHeaders = nodesResult.meta.fields || [];
             const nodesMissingColumns = nodesRequiredColumns.filter(
@@ -254,8 +250,8 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
     };
 
     const isMappingValid = () => {
-        // Cycle 1: Only ID is required
-        return !!mapping.id;
+        // Cycle 2: ID, Title, and Type are required
+        return !!mapping.id && !!mapping.title && !!mapping.type;
     };
 
     return (
@@ -342,6 +338,36 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                         value={mapping.id || ""}
                                         onChange={(e) => setMapping(prev => ({ ...prev, id: e.target.value || undefined }))}
+                                    >
+                                        <option value="">Select column...</option>
+                                        {nodeColumns.map(col => (
+                                            <option key={col} value={col}>{col}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="mapping-title">Title</Label>
+                                    <select
+                                        id="mapping-title"
+                                        data-testid="mapping-select-title"
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        value={mapping.title || ""}
+                                        onChange={(e) => setMapping(prev => ({ ...prev, title: e.target.value || undefined }))}
+                                    >
+                                        <option value="">Select column...</option>
+                                        {nodeColumns.map(col => (
+                                            <option key={col} value={col}>{col}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="mapping-type">Type</Label>
+                                    <select
+                                        id="mapping-type"
+                                        data-testid="mapping-select-type"
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        value={mapping.type || ""}
+                                        onChange={(e) => setMapping(prev => ({ ...prev, type: e.target.value || undefined }))}
                                     >
                                         <option value="">Select column...</option>
                                         {nodeColumns.map(col => (

@@ -8,17 +8,84 @@ test.describe("CSV Import", () => {
         await page.waitForLoadState("networkidle");
     });
 
-    // Helper to complete the mapping step (Cycle 1: ID only)
+    // Helper to complete the mapping step (Cycle 2: ID, Title, Type)
     async function completeMappingStep(page: Page) {
         // Wait for mapping step to appear
         await expect(page.getByText("Column Mapping")).toBeVisible();
 
-        // Select ID column (assuming standard 'id' column is present)
+        // Select ID column
         await page.getByTestId("mapping-select-id").selectOption({ label: "id" });
+
+        // Select Title column
+        await page.getByTestId("mapping-select-title").selectOption({ label: "title" });
+
+        // Select Type column
+        await page.getByTestId("mapping-select-type").selectOption({ label: "type" });
 
         // Click Next
         await page.getByRole("button", { name: "Next" }).click();
     }
+
+    // ========== NEW TESTS FOR COLUMN MAPPING (CYCLE 1 & 2) ==========
+    test.describe("Column Mapping", () => {
+        test("should show mapping step with ID, Title, and Type dropdowns", async ({ page }) => {
+            // 1. Open Modal
+            await page.getByRole("button", { name: "Import CSV" }).click();
+
+            // 2. Upload non-standard nodes file
+            const fixturePath = path.join(__dirname, "fixtures", "mapping-nodes-nonstandard.csv");
+            await page.getByTestId("dropzone-nodes").locator('input[type="file"]').setInputFiles(fixturePath);
+
+            // 3. Click Next
+            await page.getByRole("button", { name: "Next", exact: true }).click();
+
+            // 4. Verify Mapping Step
+            const modal = page.getByRole("dialog");
+            await expect(modal).toContainText("Column Mapping");
+            await expect(modal).toContainText("Map your CSV columns");
+
+            // 5. Verify Dropdowns exist and have options
+            const idSelect = page.getByTestId("mapping-select-id");
+            await expect(idSelect).toBeVisible();
+            await expect(idSelect).toContainText("node_id");
+
+            const titleSelect = page.getByTestId("mapping-select-title");
+            await expect(titleSelect).toBeVisible();
+            await expect(titleSelect).toContainText("name");
+
+            const typeSelect = page.getByTestId("mapping-select-type");
+            await expect(typeSelect).toBeVisible();
+            await expect(typeSelect).toContainText("node_type");
+        });
+
+        test("should validate mapping requirements", async ({ page }) => {
+            // 1. Open Modal & Upload
+            await page.getByRole("button", { name: "Import CSV" }).click();
+            const fixturePath = path.join(__dirname, "fixtures", "mapping-nodes-nonstandard.csv");
+            await page.getByTestId("dropzone-nodes").locator('input[type="file"]').setInputFiles(fixturePath);
+            await page.getByRole("button", { name: "Next", exact: true }).click();
+
+            // 2. Verify Next button is disabled initially
+            const nextButton = page.getByRole("button", { name: "Next", exact: true });
+            await expect(nextButton).toBeDisabled();
+
+            // 3. Map ID -> Still disabled
+            await page.getByTestId("mapping-select-id").selectOption({ label: "node_id" });
+            await expect(nextButton).toBeDisabled();
+
+            // 4. Map Title -> Still disabled
+            await page.getByTestId("mapping-select-title").selectOption({ label: "name" });
+            await expect(nextButton).toBeDisabled();
+
+            // 5. Map Type -> Enabled
+            await page.getByTestId("mapping-select-type").selectOption({ label: "node_type" });
+            await expect(nextButton).toBeEnabled();
+
+            // 6. Reversibility Check: Unmap Title
+            await page.getByTestId("mapping-select-title").selectOption({ value: "" });
+            await expect(nextButton).toBeDisabled();
+        });
+    });
 
     // ========== HAPPY PATH ==========
     test.describe("Valid Files", () => {
@@ -381,62 +448,9 @@ test.describe("CSV Import", () => {
             await closeButton.click();
             await expect(modal).not.toBeVisible();
 
-            // 5. Verify only 2 unique nodes were imported
             await expect(page.locator(".react-flow__node")).toHaveCount(2);
         });
     });
 
-    // ========== NEW TESTS FOR COLUMN MAPPING (CYCLE 1) ==========
-    test.describe("Column Mapping", () => {
-        test("should show mapping step with ID dropdown", async ({ page }) => {
-            // 1. Open Modal
-            await page.getByRole("button", { name: "Import CSV" }).click();
 
-            // 2. Upload non-standard nodes file
-            const fixturePath = path.join(__dirname, "fixtures", "mapping-nodes-nonstandard.csv");
-            await page.getByTestId("dropzone-nodes").locator('input[type="file"]').setInputFiles(fixturePath);
-
-            // 3. Click Next
-            await page.getByRole("button", { name: "Next", exact: true }).click();
-
-            // 4. Verify Mapping Step
-            const modal = page.getByRole("dialog");
-            await expect(modal).toContainText("Column Mapping");
-            await expect(modal).toContainText("Map your CSV columns");
-
-            // 5. Verify ID Dropdown exists and has options
-            const idSelect = page.getByTestId("mapping-select-id");
-            await expect(idSelect).toBeVisible();
-
-            // Check that options exist (for native select, we check text content or values)
-            await expect(idSelect).toContainText("node_id");
-            await expect(idSelect).toContainText("name");
-            await expect(idSelect).toContainText("node_type");
-        });
-
-        test("should validate mapping requirements", async ({ page }) => {
-            // 1. Open Modal & Upload
-            await page.getByRole("button", { name: "Import CSV" }).click();
-            const fixturePath = path.join(__dirname, "fixtures", "mapping-nodes-nonstandard.csv");
-            await page.getByTestId("dropzone-nodes").locator('input[type="file"]').setInputFiles(fixturePath);
-            await page.getByRole("button", { name: "Next", exact: true }).click();
-
-            // 2. Verify Next button is disabled initially (ID not mapped)
-            const nextButton = page.getByRole("button", { name: "Next", exact: true });
-            await expect(nextButton).toBeDisabled();
-
-            // 3. Map ID
-            await page.getByTestId("mapping-select-id").selectOption({ label: "node_id" });
-
-            // 4. Verify Next button is enabled
-            await expect(nextButton).toBeEnabled();
-
-            // 5. Reversibility Check: Unmap ID
-            // Select the placeholder option (value="")
-            await page.getByTestId("mapping-select-id").selectOption({ value: "" });
-
-            // Verify Next button is disabled again
-            await expect(nextButton).toBeDisabled();
-        });
-    });
 });
