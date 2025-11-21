@@ -123,6 +123,15 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
 
             // --- NODES VALIDATION ---
             // Cycle 3: Use mapped columns instead of hardcoded ones
+
+            // Validate mapping completeness
+            const { id: idCol, title: titleCol, type: typeCol } = mapping;
+            if (!idCol || !titleCol || !typeCol) {
+                setError("Please map all required columns (ID, Title, Type).");
+                setCurrentStep('mapping');
+                return;
+            }
+
             const validTypes = ["INPUT", "STEP", "OUTPUT"];
             const validationWarnings: string[] = [];
             let droppedNodesCount = 0;
@@ -130,10 +139,10 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
 
             const nodes = nodesResult.data
                 .map((row: any) => {
-                    // Use mapped columns
-                    const idValue = row[mapping.id!];
-                    const titleValue = row[mapping.title!];
-                    const typeValue = row[mapping.type!];
+                    // Use mapped columns (now guaranteed to be strings)
+                    const idValue = row[idCol];
+                    const titleValue = row[titleCol];
+                    const typeValue = row[typeCol];
 
                     if (!idValue || !titleValue) return null;
 
