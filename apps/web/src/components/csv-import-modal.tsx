@@ -122,19 +122,7 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
             ]);
 
             // --- NODES VALIDATION ---
-            // Cycle 2: We still check for standard columns because functional mapping is Cycle 3.
-            const nodesRequiredColumns = ["id", "title", "type"];
-            const nodesHeaders = nodesResult.meta.fields || [];
-            const nodesMissingColumns = nodesRequiredColumns.filter(
-                (col) => !nodesHeaders.includes(col)
-            );
-
-            if (nodesMissingColumns.length > 0) {
-                setError(`Missing required columns in nodes file: ${nodesMissingColumns.join(", ")}`);
-                setCurrentStep('results');
-                return;
-            }
-
+            // Cycle 3: Use mapped columns instead of hardcoded ones
             const validTypes = ["INPUT", "STEP", "OUTPUT"];
             const validationWarnings: string[] = [];
             let droppedNodesCount = 0;
@@ -142,28 +130,33 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
 
             const nodes = nodesResult.data
                 .map((row: any) => {
-                    if (!row.id || !row.title) return null;
+                    // Use mapped columns
+                    const idValue = row[mapping.id!];
+                    const titleValue = row[mapping.title!];
+                    const typeValue = row[mapping.type!];
 
-                    if (seenNodeIds.has(row.id)) {
+                    if (!idValue || !titleValue) return null;
+
+                    if (seenNodeIds.has(idValue)) {
                         droppedNodesCount++;
-                        validationWarnings.push(`${row.id}: Duplicate Node ID`);
+                        validationWarnings.push(`${idValue}: Duplicate Node ID`);
                         return null;
                     }
-                    seenNodeIds.set(row.id, true);
+                    seenNodeIds.set(idValue, true);
 
-                    const normalizedType = row.type?.toUpperCase();
+                    const normalizedType = typeValue?.toUpperCase();
                     if (!normalizedType || !validTypes.includes(normalizedType)) {
                         droppedNodesCount++;
                         validationWarnings.push(
-                            `${row.id}: Invalid type '${row.type || ""}'. Valid types: INPUT, STEP, OUTPUT`
+                            `${idValue}: Invalid type '${typeValue || ""}'. Valid types: INPUT, STEP, OUTPUT`
                         );
                         return null;
                     }
 
                     return {
-                        id: row.id,
+                        id: idValue,
                         type: "custom",
-                        data: { label: row.title },
+                        data: { label: titleValue },
                         position: { x: 0, y: 0 },
                     };
                 })

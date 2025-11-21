@@ -85,6 +85,38 @@ test.describe("CSV Import", () => {
             await page.getByTestId("mapping-select-title").selectOption({ value: "" });
             await expect(nextButton).toBeDisabled();
         });
+
+        test("should import nodes with mapped fields", async ({ page }) => {
+            // 1. Open Modal
+            await page.getByRole("button", { name: "Import CSV" }).click();
+
+            // 2. Upload non-standard nodes file
+            const fixturePath = path.join(__dirname, "fixtures", "mapping-nodes-nonstandard.csv");
+            await page.getByTestId("dropzone-nodes").locator('input[type="file"]').setInputFiles(fixturePath);
+
+            // 3. Click Next
+            await page.getByRole("button", { name: "Next", exact: true }).click();
+
+            // 4. Map columns
+            await page.getByTestId("mapping-select-id").selectOption({ label: "node_id" });
+            await page.getByTestId("mapping-select-title").selectOption({ label: "name" });
+            await page.getByTestId("mapping-select-type").selectOption({ label: "node_type" });
+
+            // 5. Click Next to import
+            await page.getByRole("button", { name: "Next", exact: true }).click();
+
+            // 6. Verify Success
+            const modal = page.getByRole("dialog");
+            await expect(modal).toContainText("Import successful");
+
+            // 7. Close modal
+            const closeButton = page.getByTestId("import-close-button");
+            await closeButton.click();
+
+            // 8. Verify nodes are displayed on graph
+            await expect(page.locator(".react-flow__node").filter({ hasText: "First Node" })).toBeVisible();
+            await expect(page.locator(".react-flow__node").filter({ hasText: "Second Node" })).toBeVisible();
+        });
     });
 
     // ========== HAPPY PATH ==========
