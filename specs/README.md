@@ -7,7 +7,7 @@ This repository uses a **Spec-Driven Workflow** to manage context, planning, and
 ```
 specs/
 ├── README.md                     # This policy file
-├── [YYYY-MM-DD-feature-name]/    # One folder per feature branch (Chronological)
+├── [YYYY-MM-DD-feature-name]/    # One folder per feature branch (STRICT: New Branch = New Folder)
 │   ├── task.md                   # The Feature Manifest (Master Checklist)
 │   ├── research.md               # Raw research notes, analysis, and context
 │   ├── learnings.md              # Curated insights and "Aha!" moments (for sharing)

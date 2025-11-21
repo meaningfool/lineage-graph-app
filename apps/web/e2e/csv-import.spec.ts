@@ -29,8 +29,13 @@ test.describe("CSV Import", () => {
             const fixturePath = path.join(__dirname, "fixtures", "basic-nodes.csv");
 
             // Find the file input and upload
-            const fileInput = page.locator('input[type="file"]');
+            const fileInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
             await fileInput.setInputFiles(fixturePath);
+
+            // Click Import button (now required)
+            const importAction = page.getByRole("button", { name: "Import", exact: true });
+            await expect(importAction).toBeEnabled();
+            await importAction.click();
 
             // 4. Verify we're now in the results step
             await expect(modal).toContainText("Import successful");
@@ -47,7 +52,198 @@ test.describe("CSV Import", () => {
             await expect(page.locator(".react-flow__node").filter({ hasText: "First Node" })).toBeVisible();
             await expect(page.locator(".react-flow__node").filter({ hasText: "Second Node" })).toBeVisible();
         });
+
+        test("should have disabled import button initially", async ({ page }) => {
+            // 1. Click "Import CSV" button
+            const importButton = page.getByRole("button", { name: "Import CSV" });
+            await importButton.click();
+
+            const modal = page.getByRole("dialog");
+            await expect(modal).toBeVisible();
+
+            // 2. Verify Import button is disabled
+            const importAction = page.getByRole("button", { name: "Import", exact: true });
+            await expect(importAction).toBeDisabled();
+
+            // 3. Upload Nodes file
+            const fixturePath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+            const fileInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
+            await fileInput.setInputFiles(fixturePath);
+
+            // 4. Verify Import button is enabled
+            await expect(importAction).toBeEnabled();
+        });
     });
+
+    test("should allow uploading an edges file along with nodes", async ({ page }) => {
+        // 1. Click "Import CSV" button
+        const importButton = page.getByRole("button", { name: "Import CSV" });
+        await importButton.click();
+
+        // 2. Upload Nodes file
+        const nodesPath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+        const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
+        await nodesInput.setInputFiles(nodesPath);
+
+        // 3. Upload Edges file (using a valid edges file)
+        // We need a fixture for edges. I'll check if one exists or use a dummy one.
+        // Assuming 'valid-basic-edges.csv' exists in legacy or I need to create one.
+        // For now, I'll use the legacy one if I can copy it, or just create a simple one on the fly?
+        // Playwright can't create files easily on the fly without fs.
+        // I'll use a known existing file or create a fixture file first.
+        // Let's assume I need to create 'basic-edges.csv' fixture.
+        const edgesPath = path.join(__dirname, "fixtures", "basic-edges.csv");
+        const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
+        await edgesInput.setInputFiles(edgesPath);
+
+        // 4. Click Import
+        const importAction = page.getByRole("button", { name: "Import", exact: true });
+        await expect(importAction).toBeEnabled();
+        await importAction.click();
+
+        // 5. Verify Nodes are displayed
+        await expect(page.locator(".react-flow__node").filter({ hasText: "First Node" })).toBeVisible();
+        await expect(page.locator(".react-flow__node").filter({ hasText: "Second Node" })).toBeVisible();
+
+        // 6. Verify Edges are displayed
+        await expect(page.locator(".react-flow__edge")).toHaveCount(1);
+    });
+
+    test("should reject edges pointing to missing nodes", async ({ page }) => {
+        // 1. Click "Import CSV" button
+        const importButton = page.getByRole("button", { name: "Import CSV" });
+        await importButton.click();
+
+        // 2. Upload Valid Nodes
+        const nodesPath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+        const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
+        await nodesInput.setInputFiles(nodesPath);
+
+        // 3. Upload Invalid Edges
+        const edgesPath = path.join(__dirname, "fixtures", "error-missing-node-edge.csv");
+        const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
+        await edgesInput.setInputFiles(edgesPath);
+
+        // 4. Click Import
+        const importAction = page.getByRole("button", { name: "Import", exact: true });
+        await importAction.click();
+
+        // 5. Verify Warning
+        const modal = page.getByRole("dialog");
+        await expect(modal).toContainText("Edge dropped: Source 'missing-id' not found");
+    });
+
+    test("should reject edges pointing to missing target node", async ({ page }) => {
+        // 1. Click "Import CSV" button
+        const importButton = page.getByRole("button", { name: "Import CSV" });
+        await importButton.click();
+
+        // 2. Upload Valid Nodes
+        const nodesPath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+        const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
+        await nodesInput.setInputFiles(nodesPath);
+
+        // 3. Upload Invalid Edges (Missing Target)
+        const edgesPath = path.join(__dirname, "fixtures", "error-missing-target-edge.csv");
+        const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
+        await edgesInput.setInputFiles(edgesPath);
+
+        // 4. Click Import
+        const importAction = page.getByRole("button", { name: "Import", exact: true });
+        await importAction.click();
+
+        // 5. Verify Warning
+        const modal = page.getByRole("dialog");
+        await expect(modal).toContainText("Edge dropped: Target 'missing-target-id' not found");
+    });
+
+    test("should reject edges pointing to nodes dropped due to validation errors", async ({ page }) => {
+        // 1. Click "Import CSV" button
+        const importButton = page.getByRole("button", { name: "Import CSV" });
+        await importButton.click();
+
+        // 2. Upload Nodes with one invalid type
+        // error-invalid-type.csv contains: node-1 (valid), node-2 (invalid type)
+        const nodesPath = path.join(__dirname, "fixtures", "error-invalid-type.csv");
+        const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
+        await nodesInput.setInputFiles(nodesPath);
+
+        // 3. Upload Edges pointing to the invalid node
+        // error-edge-to-dropped-node.csv contains: edge-1 (node-1 -> node-2)
+        const edgesPath = path.join(__dirname, "fixtures", "error-edge-to-dropped-node.csv");
+        const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
+        await edgesInput.setInputFiles(edgesPath);
+
+        // 4. Click Import
+        const importAction = page.getByRole("button", { name: "Import", exact: true });
+        await importAction.click();
+
+        // 5. Verify Warnings
+        const modal = page.getByRole("dialog");
+        // Verify node dropped warning
+        await expect(modal).toContainText("1 node dropped");
+        await expect(modal).toContainText("node-2: Invalid type");
+
+        // Verify edge dropped warning (Cascading validation)
+        await expect(modal).toContainText("1 edge dropped");
+        await expect(modal).toContainText("Edge dropped: Target 'node-2' not found");
+    });
+
+    test("should import edges with only source and target columns", async ({ page }) => {
+        // 1. Click "Import CSV" button
+        const importButton = page.getByRole("button", { name: "Import CSV" });
+        await importButton.click();
+
+        // 2. Upload Valid Nodes
+        const nodesPath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+        const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
+        await nodesInput.setInputFiles(nodesPath);
+
+        // 3. Upload Edges without ID
+        const edgesPath = path.join(__dirname, "fixtures", "edges-no-id.csv");
+        const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
+        await edgesInput.setInputFiles(edgesPath);
+
+        // 4. Click Import
+        const importAction = page.getByRole("button", { name: "Import", exact: true });
+        await importAction.click();
+
+        // 5. Verify Success
+        const modal = page.getByRole("dialog");
+        await expect(modal).toContainText("Import successful");
+
+        // 6. Verify Edge is displayed
+        await expect(page.locator(".react-flow__edge")).toHaveCount(1);
+    });
+
+    test("should silently deduplicate parallel edges", async ({ page }) => {
+        // 1. Click "Import CSV" button
+        const importButton = page.getByRole("button", { name: "Import CSV" });
+        await importButton.click();
+
+        // 2. Upload Valid Nodes
+        const nodesPath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+        const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
+        await nodesInput.setInputFiles(nodesPath);
+
+        // 3. Upload Duplicate Edges without ID
+        const edgesPath = path.join(__dirname, "fixtures", "edges-duplicate-no-id.csv");
+        const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
+        await edgesInput.setInputFiles(edgesPath);
+
+        // 4. Click Import
+        const importAction = page.getByRole("button", { name: "Import", exact: true });
+        await importAction.click();
+
+        // 5. Verify Success (No warnings)
+        const modal = page.getByRole("dialog");
+        await expect(modal).toContainText("Import successful");
+        await expect(modal).not.toContainText("dropped");
+
+        // 6. Verify only 1 Edge is displayed
+        await expect(page.locator(".react-flow__edge")).toHaveCount(1);
+    });
+
 
     // ========== FILE-LEVEL ERRORS (BLOCKING) ==========
     test.describe("File-Level Validation", () => {
@@ -61,11 +257,15 @@ test.describe("CSV Import", () => {
 
             // 2. Upload file missing 'type' column
             const fixturePath = path.join(__dirname, "fixtures", "error-missing-type.csv");
-            const fileInput = page.locator('input[type="file"]');
+            const fileInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
             await fileInput.setInputFiles(fixturePath);
 
+            // Click Import button
+            const importAction = page.getByRole("button", { name: "Import", exact: true });
+            await importAction.click();
+
             // 3. Expect to transition to results step with error
-            await expect(modal).toContainText("Missing required columns: type");
+            await expect(modal).toContainText("Missing required columns in nodes file: type");
 
             // 4. Verify Close button is present
             const closeButton = page.getByTestId("import-close-button");
@@ -86,11 +286,15 @@ test.describe("CSV Import", () => {
 
             const modal = page.getByRole("dialog");
             const fixturePath = path.join(__dirname, "fixtures", "error-missing-type.csv");
-            const fileInput = page.locator('input[type="file"]');
+            const fileInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
             await fileInput.setInputFiles(fixturePath);
 
+            // Click Import button
+            const importAction = page.getByRole("button", { name: "Import", exact: true });
+            await importAction.click();
+
             // 2. Verify error is shown in results step
-            await expect(modal).toContainText("Missing required columns: type");
+            await expect(modal).toContainText("Missing required columns in nodes file: type");
 
             // 3. Close the modal using Close button
             const closeButton = page.getByTestId("import-close-button");
@@ -118,12 +322,16 @@ test.describe("CSV Import", () => {
 
             // 2. Upload file with one valid and one invalid node
             const fixturePath = path.join(__dirname, "fixtures", "error-invalid-type.csv");
-            const fileInput = page.locator('input[type="file"]');
+            const fileInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
             await fileInput.setInputFiles(fixturePath);
+
+            // Click Import button
+            const importAction = page.getByRole("button", { name: "Import", exact: true });
+            await importAction.click();
 
             // 3. Expect import to succeed with partial data
             // Modal should transition to results step showing warnings
-            await expect(modal).toContainText("1 row dropped");
+            await expect(modal).toContainText("1 node dropped");
             await expect(modal).toContainText("node-2: Invalid type");
 
             // 4. Close modal using Close button
@@ -154,13 +362,17 @@ test.describe("CSV Import", () => {
 
             // 2. Upload file with duplicate IDs
             const fixturePath = path.join(__dirname, "fixtures", "error-duplicate-ids.csv");
-            const fileInput = page.locator('input[type="file"]');
+            const fileInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
             await fileInput.setInputFiles(fixturePath);
+
+            // Click Import button
+            const importAction = page.getByRole("button", { name: "Import", exact: true });
+            await importAction.click();
 
             // 3. Expect import to succeed with deduplicated data
             // Modal should transition to results step showing warnings
-            await expect(modal).toContainText("1 row dropped");
-            await expect(modal).toContainText("node-1: Duplicate ID");
+            await expect(modal).toContainText("1 node dropped");
+            await expect(modal).toContainText("node-1: Duplicate Node ID");
 
             // 4. Close modal using Close button
             const closeButton = page.getByTestId("import-close-button");

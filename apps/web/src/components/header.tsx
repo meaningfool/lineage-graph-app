@@ -5,7 +5,7 @@ import { ModeToggle } from "./mode-toggle";
 import { CSVImportModal } from "./csv-import-modal";
 
 interface HeaderProps {
-	onImport: (nodes: any[]) => void;
+	onImport: (nodes: any[], edges: any[]) => void;
 }
 
 export default function Header({ onImport }: HeaderProps) {
