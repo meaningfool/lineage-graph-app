@@ -20,9 +20,73 @@ Users may have CSVs with different column names (e.g., `node_id` instead of `id`
 4. User proceeds to validation and import.
 
 ## Design Considerations
-- **Auto-mapping**: If a column name matches (e.g., `id`, `ID`, `Id`), pre-select it.
-- **Unmapped Columns**: Track which columns are not mapped (they become properties in later features).
 - **Error Handling**: If required mappings are missing, disable "Next" button.
 
 ## TDD Cycles
-To be defined during implementation.
+
+### Cycle 1: ID Mapping UI & Validation (Non-Functional)
+*   **Goal**: Add mapping step with ID dropdown and robust validation.
+*   **Red**:
+    *   **New Test**: `should show mapping step with ID dropdown`
+        *   Upload `mapping-nodes-nonstandard.csv`.
+        *   Verify "Column Mapping" step appears with ID dropdown.
+    *   **New Test**: `should validate mapping requirements`
+        *   Upload file.
+        *   Verify "Next" button is **disabled** initially.
+        *   Select `node_id` for ID.
+        *   Verify "Next" button is **enabled**.
+        *   **Reversibility Check**: Select empty/default option.
+        *   Verify "Next" button is **disabled** again.
+    *   **Update Existing Tests**:
+        *   Update all 12 existing tests to: Upload -> **Select `id`** -> Click Next.
+*   **Green**: 
+    *   Add `mapping` step.
+    *   Implement ID dropdown.
+    *   Implement validation logic with reversibility.
+
+### Cycle 2: Title & Type Mapping UI (Non-Functional)
+*   **Goal**: Add Title and Type dropdowns with combined validation.
+*   **Red**:
+    *   **Update Test**: `should validate mapping requirements`
+        *   Update the test from Cycle 1 to include Title and Type.
+        *   Map ID only -> Verify "Next" **disabled**.
+        *   Map ID + Title -> Verify "Next" **disabled**.
+        *   Map ID + Title + Type -> Verify "Next" **enabled**.
+        *   Unmap Type -> Verify "Next" **disabled**.
+    *   **Update Existing Tests**:
+        *   Update all 12 tests to also select `title` and `type`.
+*   **Green**: 
+    *   Add Title and Type dropdowns.
+    *   Update validation logic to require all three fields.
+
+### Cycle 3: Functional Node Mapping
+*   **Goal**: Actually use the mapped columns during import.
+*   **Red**:
+    *   **New Test**: `should import nodes with mapped fields`
+        *   Upload `mapping-nodes-nonstandard.csv`.
+        *   Map fields correctly.
+        *   Import.
+        *   Verify imported node has correct ID (`node_id`), Label (`name`), and Type (`node_type`).
+*   **Green**: 
+    *   Update parsing logic to use the selected columns for ID, Title, and Type.
+
+### Cycle 4: Edge Mapping (UI + Functional)
+*   **Goal**: Add edge mapping with validation and failure mode checks.
+*   **Red**:
+    *   **Update Test**: `should validate mapping requirements`
+        *   Update test to include edge files.
+        *   Upload Nodes + Edges.
+        *   Map all Node fields -> Verify "Next" **disabled** (because edges unmapped).
+        *   Map Source only -> Verify "Next" **disabled**.
+        *   Map Source + Target -> Verify "Next" **enabled**.
+    *   **New Test**: `should prevent mapping same column to source and target`
+        *   Upload edges file.
+        *   Map `from` to Source.
+        *   Map `from` to Target.
+        *   Verify "Next" **disabled** (or show error).
+    *   **Update Existing Tests**:
+        *   Update edge-related tests to map `source` and `target`.
+*   **Green**: 
+    *   Add Edge mapping UI.
+    *   Implement Edge validation (required fields + distinct columns check).
+    *   Implement Edge mapping logic.

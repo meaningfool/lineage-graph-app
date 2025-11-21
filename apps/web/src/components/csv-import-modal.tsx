@@ -9,6 +9,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Upload } from "lucide-react";
 
 interface CSVImportModalProps {
@@ -19,9 +20,16 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
     const [isOpen, setIsOpen] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [warnings, setWarnings] = React.useState<string[]>([]);
-    const [currentStep, setCurrentStep] = React.useState<'upload' | 'results'>('upload');
+    const [currentStep, setCurrentStep] = React.useState<'upload' | 'mapping' | 'results'>('upload');
     const [nodesFile, setNodesFile] = React.useState<File | null>(null);
     const [edgesFile, setEdgesFile] = React.useState<File | null>(null);
+
+    // Mapping state
+    const [nodeColumns, setNodeColumns] = React.useState<string[]>([]);
+    const [edgeColumns, setEdgeColumns] = React.useState<string[]>([]);
+    const [mapping, setMapping] = React.useState<{
+        id?: string;
+    }>({});
 
     // Clear state when modal is closed
     React.useEffect(() => {
@@ -31,6 +39,9 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
             setCurrentStep('upload');
             setNodesFile(null);
             setEdgesFile(null);
+            setNodeColumns([]);
+            setEdgeColumns([]);
+            setMapping({});
         }
     }, [isOpen]);
 
@@ -54,7 +65,20 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
         multiple: false,
     });
 
-    const parseFile = (file: File): Promise<Papa.ParseResult<any>> => {
+    const parseFileHeaders = (file: File): Promise<string[]> => {
+        return new Promise((resolve, reject) => {
+            Papa.parse(file, {
+                header: true,
+                preview: 1, // Only read first row for headers
+                complete: (results) => {
+                    resolve(results.meta.fields || []);
+                },
+                error: (err) => reject(err),
+            });
+        });
+    };
+
+    const parseFileFull = (file: File): Promise<Papa.ParseResult<any>> => {
         return new Promise((resolve, reject) => {
             Papa.parse(file, {
                 header: true,
@@ -64,7 +88,31 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
         });
     };
 
-    const handleImport = async () => {
+    const handleUploadNext = async () => {
+        if (!nodesFile) return;
+
+        try {
+            const nCols = await parseFileHeaders(nodesFile);
+            setNodeColumns(nCols);
+
+            if (edgesFile) {
+                const eCols = await parseFileHeaders(edgesFile);
+                setEdgeColumns(eCols);
+            }
+
+            // Pre-select 'id' if present (optional convenience, but strictly we want manual mapping or just empty)
+            // For TDD strictness, let's leave it empty or simple.
+            // If I leave it empty, existing tests (standard files) will require me to select 'id'.
+            // My updated existing tests DO select 'id'. So it's fine to start empty.
+
+            setCurrentStep('mapping');
+        } catch (err) {
+            console.error("Header Parse Error:", err);
+            setError("Failed to read CSV headers");
+        }
+    };
+
+    const handleFinalImport = async () => {
         if (!nodesFile) return;
 
         setError(null);
@@ -72,11 +120,13 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
 
         try {
             const [nodesResult, edgesResult] = await Promise.all([
-                parseFile(nodesFile),
-                edgesFile ? parseFile(edgesFile) : Promise.resolve(null),
+                parseFileFull(nodesFile),
+                edgesFile ? parseFileFull(edgesFile) : Promise.resolve(null),
             ]);
 
             // --- NODES VALIDATION ---
+            // Cycle 1: We still check for standard columns because we haven't implemented the functional mapping logic yet.
+            // The mapping state is available but unused in parsing for now.
             const nodesRequiredColumns = ["id", "title", "type"];
             const nodesHeaders = nodesResult.meta.fields || [];
             const nodesMissingColumns = nodesRequiredColumns.filter(
@@ -133,7 +183,6 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
             // --- EDGES VALIDATION ---
             let edges: any[] = [];
             if (edgesResult) {
-                // ID is no longer required
                 const edgesRequiredColumns = ["source", "target"];
                 const edgesHeaders = edgesResult.meta.fields || [];
                 const edgesMissingColumns = edgesRequiredColumns.filter(
@@ -204,6 +253,11 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
         }
     };
 
+    const isMappingValid = () => {
+        // Cycle 1: Only ID is required
+        return !!mapping.id;
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
@@ -214,14 +268,18 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>{currentStep === 'upload' ? 'Upload CSV' : 'Import Results'}</DialogTitle>
+                    <DialogTitle>
+                        {currentStep === 'upload' && 'Upload CSV'}
+                        {currentStep === 'mapping' && 'Column Mapping'}
+                        {currentStep === 'results' && 'Import Results'}
+                    </DialogTitle>
                 </DialogHeader>
 
-                {currentStep === 'upload' ? (
+                {currentStep === 'upload' && (
                     <div className="space-y-4">
                         {/* Nodes Dropzone */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Nodes CSV (Required)</label>
+                            <Label>Nodes CSV (Required)</Label>
                             <div
                                 {...getNodesRootProps()}
                                 data-testid="dropzone-nodes"
@@ -242,7 +300,7 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
 
                         {/* Edges Dropzone */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Edges CSV (Optional)</label>
+                            <Label>Edges CSV (Optional)</Label>
                             <div
                                 {...getEdgesRootProps()}
                                 data-testid="dropzone-edges"
@@ -262,13 +320,49 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                         </div>
 
                         <div className="flex justify-end pt-4">
-                            <Button onClick={handleImport} disabled={!nodesFile}>
-                                Import
+                            <Button onClick={handleUploadNext} disabled={!nodesFile}>
+                                Next
                             </Button>
                         </div>
                     </div>
-                ) : (
-                    // Step 2: Results
+                )}
+
+                {currentStep === 'mapping' && (
+                    <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">Map your CSV columns to the required fields.</p>
+
+                        <div className="space-y-4 border rounded-md p-4">
+                            <h4 className="font-medium text-sm">Nodes</h4>
+                            <div className="grid gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="mapping-id">Node ID</Label>
+                                    <select
+                                        id="mapping-id"
+                                        data-testid="mapping-select-id"
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        value={mapping.id || ""}
+                                        onChange={(e) => setMapping(prev => ({ ...prev, id: e.target.value || undefined }))}
+                                    >
+                                        <option value="">Select column...</option>
+                                        {nodeColumns.map(col => (
+                                            <option key={col} value={col}>{col}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end pt-4 gap-2">
+                            <Button variant="outline" onClick={() => setCurrentStep('upload')}>Back</Button>
+                            <Button onClick={handleFinalImport} disabled={!isMappingValid()}>
+                                Next
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                {currentStep === 'results' && (
+                    // Step 3: Results
                     <div className="space-y-4">
                         {error ? (
                             <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
