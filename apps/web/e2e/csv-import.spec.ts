@@ -189,6 +189,61 @@ test.describe("CSV Import", () => {
         await expect(modal).toContainText("Edge dropped: Target 'node-2' not found");
     });
 
+    test("should import edges with only source and target columns", async ({ page }) => {
+        // 1. Click "Import CSV" button
+        const importButton = page.getByRole("button", { name: "Import CSV" });
+        await importButton.click();
+
+        // 2. Upload Valid Nodes
+        const nodesPath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+        const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
+        await nodesInput.setInputFiles(nodesPath);
+
+        // 3. Upload Edges without ID
+        const edgesPath = path.join(__dirname, "fixtures", "edges-no-id.csv");
+        const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
+        await edgesInput.setInputFiles(edgesPath);
+
+        // 4. Click Import
+        const importAction = page.getByRole("button", { name: "Import", exact: true });
+        await importAction.click();
+
+        // 5. Verify Success
+        const modal = page.getByRole("dialog");
+        await expect(modal).toContainText("Import successful");
+
+        // 6. Verify Edge is displayed
+        await expect(page.locator(".react-flow__edge")).toHaveCount(1);
+    });
+
+    test("should silently deduplicate parallel edges", async ({ page }) => {
+        // 1. Click "Import CSV" button
+        const importButton = page.getByRole("button", { name: "Import CSV" });
+        await importButton.click();
+
+        // 2. Upload Valid Nodes
+        const nodesPath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+        const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
+        await nodesInput.setInputFiles(nodesPath);
+
+        // 3. Upload Duplicate Edges without ID
+        const edgesPath = path.join(__dirname, "fixtures", "edges-duplicate-no-id.csv");
+        const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
+        await edgesInput.setInputFiles(edgesPath);
+
+        // 4. Click Import
+        const importAction = page.getByRole("button", { name: "Import", exact: true });
+        await importAction.click();
+
+        // 5. Verify Success (No warnings)
+        const modal = page.getByRole("dialog");
+        await expect(modal).toContainText("Import successful");
+        await expect(modal).not.toContainText("dropped");
+
+        // 6. Verify only 1 Edge is displayed
+        await expect(page.locator(".react-flow__edge")).toHaveCount(1);
+    });
+
 
     // ========== FILE-LEVEL ERRORS (BLOCKING) ==========
     test.describe("File-Level Validation", () => {

@@ -14,5 +14,5 @@ We are building the Edge Import feature to allow users to define relationships b
     - [x] **Cycle 4: Graph Rendering (GREEN)**: Connect to graph <!-- id: 9 -->
     - [x] **Cycle 5: Cascading Validation (RED)**: Test dropped nodes & target validation <!-- id: 10 -->
     - [x] **Cycle 5: Cascading Validation (GREEN)**: Fix validation logic <!-- id: 11 -->
-    - [ ] **Cycle 6: Synthetic IDs & Dedup (RED)**: Test source/target only & silent dedup <!-- id: 12 -->
-    - [ ] **Cycle 6: Synthetic IDs & Dedup (GREEN)**: Implement auto-ID & silent dedup <!-- id: 13 -->
+    - [x] **Cycle 6: Synthetic IDs & Dedup (RED)**: Test source/target only & silent dedup <!-- id: 12 -->
+    - [x] **Cycle 6: Synthetic IDs & Dedup (GREEN)**: Implement auto-ID & silent dedup <!-- id: 13 -->

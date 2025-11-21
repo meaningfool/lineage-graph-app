@@ -133,7 +133,8 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
             // --- EDGES VALIDATION ---
             let edges: any[] = [];
             if (edgesResult) {
-                const edgesRequiredColumns = ["id", "source", "target"];
+                // ID is no longer required
+                const edgesRequiredColumns = ["source", "target"];
                 const edgesHeaders = edgesResult.meta.fields || [];
                 const edgesMissingColumns = edgesRequiredColumns.filter(
                     (col) => !edgesHeaders.includes(col)
@@ -146,18 +147,19 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                 }
 
                 let droppedEdgesCount = 0;
-                const seenEdgeIds = new Map<string, boolean>();
+                const seenEdgeKeys = new Map<string, boolean>();
 
                 edges = edgesResult.data
                     .map((row: any) => {
-                        if (!row.id || !row.source || !row.target) return null;
+                        if (!row.source || !row.target) return null;
 
-                        if (seenEdgeIds.has(row.id)) {
-                            droppedEdgesCount++;
-                            validationWarnings.push(`${row.id}: Duplicate Edge ID`);
+                        // Deduplicate based on Source-Target pair (Silent drop)
+                        const edgeKey = `${row.source}-${row.target}`;
+                        if (seenEdgeKeys.has(edgeKey)) {
+                            // Silent drop for duplicates
                             return null;
                         }
-                        seenEdgeIds.set(row.id, true);
+                        seenEdgeKeys.set(edgeKey, true);
 
                         // Referential Integrity - Check against VALID nodes only
                         if (!validNodeIds.has(row.source)) {
@@ -171,8 +173,11 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                             return null;
                         }
 
+                        // Generate synthetic ID
+                        const syntheticId = `edge-${row.source}-${row.target}`;
+
                         return {
-                            id: row.id,
+                            id: syntheticId,
                             source: row.source,
                             target: row.target,
                             type: "smoothstep",
