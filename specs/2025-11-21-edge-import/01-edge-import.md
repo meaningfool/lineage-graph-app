@@ -73,3 +73,20 @@ Enable importing edges between nodes via CSV, allowing users to define relations
 *   **Green**:
     *   Update `CSVImportModal` to build the valid node ID set *only* from nodes that passed all validation checks.
     *   Ensure edge validation checks both `source` and `target` against this valid set.
+
+### Cycle 6: Synthetic IDs & Silent Deduplication (Red/Green)
+*   **Goal**: Always generate synthetic IDs for edges (ignore user `id` column) and silently deduplicate parallel edges.
+*   **Red**:
+    *   **New Test**: `should import edges with only source and target columns`
+        *   Upload edges with `source,target` header.
+        *   Verify import succeeds.
+    *   **New Test**: `should silently deduplicate parallel edges`
+        *   Upload edges with duplicate `source,target` pairs.
+        *   Verify only 1 edge is created.
+        *   Verify **no** warning is shown.
+*   **Green**:
+    *   Update `CSVImportModal`:
+        *   Change required edge columns to `['source', 'target']`.
+        *   **Always** generate ID: `edge-${source}-${target}`.
+        *   Deduplicate based on `${source}-${target}`.
+        *   Remove "Duplicate Edge ID" warning logic.

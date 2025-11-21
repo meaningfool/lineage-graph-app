@@ -127,6 +127,9 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                 validationWarnings.unshift(`${droppedNodesCount} node${droppedNodesCount > 1 ? "s" : ""} dropped`);
             }
 
+            // Create a set of VALID node IDs for edge validation
+            const validNodeIds = new Set(nodes.map((n) => n.id));
+
             // --- EDGES VALIDATION ---
             let edges: any[] = [];
             if (edgesResult) {
@@ -156,13 +159,13 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                         }
                         seenEdgeIds.set(row.id, true);
 
-                        // Referential Integrity
-                        if (!seenNodeIds.has(row.source)) {
+                        // Referential Integrity - Check against VALID nodes only
+                        if (!validNodeIds.has(row.source)) {
                             droppedEdgesCount++;
                             validationWarnings.push(`Edge dropped: Source '${row.source}' not found`);
                             return null;
                         }
-                        if (!seenNodeIds.has(row.target)) {
+                        if (!validNodeIds.has(row.target)) {
                             droppedEdgesCount++;
                             validationWarnings.push(`Edge dropped: Target '${row.target}' not found`);
                             return null;

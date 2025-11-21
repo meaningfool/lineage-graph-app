@@ -133,6 +133,62 @@ test.describe("CSV Import", () => {
         await expect(modal).toContainText("Edge dropped: Source 'missing-id' not found");
     });
 
+    test("should reject edges pointing to missing target node", async ({ page }) => {
+        // 1. Click "Import CSV" button
+        const importButton = page.getByRole("button", { name: "Import CSV" });
+        await importButton.click();
+
+        // 2. Upload Valid Nodes
+        const nodesPath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+        const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
+        await nodesInput.setInputFiles(nodesPath);
+
+        // 3. Upload Invalid Edges (Missing Target)
+        const edgesPath = path.join(__dirname, "fixtures", "error-missing-target-edge.csv");
+        const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
+        await edgesInput.setInputFiles(edgesPath);
+
+        // 4. Click Import
+        const importAction = page.getByRole("button", { name: "Import", exact: true });
+        await importAction.click();
+
+        // 5. Verify Warning
+        const modal = page.getByRole("dialog");
+        await expect(modal).toContainText("Edge dropped: Target 'missing-target-id' not found");
+    });
+
+    test("should reject edges pointing to nodes dropped due to validation errors", async ({ page }) => {
+        // 1. Click "Import CSV" button
+        const importButton = page.getByRole("button", { name: "Import CSV" });
+        await importButton.click();
+
+        // 2. Upload Nodes with one invalid type
+        // error-invalid-type.csv contains: node-1 (valid), node-2 (invalid type)
+        const nodesPath = path.join(__dirname, "fixtures", "error-invalid-type.csv");
+        const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
+        await nodesInput.setInputFiles(nodesPath);
+
+        // 3. Upload Edges pointing to the invalid node
+        // error-edge-to-dropped-node.csv contains: edge-1 (node-1 -> node-2)
+        const edgesPath = path.join(__dirname, "fixtures", "error-edge-to-dropped-node.csv");
+        const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
+        await edgesInput.setInputFiles(edgesPath);
+
+        // 4. Click Import
+        const importAction = page.getByRole("button", { name: "Import", exact: true });
+        await importAction.click();
+
+        // 5. Verify Warnings
+        const modal = page.getByRole("dialog");
+        // Verify node dropped warning
+        await expect(modal).toContainText("1 node dropped");
+        await expect(modal).toContainText("node-2: Invalid type");
+
+        // Verify edge dropped warning (Cascading validation)
+        await expect(modal).toContainText("1 edge dropped");
+        await expect(modal).toContainText("Edge dropped: Target 'node-2' not found");
+    });
+
 
     // ========== FILE-LEVEL ERRORS (BLOCKING) ==========
     test.describe("File-Level Validation", () => {
