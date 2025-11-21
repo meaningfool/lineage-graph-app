@@ -59,5 +59,17 @@ Enable importing edges between nodes via CSV, allowing users to define relations
     *   **Modify**: `should allow uploading an edges file along with nodes` -> Add assertion: `expect(page.locator(".react-flow__edge")).toHaveCount(X)`.
 *   **Green**: Update `onImport` to pass edges to parent. Update `LineageGraph` (if needed) or `page.tsx` to handle edges.
 
-## Open Questions
-*   None.
+### Cycle 5: Cascading Validation & Edge Cases (Red/Green)
+*   **Goal**: Ensure edges are dropped if they point to nodes that were dropped (e.g., due to invalid type), and verify both source/target validation.
+*   **Red**:
+    *   **New Test**: `should reject edges pointing to nodes dropped due to validation errors`
+        *   Upload nodes with one valid node and one invalid-type node.
+        *   Upload edges pointing to the invalid-type node.
+        *   Verify edge is dropped with warning.
+    *   **New Test**: `should reject edges pointing to missing target node`
+        *   Upload valid nodes.
+        *   Upload edge with valid source but missing target.
+        *   Verify edge is dropped with warning.
+*   **Green**:
+    *   Update `CSVImportModal` to build the valid node ID set *only* from nodes that passed all validation checks.
+    *   Ensure edge validation checks both `source` and `target` against this valid set.

@@ -33,11 +33,11 @@ export default function Home() {
 	// For now, we'll just layout the current state
 	const layouted = getLayoutedElements(nodes, edges, "LR");
 
-	const handleImport = useCallback((newNodes: any[]) => {
+	const handleImport = useCallback((newNodes: any[], newEdges: any[]) => {
 		// For Phase 1, we just replace nodes and clear edges
-		const layoutedNew = getLayoutedElements(newNodes, [], "LR");
+		const layoutedNew = getLayoutedElements(newNodes, newEdges, "LR");
 		setNodes(layoutedNew.nodes);
-		setEdges([]);
+		setEdges(layoutedNew.edges);
 	}, []);
 
 	return (
