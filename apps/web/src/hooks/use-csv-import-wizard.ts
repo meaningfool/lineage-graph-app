@@ -9,25 +9,39 @@ import {
     type ValidatedEdgeMapping,
 } from "../lib/csv-graph-importer";
 
+// --- PROPS ---
+// These are the inputs this hook needs to function.
 export interface UseCSVImportWizardProps {
-    onImport: (nodes: Node[], edges: Edge[]) => void;
-    onClose: () => void; // Used to close the modal after successful import
+    onImport: (nodes: Node[], edges: Edge[]) => void; // Callback to save data
+    onClose: () => void; // Callback to close the modal
 }
 
+// --- CUSTOM HOOK ---
+// A custom hook is just a function that uses other React hooks (like useState).
+// We use it to group all the "brain" logic of the wizard in one place.
 export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProps) {
-    // --- State ---
+
+    // --- STATE ---
+    // useState creates a variable that React "watches". 
+    // When we change it (using setSomething), React re-renders the component.
+
+    // Tracks which step of the wizard is currently visible.
     const [currentStep, setCurrentStep] = useState<"upload" | "mapping" | "results">("upload");
 
+    // Stores the actual File objects selected by the user.
     const [files, setFiles] = useState<{ nodes: File | null; edges: File | null }>({
         nodes: null,
         edges: null,
     });
 
+    // Stores the list of column headers (e.g., ["id", "name", "date"]) found in the CSVs.
     const [columns, setColumns] = useState<{ nodes: string[]; edges: string[] }>({
         nodes: [],
         edges: [],
     });
 
+    // Stores how the user has mapped CSV columns to our required fields.
+    // e.g., { id: "User ID", title: "Full Name" }
     const [mapping, setMapping] = useState<{
         id?: string;
         title?: string;
@@ -36,13 +50,17 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
         target?: string;
     }>({});
 
+    // Stores error messages or warnings to display to the user.
     const [feedback, setFeedback] = useState<{ error: string | null; warnings: string[] }>({
         error: null,
         warnings: [],
     });
 
-    // --- Actions ---
+    // --- ACTIONS ---
+    // These are functions that update our state.
 
+    // useCallback "remembers" the function so it doesn't get re-created on every render.
+    // This is good for performance when passing functions to child components.
     const setNodesFile = useCallback((file: File) => {
         setFiles((prev) => ({ ...prev, nodes: file }));
     }, []);
@@ -51,10 +69,13 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
         setFiles((prev) => ({ ...prev, edges: file }));
     }, []);
 
+    // Updates a single field in the mapping state.
     const updateMapping = useCallback((field: keyof typeof mapping, value: string | undefined) => {
         setMapping((prev) => ({ ...prev, [field]: value }));
     }, []);
 
+    // Called when user clicks "Next" on the Upload step.
+    // It reads the file headers to prepare for the Mapping step.
     const handleUploadNext = async () => {
         if (!files.nodes || !files.edges) return;
 
@@ -63,20 +84,23 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
         const failedFiles: string[] = [];
         let newFiles = { ...files };
 
+        // Try to read headers from the Nodes file
         try {
             nCols = await parseFileHeaders(files.nodes);
         } catch (err) {
             failedFiles.push(files.nodes?.name || "nodes.csv");
-            newFiles.nodes = null;
+            newFiles.nodes = null; // Clear invalid file
         }
 
+        // Try to read headers from the Edges file
         try {
             eCols = await parseFileHeaders(files.edges);
         } catch (err) {
             failedFiles.push(files.edges?.name || "edges.csv");
-            newFiles.edges = null;
+            newFiles.edges = null; // Clear invalid file
         }
 
+        // If any file failed, show an error and don't proceed
         if (failedFiles.length > 0) {
             setFeedback((prev) => ({
                 ...prev,
@@ -86,11 +110,14 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
             return;
         }
 
+        // Success! Save columns and move to next step
         setColumns({ nodes: nCols, edges: eCols });
         setCurrentStep("mapping");
         setFeedback({ error: null, warnings: [] });
     };
 
+    // Called when user clicks "Import" on the Mapping step.
+    // This is the main logic that processes the files.
     const handleFinalImport = async () => {
         if (!files.nodes || !files.edges) return;
 
@@ -98,12 +125,14 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
 
         try {
             // 1. Parse Files
+            // We read both files in parallel using Promise.all
             const [nodesResult, edgesResult] = await Promise.all([
                 parseFileFull(files.nodes),
                 parseFileFull(files.edges),
             ]);
 
             // 2. Validate Mapping (Gatekeeper)
+            // Ensure we have all the required fields mapped
             const validatedMapping = parseMapping(mapping);
             if (!validatedMapping) {
                 setFeedback((prev) => ({ ...prev, error: "Please complete all mapping fields." }));
@@ -111,6 +140,10 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
             }
 
             // 3. Build Graph (Domain Logic)
+            // This function (in csv-graph-importer.ts) does the heavy lifting:
+            // - Validates data types
+            // - Checks for duplicates
+            // - Ensures edges connect to valid nodes
             const result = buildGraphFromCsv(
                 nodesResult.data,
                 edgesResult.data,
@@ -124,11 +157,12 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
             }
 
             // 5. Map Domain Types to React Flow Types (UI Decoupling)
+            // We convert our internal "GraphNode" format to the format "ReactFlow" expects.
             const reactFlowNodes: Node[] = result.nodes.map((n) => ({
                 id: n.id,
-                type: "custom",
+                type: "custom", // Our custom node type
                 data: { label: n.title },
-                position: { x: 0, y: 0 },
+                position: { x: 0, y: 0 }, // Default position (layout will fix this later)
             }));
 
             const reactFlowEdges: Edge[] = result.edges.map((e) => ({
@@ -138,13 +172,13 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
             }));
 
             if (result.warnings.length > 0) {
-                // Show warnings before closing
+                // If there are warnings (e.g., some rows dropped), show them to the user.
                 setFeedback({ error: null, warnings: result.warnings });
-                // We still perform the import, but show the results screen
+                // We still perform the import!
                 onImport(reactFlowNodes, reactFlowEdges);
                 setCurrentStep("results");
             } else {
-                // Success - Import and show success message
+                // Perfect import!
                 onImport(reactFlowNodes, reactFlowEdges);
                 setCurrentStep("results");
             }
@@ -155,6 +189,7 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
         }
     };
 
+    // Helper to check if the mapping form is complete
     const isMappingValid = () => {
         return (
             !!mapping.id &&
@@ -162,10 +197,11 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
             !!mapping.type &&
             !!mapping.source &&
             !!mapping.target &&
-            mapping.source !== mapping.target
+            mapping.source !== mapping.target // Source and Target columns shouldn't be the same
         );
     };
 
+    // Return everything the UI needs
     return {
         // State
         currentStep,

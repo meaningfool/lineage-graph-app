@@ -2,6 +2,11 @@ import React from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
+// --- PROPS ---
+// This component needs to know:
+// 1. What columns are available in the CSV files?
+// 2. What is the current mapping?
+// 3. Functions to call when the user changes something or clicks buttons.
 interface StepMappingProps {
     columns: { nodes: string[]; edges: string[] };
     mapping: {
@@ -11,11 +16,13 @@ interface StepMappingProps {
         source?: string;
         target?: string;
     };
+    // The parent (Wizard) handles the actual state update.
+    // We just tell it "Hey, the user changed the 'id' field to 'User ID'".
     onChange: (field: "id" | "title" | "type" | "source" | "target", value: string | undefined) => void;
     onNext: () => void;
     onBack: () => void;
-    isValid: boolean;
-    hasEdgesFile: boolean;
+    isValid: boolean; // Can we proceed? (Are all fields mapped?)
+    hasEdgesFile: boolean; // Did the user upload an edges file?
 }
 
 export function StepMapping({
@@ -33,19 +40,24 @@ export function StepMapping({
                 Map your CSV columns to the required fields.
             </p>
 
+            {/* --- NODES MAPPING SECTION --- */}
             <div className="space-y-4 border rounded-md p-4">
                 <h4 className="font-medium text-sm">Nodes</h4>
                 <div className="grid gap-4">
+
+                    {/* ID Field */}
                     <div className="grid gap-2">
                         <Label htmlFor="mapping-id">Node ID</Label>
                         <select
                             id="mapping-id"
                             data-testid="mapping-select-id"
+                            // Standard styling for a select input
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             value={mapping.id || ""}
                             onChange={(e) => onChange("id", e.target.value || undefined)}
                         >
                             <option value="">Select column...</option>
+                            {/* We map over the available columns to create options */}
                             {columns.nodes.map((col) => (
                                 <option key={col} value={col}>
                                     {col}
@@ -53,6 +65,8 @@ export function StepMapping({
                             ))}
                         </select>
                     </div>
+
+                    {/* Title Field */}
                     <div className="grid gap-2">
                         <Label htmlFor="mapping-title">Title</Label>
                         <select
@@ -70,6 +84,8 @@ export function StepMapping({
                             ))}
                         </select>
                     </div>
+
+                    {/* Type Field */}
                     <div className="grid gap-2">
                         <Label htmlFor="mapping-type">Type</Label>
                         <select
@@ -90,10 +106,14 @@ export function StepMapping({
                 </div>
             </div>
 
+            {/* --- EDGES MAPPING SECTION --- */}
+            {/* Only show this if the user actually uploaded an edges file */}
             {hasEdgesFile && (
                 <div className="space-y-4 border rounded-md p-4">
                     <h4 className="font-medium text-sm">Edges</h4>
                     <div className="grid gap-4">
+
+                        {/* Source Field */}
                         <div className="grid gap-2">
                             <Label htmlFor="mapping-source">Source Node ID</Label>
                             <select
@@ -108,6 +128,8 @@ export function StepMapping({
                                     <option
                                         key={col}
                                         value={col}
+                                        // Prevent selecting the same column for source and target?
+                                        // Actually, here we just disable it if it's already selected as target.
                                         disabled={col === mapping.target}
                                     >
                                         {col}
@@ -115,6 +137,8 @@ export function StepMapping({
                                 ))}
                             </select>
                         </div>
+
+                        {/* Target Field */}
                         <div className="grid gap-2">
                             <Label htmlFor="mapping-target">Target Node ID</Label>
                             <select
@@ -140,6 +164,7 @@ export function StepMapping({
                 </div>
             )}
 
+            {/* --- NAVIGATION BUTTONS --- */}
             <div className="flex justify-end pt-4 gap-2">
                 <Button variant="outline" onClick={onBack}>
                     Back
@@ -147,7 +172,7 @@ export function StepMapping({
                 <Button
                     data-testid="mapping-next-button"
                     onClick={onNext}
-                    disabled={!isValid}
+                    disabled={!isValid} // Disable "Next" until mapping is complete
                 >
                     Next
                 </Button>

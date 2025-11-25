@@ -1,18 +1,24 @@
 import Papa from "papaparse";
 
-// --- Domain Types ---
+// --- DOMAIN TYPES ---
+// These types define what our "Graph" looks like in the abstract.
+// They are independent of the UI library (React Flow).
 
+// Represents a Node in our graph logic.
 export interface GraphNode {
     id: string;
     title: string;
     type: "INPUT" | "STEP" | "OUTPUT";
 }
 
+// Represents an Edge (connection) between two nodes.
 export interface GraphEdge {
     source: string;
     target: string;
 }
 
+// These types ensure that when we say we have a "Mapping",
+// we definitely have strings for all the required fields.
 export interface ValidatedNodeMapping {
     id: string;
     title: string;
@@ -24,6 +30,9 @@ export interface ValidatedEdgeMapping {
     target: string;
 }
 
+// The result of our import process.
+// It can contain data (nodes/edges), warnings (things that looked weird but we fixed),
+// or a critical error (we couldn't process the file at all).
 export interface ImportResult {
     nodes: GraphNode[];
     edges: GraphEdge[];
@@ -31,13 +40,18 @@ export interface ImportResult {
     error: string | null;
 }
 
-// --- Helper Functions ---
+// --- HELPER FUNCTIONS ---
 
+// Cleans up ID strings (removes spaces around them).
 export const sanitizeId = (id: string) => id.trim();
 
+// Type Guards: These tell TypeScript "Yes, this is definitely a GraphNode".
+// Used when filtering arrays to remove null values.
 export const isGraphNode = (n: GraphNode | null): n is GraphNode => n !== null;
 export const isGraphEdge = (e: GraphEdge | null): e is GraphEdge => e !== null;
 
+// Validates that the user has mapped all required fields.
+// Returns null if anything is missing.
 export const parseMapping = (
     raw: { id?: string; title?: string; type?: string; source?: string; target?: string }
 ): { nodes: ValidatedNodeMapping; edges: ValidatedEdgeMapping } | null => {
@@ -53,6 +67,8 @@ export const parseMapping = (
     };
 };
 
+// Reads just the first row of a CSV file to get the headers.
+// Uses the 'papaparse' library.
 export const parseFileHeaders = (file: File): Promise<string[]> => {
     return new Promise((resolve, reject) => {
         Papa.parse(file, {
@@ -71,6 +87,7 @@ export const parseFileHeaders = (file: File): Promise<string[]> => {
     });
 };
 
+// Reads the entire CSV file.
 export const parseFileFull = (file: File): Promise<Papa.ParseResult<any>> => {
     return new Promise((resolve, reject) => {
         Papa.parse(file, {
@@ -81,8 +98,9 @@ export const parseFileFull = (file: File): Promise<Papa.ParseResult<any>> => {
     });
 };
 
-// --- Core Logic ---
-
+// --- CORE LOGIC ---
+// This is the "Brain" of the importer.
+// It takes raw CSV data and turns it into a clean Graph.
 export const buildGraphFromCsv = (
     nodesData: any[],
     edgesData: any[],
@@ -93,20 +111,21 @@ export const buildGraphFromCsv = (
 
     // --- NODES PROCESSING ---
     let droppedNodesCount = 0;
-    const seenNodeIds = new Map<string, boolean>();
+    const seenNodeIds = new Map<string, boolean>(); // To track duplicates
     const validTypes = ["INPUT", "STEP", "OUTPUT"];
 
     const nodes = nodesData
         .map((row: any) => {
+            // Get values using the user's mapping
             const rawId = row[nodeMapping.id];
             const titleValue = row[nodeMapping.title];
             const typeValue = row[nodeMapping.type];
 
-            if (!rawId) return null;
+            if (!rawId) return null; // Skip empty rows
 
             const idValue = sanitizeId(rawId);
 
-            // Deduplication
+            // Deduplication: If we've seen this ID before, skip it.
             if (seenNodeIds.has(idValue)) {
                 droppedNodesCount++;
                 validationWarnings.push(`${idValue}: Duplicate Node ID`);
@@ -114,7 +133,7 @@ export const buildGraphFromCsv = (
             }
             seenNodeIds.set(idValue, true);
 
-            // Type Validation
+            // Type Validation: Must be INPUT, STEP, or OUTPUT
             const normalizedType = typeValue?.toUpperCase();
             if (!normalizedType || !validTypes.includes(normalizedType)) {
                 droppedNodesCount++;
@@ -130,13 +149,14 @@ export const buildGraphFromCsv = (
                 type: normalizedType as "INPUT" | "STEP" | "OUTPUT",
             };
         })
-        .filter(isGraphNode);
+        .filter(isGraphNode); // Remove nulls
 
     if (validationWarnings.length > 0 && droppedNodesCount > 0) {
         validationWarnings.unshift(`${droppedNodesCount} node${droppedNodesCount > 1 ? "s" : ""} dropped`);
     }
 
-    // Create a set of VALID node IDs for edge validation
+    // Create a set of VALID node IDs for edge validation.
+    // We need this to check if an edge connects to a real node.
     const validNodeIds = new Set(nodes.map((n) => n.id));
 
     // --- EDGES PROCESSING ---
@@ -160,7 +180,7 @@ export const buildGraphFromCsv = (
             }
             seenEdgeKeys.set(edgeKey, true);
 
-            // Referential Integrity
+            // Referential Integrity: Do both ends of the edge exist?
             if (!validNodeIds.has(sourceId)) {
                 droppedEdgesCount++;
                 validationWarnings.push(`Edge dropped: Source '${sourceId}' not found`);
@@ -184,6 +204,7 @@ export const buildGraphFromCsv = (
     }
 
     // --- WARNING LIMITS ---
+    // Don't overwhelm the user with 1000 warnings. Cap it at 10.
     const MAX_WARNINGS = 10;
     const displayWarnings = validationWarnings.slice(0, MAX_WARNINGS);
     if (validationWarnings.length > MAX_WARNINGS) {
