@@ -159,10 +159,7 @@ test.describe("CSV Import", () => {
 
             // 5. Verify Error Message contains both errors
             const dialog = page.getByRole("dialog");
-            await expect(dialog).toContainText("Failed to read nodes file: malformed.csv");
-            // Note: Currently the code returns early, so this second assertion WILL FAIL until we fix the code.
-            // But we want to see it fail first.
-            await expect(dialog).toContainText("Failed to read edges file: malformed.csv");
+            await expect(dialog).toContainText("Failed to read file(s): malformed.csv, malformed.csv");
 
             // 6. Verify BOTH dropzones are cleared
             await expect(page.getByTestId("dropzone-nodes")).not.toContainText("malformed.csv");

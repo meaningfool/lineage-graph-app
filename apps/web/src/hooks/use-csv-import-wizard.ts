@@ -68,27 +68,28 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
 
         let nCols: string[] = [];
         let eCols: string[] = [];
-        const errors: string[] = [];
+        const failedFiles: string[] = [];
         let newFiles = { ...files };
 
         try {
             nCols = await parseFileHeaders(files.nodes);
         } catch (err) {
-            console.error("Nodes Header Parse Error:", err);
-            errors.push(`Failed to read nodes file: ${files.nodes?.name}`);
+            failedFiles.push(files.nodes?.name || "nodes.csv");
             newFiles.nodes = null;
         }
 
         try {
             eCols = await parseFileHeaders(files.edges);
         } catch (err) {
-            console.error("Edges Header Parse Error:", err);
-            errors.push(`Failed to read edges file: ${files.edges?.name}`);
+            failedFiles.push(files.edges?.name || "edges.csv");
             newFiles.edges = null;
         }
 
-        if (errors.length > 0) {
-            setFeedback((prev) => ({ ...prev, error: errors.join("\n") }));
+        if (failedFiles.length > 0) {
+            setFeedback((prev) => ({
+                ...prev,
+                error: `Failed to read file(s): ${failedFiles.join(", ")}`,
+            }));
             setFiles(newFiles);
             return;
         }
