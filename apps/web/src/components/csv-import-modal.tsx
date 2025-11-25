@@ -1,4 +1,5 @@
 import React, { useCallback } from "react";
+import type { Node, Edge } from "reactflow";
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
 import {
@@ -6,31 +7,35 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Upload } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, Upload, FileText, Check } from "lucide-react";
 
 interface CSVImportModalProps {
-    onImport: (nodes: any[], edges: any[]) => void;
+    isOpen: boolean;
+    onClose: () => void;
+    onImport: (nodes: Node[], edges: Edge[]) => void;
 }
 
-export function CSVImportModal({ onImport }: CSVImportModalProps) {
+export function CSVImportModal({ onClose, onImport }: CSVImportModalProps) {
     const [isOpen, setIsOpen] = React.useState(false);
-    const [error, setError] = React.useState<string | null>(null);
-    const [warnings, setWarnings] = React.useState<string[]>([]);
     const [currentStep, setCurrentStep] = React.useState<'upload' | 'mapping' | 'results'>('upload');
     const [nodesFile, setNodesFile] = React.useState<File | null>(null);
     const [edgesFile, setEdgesFile] = React.useState<File | null>(null);
-
-    // Mapping state
+    const [error, setError] = React.useState<string | null>(null);
+    const [warnings, setWarnings] = React.useState<string[]>([]);
     const [nodeColumns, setNodeColumns] = React.useState<string[]>([]);
     const [edgeColumns, setEdgeColumns] = React.useState<string[]>([]);
     const [mapping, setMapping] = React.useState<{
         id?: string;
         title?: string;
         type?: string;
+        source?: string;
+        target?: string;
     }>({});
 
     // Clear state when modal is closed
@@ -114,37 +119,32 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
 
         setError(null);
         setWarnings([]);
-
         try {
-            const [nodesResult, edgesResult] = await Promise.all([
-                parseFileFull(nodesFile),
-                edgesFile ? parseFileFull(edgesFile) : Promise.resolve(null),
-            ]);
+            // Parse files
+            const nodesResult = nodesFile ? await parseFileFull(nodesFile) : { data: [], meta: { fields: [] } };
+            const edgesResult = edgesFile ? await parseFileFull(edgesFile) : null;
+
+            const { id: idCol, title: titleCol, type: typeCol } = mapping;
 
             // --- NODES VALIDATION ---
-            // Cycle 3: Use mapped columns instead of hardcoded ones
-
-            // Validate mapping completeness
-            const { id: idCol, title: titleCol, type: typeCol } = mapping;
             if (!idCol || !titleCol || !typeCol) {
-                setError("Please map all required columns (ID, Title, Type).");
+                setError("Please map all required node columns (ID, Title, Type).");
                 setCurrentStep('mapping');
                 return;
             }
 
-            const validTypes = ["INPUT", "STEP", "OUTPUT"];
-            const validationWarnings: string[] = [];
             let droppedNodesCount = 0;
+            const validationWarnings: string[] = [];
             const seenNodeIds = new Map<string, boolean>();
+            const validTypes = ["INPUT", "STEP", "OUTPUT"];
 
-            const nodes = nodesResult.data
+            const nodes = (nodesResult.data as any[])
                 .map((row: any) => {
-                    // Use mapped columns (now guaranteed to be strings)
                     const idValue = row[idCol];
                     const titleValue = row[titleCol];
                     const typeValue = row[typeCol];
 
-                    if (!idValue || !titleValue) return null;
+                    if (!idValue) return null;
 
                     if (seenNodeIds.has(idValue)) {
                         droppedNodesCount++;
@@ -168,40 +168,42 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                         data: { label: titleValue },
                         position: { x: 0, y: 0 },
                     };
-                })
-                .filter((node): node is NonNullable<typeof node> => node !== null);
+                }) as unknown as (Node | null)[];
 
-            if (droppedNodesCount > 0) {
+            const validNodes = nodes.filter((n): n is Node => n !== null);
+
+            if (validationWarnings.length > 0 && droppedNodesCount > 0) {
                 validationWarnings.unshift(`${droppedNodesCount} node${droppedNodesCount > 1 ? "s" : ""} dropped`);
             }
 
             // Create a set of VALID node IDs for edge validation
-            const validNodeIds = new Set(nodes.map((n) => n.id));
+            // We must use the IDs of nodes that actually survived validation
+            const validNodeIds = new Set(validNodes.map((n) => n.id));
 
             // --- EDGES VALIDATION ---
-            let edges: any[] = [];
+            let edges: Edge[] = [];
             if (edgesResult) {
-                const edgesRequiredColumns = ["source", "target"];
-                const edgesHeaders = edgesResult.meta.fields || [];
-                const edgesMissingColumns = edgesRequiredColumns.filter(
-                    (col) => !edgesHeaders.includes(col)
-                );
+                // Cycle 4: Use mapped columns
+                const { source: sourceCol, target: targetCol } = mapping;
 
-                if (edgesMissingColumns.length > 0) {
-                    setError(`Missing required columns in edges file: ${edgesMissingColumns.join(", ")}`);
-                    setCurrentStep('results');
+                if (!sourceCol || !targetCol) {
+                    setError("Please map all required edge columns (Source, Target).");
+                    setCurrentStep('mapping');
                     return;
                 }
 
                 let droppedEdgesCount = 0;
                 const seenEdgeKeys = new Map<string, boolean>();
 
-                edges = edgesResult.data
+                edges = (edgesResult.data as any[])
                     .map((row: any) => {
-                        if (!row.source || !row.target) return null;
+                        const sourceId = row[sourceCol];
+                        const targetId = row[targetCol];
+
+                        if (!sourceId || !targetId) return null;
 
                         // Deduplicate based on Source-Target pair (Silent drop)
-                        const edgeKey = `${row.source}-${row.target}`;
+                        const edgeKey = `${sourceId}-${targetId}`;
                         if (seenEdgeKeys.has(edgeKey)) {
                             // Silent drop for duplicates
                             return null;
@@ -209,40 +211,41 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                         seenEdgeKeys.set(edgeKey, true);
 
                         // Referential Integrity - Check against VALID nodes only
-                        if (!validNodeIds.has(row.source)) {
+                        if (!validNodeIds.has(sourceId)) {
                             droppedEdgesCount++;
-                            validationWarnings.push(`Edge dropped: Source '${row.source}' not found`);
+                            validationWarnings.push(`Edge dropped: Source '${sourceId}' not found`);
                             return null;
                         }
-                        if (!validNodeIds.has(row.target)) {
+                        if (!validNodeIds.has(targetId)) {
                             droppedEdgesCount++;
-                            validationWarnings.push(`Edge dropped: Target '${row.target}' not found`);
+                            validationWarnings.push(`Edge dropped: Target '${targetId}' not found`);
                             return null;
                         }
-
-                        // Generate synthetic ID
-                        const syntheticId = `edge-${row.source}-${row.target}`;
 
                         return {
-                            id: syntheticId,
-                            source: row.source,
-                            target: row.target,
-                            type: "smoothstep",
-                        };
+                            id: `e-${sourceId}-${targetId}`,
+                            source: sourceId,
+                            target: targetId,
+                        } as Edge;
                     })
-                    .filter((edge): edge is NonNullable<typeof edge> => edge !== null);
+                    .filter((edge): edge is Edge => edge !== null);
 
                 if (droppedEdgesCount > 0) {
                     validationWarnings.push(`${droppedEdgesCount} edge${droppedEdgesCount > 1 ? "s" : ""} dropped`);
                 }
             }
 
+            // If we have warnings, show them in results step
             if (validationWarnings.length > 0) {
                 setWarnings(validationWarnings);
+                // Pass valid data to parent even if there are warnings (partial success)
+                onImport(validNodes as unknown as Node[], edges as unknown as Edge[]);
+                setCurrentStep('results');
+            } else {
+                // Success - show success message
+                onImport(validNodes as unknown as Node[], edges as unknown as Edge[]);
+                setCurrentStep('results');
             }
-
-            onImport(nodes, edges);
-            setCurrentStep('results');
 
         } catch (err) {
             console.error("CSV Parse Error:", err);
@@ -251,20 +254,47 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
         }
     };
 
+    const handleOpenChange = (open: boolean) => {
+        setIsOpen(open);
+        if (!open) {
+            // Reset state on close
+            setTimeout(() => {
+                setNodesFile(null);
+                setEdgesFile(null);
+                setError(null);
+                setWarnings([]);
+                setCurrentStep('upload');
+                setMapping({});
+                setNodeColumns([]);
+                setEdgeColumns([]);
+            }, 300); // Small delay to allow animation to finish
+        }
+    };
+
+    const handleClose = () => {
+        handleOpenChange(false);
+    };
+
     const isMappingValid = () => {
         // Cycle 2: ID, Title, and Type are required
         return !!mapping.id && !!mapping.title && !!mapping.type;
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="outline">
                     <Upload className="mr-2 h-4 w-4" />
                     Import CSV
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                    <DialogTitle>Import CSV</DialogTitle>
+                    <DialogDescription>
+                        Import nodes and edges from CSV files.
+                    </DialogDescription>
+                </DialogHeader>
                 <DialogHeader>
                     <DialogTitle>
                         {currentStep === 'upload' && 'Upload CSV'}
@@ -380,9 +410,47 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                             </div>
                         </div>
 
+                        {edgesFile && (
+                            <div className="space-y-4 border rounded-md p-4">
+                                <h4 className="font-medium text-sm">Edges</h4>
+                                <div className="grid gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="mapping-source">Source Node ID</Label>
+                                        <select
+                                            id="mapping-source"
+                                            data-testid="mapping-select-source"
+                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            value={mapping.source || ""}
+                                            onChange={(e) => setMapping(prev => ({ ...prev, source: e.target.value || undefined }))}
+                                        >
+                                            <option value="">Select column...</option>
+                                            {edgeColumns.map(col => (
+                                                <option key={col} value={col}>{col}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="mapping-target">Target Node ID</Label>
+                                        <select
+                                            id="mapping-target"
+                                            data-testid="mapping-select-target"
+                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            value={mapping.target || ""}
+                                            onChange={(e) => setMapping(prev => ({ ...prev, target: e.target.value || undefined }))}
+                                        >
+                                            <option value="">Select column...</option>
+                                            {edgeColumns.map(col => (
+                                                <option key={col} value={col}>{col}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex justify-end pt-4 gap-2">
                             <Button variant="outline" onClick={() => setCurrentStep('upload')}>Back</Button>
-                            <Button onClick={handleFinalImport} disabled={!isMappingValid()}>
+                            <Button data-testid="mapping-next-button" onClick={handleFinalImport} disabled={!isMappingValid()}>
                                 Next
                             </Button>
                         </div>
@@ -410,7 +478,7 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                         )}
 
                         <div className="flex justify-end">
-                            <Button data-testid="import-close-button" onClick={() => setIsOpen(false)}>Close</Button>
+                            <Button data-testid="import-close-button" onClick={handleClose}>Close</Button>
                         </div>
                     </div>
                 )}

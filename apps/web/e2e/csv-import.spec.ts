@@ -8,25 +8,27 @@ test.describe("CSV Import", () => {
         await page.waitForLoadState("networkidle");
     });
 
-    // Helper to complete the mapping step (Cycle 2: ID, Title, Type)
-    async function completeMappingStep(page: Page) {
+    // Helper to complete the mapping step (Cycle 4: ID, Title, Type + Source, Target if edges)
+    async function completeMappingStep(page: Page, hasEdges = false) {
         // Wait for mapping step to appear
         await expect(page.getByText("Column Mapping")).toBeVisible();
 
-        // Select ID column
+        // Select Node columns
         await page.getByTestId("mapping-select-id").selectOption({ label: "id" });
-
-        // Select Title column
         await page.getByTestId("mapping-select-title").selectOption({ label: "title" });
-
-        // Select Type column
         await page.getByTestId("mapping-select-type").selectOption({ label: "type" });
 
+        // Select Edge columns if edges are present
+        if (hasEdges) {
+            await page.getByTestId("mapping-select-source").selectOption({ label: "source" });
+            await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
+        }
+
         // Click Next
-        await page.getByRole("button", { name: "Next" }).click();
+        await page.getByTestId("mapping-next-button").click();
     }
 
-    // ========== NEW TESTS FOR COLUMN MAPPING (CYCLE 1 & 2) ==========
+    // ========== NEW TESTS FOR COLUMN MAPPING (CYCLE 1-4) ==========
     test.describe("Column Mapping", () => {
         test("should show mapping step with ID, Title, and Type dropdowns", async ({ page }) => {
             // 1. Open Modal
@@ -171,6 +173,7 @@ test.describe("CSV Import", () => {
 
             // 2. Verify Next button is disabled
             const nextButton = page.getByRole("button", { name: "Next", exact: true });
+            await expect(nextButton).toBeVisible();
             await expect(nextButton).toBeDisabled();
 
             // 3. Upload Nodes file
@@ -204,7 +207,7 @@ test.describe("CSV Import", () => {
         await nextButton.click();
 
         // 5. Complete Mapping Step
-        await completeMappingStep(page);
+        await completeMappingStep(page, true);
 
         // 6. Verify Nodes are displayed
         await expect(page.locator(".react-flow__node").filter({ hasText: "First Node" })).toBeVisible();
@@ -234,7 +237,7 @@ test.describe("CSV Import", () => {
         await nextButton.click();
 
         // 5. Complete Mapping Step
-        await completeMappingStep(page);
+        await completeMappingStep(page, true);
 
         // 6. Verify Warning
         const modal = page.getByRole("dialog");
@@ -261,7 +264,7 @@ test.describe("CSV Import", () => {
         await nextButton.click();
 
         // 5. Complete Mapping Step
-        await completeMappingStep(page);
+        await completeMappingStep(page, true);
 
         // 6. Verify Warning
         const modal = page.getByRole("dialog");
@@ -288,7 +291,7 @@ test.describe("CSV Import", () => {
         await nextButton.click();
 
         // 5. Complete Mapping Step
-        await completeMappingStep(page);
+        await completeMappingStep(page, true);
 
         // 6. Verify Warnings
         const modal = page.getByRole("dialog");
@@ -318,7 +321,7 @@ test.describe("CSV Import", () => {
         await nextButton.click();
 
         // 5. Complete Mapping Step
-        await completeMappingStep(page);
+        await completeMappingStep(page, true);
 
         // 6. Verify Success
         const modal = page.getByRole("dialog");
@@ -348,7 +351,7 @@ test.describe("CSV Import", () => {
         await nextButton.click();
 
         // 5. Complete Mapping Step
-        await completeMappingStep(page);
+        await completeMappingStep(page, true);
 
         // 6. Verify Success (No warnings)
         const modal = page.getByRole("dialog");
