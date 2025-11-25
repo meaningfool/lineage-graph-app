@@ -9,7 +9,7 @@ test.describe("CSV Import", () => {
     });
 
     // Helper to complete the mapping step (Cycle 4: ID, Title, Type + Source, Target if edges)
-    async function completeMappingStep(page: Page, hasEdges = false) {
+    async function completeMappingStep(page: Page, hasEdges = true) {
         // Wait for mapping step to appear
         await expect(page.getByText("Column Mapping")).toBeVisible();
 
@@ -35,8 +35,11 @@ test.describe("CSV Import", () => {
             await page.getByRole("button", { name: "Import CSV" }).click();
 
             // 2. Upload non-standard nodes file
-            const fixturePath = path.join(__dirname, "fixtures", "mapping-nodes-nonstandard.csv");
+            const fixturePath = path.join(__dirname, "fixtures", "nodes_valid_custom_headers.csv");
             await page.getByTestId("dropzone-nodes").locator('input[type="file"]').setInputFiles(fixturePath);
+
+            const edgesPath = path.join(__dirname, "fixtures", "edges_valid_basic.csv");
+            await page.getByTestId("dropzone-edges").locator('input[type="file"]').setInputFiles(edgesPath);
 
             // 3. Click Next
             await page.getByRole("button", { name: "Next", exact: true }).click();
@@ -63,8 +66,12 @@ test.describe("CSV Import", () => {
         test("should validate mapping requirements", async ({ page }) => {
             // 1. Open Modal & Upload
             await page.getByRole("button", { name: "Import CSV" }).click();
-            const fixturePath = path.join(__dirname, "fixtures", "mapping-nodes-nonstandard.csv");
+            const fixturePath = path.join(__dirname, "fixtures", "nodes_valid_custom_headers.csv");
             await page.getByTestId("dropzone-nodes").locator('input[type="file"]').setInputFiles(fixturePath);
+
+            const edgesPath = path.join(__dirname, "fixtures", "edges_valid_basic.csv");
+            await page.getByTestId("dropzone-edges").locator('input[type="file"]').setInputFiles(edgesPath);
+
             await page.getByRole("button", { name: "Next", exact: true }).click();
 
             // 2. Verify Next button is disabled initially
@@ -79,8 +86,13 @@ test.describe("CSV Import", () => {
             await page.getByTestId("mapping-select-title").selectOption({ label: "name" });
             await expect(nextButton).toBeDisabled();
 
-            // 5. Map Type -> Enabled
+            // 5. Map Type -> Still Disabled (Need Edges)
             await page.getByTestId("mapping-select-type").selectOption({ label: "node_type" });
+            await expect(nextButton).toBeDisabled();
+
+            // 6. Map Edges -> Enabled
+            await page.getByTestId("mapping-select-source").selectOption({ label: "source" });
+            await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
             await expect(nextButton).toBeEnabled();
 
             // 6. Reversibility Check: Unmap Title
@@ -93,8 +105,11 @@ test.describe("CSV Import", () => {
             await page.getByRole("button", { name: "Import CSV" }).click();
 
             // 2. Upload non-standard nodes file
-            const fixturePath = path.join(__dirname, "fixtures", "mapping-nodes-nonstandard.csv");
+            const fixturePath = path.join(__dirname, "fixtures", "nodes_valid_custom_headers.csv");
             await page.getByTestId("dropzone-nodes").locator('input[type="file"]').setInputFiles(fixturePath);
+
+            const edgesPath = path.join(__dirname, "fixtures", "edges_valid_basic.csv");
+            await page.getByTestId("dropzone-edges").locator('input[type="file"]').setInputFiles(edgesPath);
 
             // 3. Click Next
             await page.getByRole("button", { name: "Next", exact: true }).click();
@@ -103,6 +118,8 @@ test.describe("CSV Import", () => {
             await page.getByTestId("mapping-select-id").selectOption({ label: "node_id" });
             await page.getByTestId("mapping-select-title").selectOption({ label: "name" });
             await page.getByTestId("mapping-select-type").selectOption({ label: "node_type" });
+            await page.getByTestId("mapping-select-source").selectOption({ label: "source" });
+            await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
 
             // 5. Click Next to import
             await page.getByRole("button", { name: "Next", exact: true }).click();
@@ -135,9 +152,12 @@ test.describe("CSV Import", () => {
             await expect(modal).toContainText("Upload CSV");
 
             // 3. Upload File
-            const fixturePath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+            const fixturePath = path.join(__dirname, "fixtures", "nodes_valid_basic.csv");
             const fileInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
             await fileInput.setInputFiles(fixturePath);
+
+            const edgesPath = path.join(__dirname, "fixtures", "edges_valid_basic.csv");
+            await page.getByTestId("dropzone-edges").locator('input[type="file"]').setInputFiles(edgesPath);
 
             // Click Next (was Import)
             const nextButton = page.getByRole("button", { name: "Next", exact: true });
@@ -177,9 +197,15 @@ test.describe("CSV Import", () => {
             await expect(nextButton).toBeDisabled();
 
             // 3. Upload Nodes file
-            const fixturePath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+            const fixturePath = path.join(__dirname, "fixtures", "nodes_valid_basic.csv");
             const fileInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
             await fileInput.setInputFiles(fixturePath);
+
+            // Still disabled until edges uploaded
+            await expect(nextButton).toBeDisabled();
+
+            const edgesPath = path.join(__dirname, "fixtures", "edges_valid_basic.csv");
+            await page.getByTestId("dropzone-edges").locator('input[type="file"]').setInputFiles(edgesPath);
 
             // 4. Verify Next button is enabled
             await expect(nextButton).toBeEnabled();
@@ -192,12 +218,12 @@ test.describe("CSV Import", () => {
         await importButton.click();
 
         // 2. Upload Nodes file
-        const nodesPath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+        const nodesPath = path.join(__dirname, "fixtures", "nodes_valid_basic.csv");
         const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
         await nodesInput.setInputFiles(nodesPath);
 
         // 3. Upload Edges file
-        const edgesPath = path.join(__dirname, "fixtures", "basic-edges.csv");
+        const edgesPath = path.join(__dirname, "fixtures", "edges_valid_basic.csv");
         const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
         await edgesInput.setInputFiles(edgesPath);
 
@@ -223,12 +249,12 @@ test.describe("CSV Import", () => {
         await importButton.click();
 
         // 2. Upload Valid Nodes
-        const nodesPath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+        const nodesPath = path.join(__dirname, "fixtures", "nodes_valid_basic.csv");
         const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
         await nodesInput.setInputFiles(nodesPath);
 
         // 3. Upload Invalid Edges
-        const edgesPath = path.join(__dirname, "fixtures", "error-missing-node-edge.csv");
+        const edgesPath = path.join(__dirname, "fixtures", "edges_invalid_missing_source.csv");
         const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
         await edgesInput.setInputFiles(edgesPath);
 
@@ -250,12 +276,12 @@ test.describe("CSV Import", () => {
         await importButton.click();
 
         // 2. Upload Valid Nodes
-        const nodesPath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+        const nodesPath = path.join(__dirname, "fixtures", "nodes_valid_basic.csv");
         const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
         await nodesInput.setInputFiles(nodesPath);
 
         // 3. Upload Invalid Edges (Missing Target)
-        const edgesPath = path.join(__dirname, "fixtures", "error-missing-target-edge.csv");
+        const edgesPath = path.join(__dirname, "fixtures", "edges_invalid_missing_target.csv");
         const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
         await edgesInput.setInputFiles(edgesPath);
 
@@ -277,12 +303,12 @@ test.describe("CSV Import", () => {
         await importButton.click();
 
         // 2. Upload Nodes with one invalid type
-        const nodesPath = path.join(__dirname, "fixtures", "error-invalid-type.csv");
+        const nodesPath = path.join(__dirname, "fixtures", "nodes_invalid_bad_type.csv");
         const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
         await nodesInput.setInputFiles(nodesPath);
 
         // 3. Upload Edges pointing to the invalid node
-        const edgesPath = path.join(__dirname, "fixtures", "error-edge-to-dropped-node.csv");
+        const edgesPath = path.join(__dirname, "fixtures", "edges_invalid_orphaned.csv");
         const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
         await edgesInput.setInputFiles(edgesPath);
 
@@ -307,12 +333,12 @@ test.describe("CSV Import", () => {
         await importButton.click();
 
         // 2. Upload Valid Nodes
-        const nodesPath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+        const nodesPath = path.join(__dirname, "fixtures", "nodes_valid_basic.csv");
         const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
         await nodesInput.setInputFiles(nodesPath);
 
         // 3. Upload Edges without ID
-        const edgesPath = path.join(__dirname, "fixtures", "edges-no-id.csv");
+        const edgesPath = path.join(__dirname, "fixtures", "edges_valid_no_id_column.csv");
         const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
         await edgesInput.setInputFiles(edgesPath);
 
@@ -337,12 +363,12 @@ test.describe("CSV Import", () => {
         await importButton.click();
 
         // 2. Upload Valid Nodes
-        const nodesPath = path.join(__dirname, "fixtures", "basic-nodes.csv");
+        const nodesPath = path.join(__dirname, "fixtures", "nodes_valid_basic.csv");
         const nodesInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
         await nodesInput.setInputFiles(nodesPath);
 
         // 3. Upload Duplicate Edges without ID
-        const edgesPath = path.join(__dirname, "fixtures", "edges-duplicate-no-id.csv");
+        const edgesPath = path.join(__dirname, "fixtures", "edges_valid_duplicates.csv");
         const edgesInput = page.getByTestId("dropzone-edges").locator('input[type="file"]');
         await edgesInput.setInputFiles(edgesPath);
 
@@ -396,9 +422,12 @@ test.describe("CSV Import", () => {
             // For now, I will comment out this test or update it to expect mapping step.
             // Let's update it to expect mapping step.
 
-            const fixturePath = path.join(__dirname, "fixtures", "error-missing-type.csv");
+            const fixturePath = path.join(__dirname, "fixtures", "nodes_invalid_missing_type_col.csv");
             const fileInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
             await fileInput.setInputFiles(fixturePath);
+
+            const edgesPath = path.join(__dirname, "fixtures", "edges_valid_basic.csv");
+            await page.getByTestId("dropzone-edges").locator('input[type="file"]').setInputFiles(edgesPath);
 
             // Click Next
             const nextButton = page.getByRole("button", { name: "Next", exact: true });
@@ -408,7 +437,7 @@ test.describe("CSV Import", () => {
             await expect(modal).toContainText("Column Mapping");
 
             // And we should see that we can't proceed because we can't map 'type' (in future cycles).
-            // In Cycle 1, we only validate ID. 'type' is missing but ID is present (in error-missing-type.csv).
+            // In Cycle 1, we only validate ID. 'type' is missing but ID is present (in nodes_invalid_missing_type_col.csv).
             // So in Cycle 1, we MIGHT be able to proceed if we only check ID!
             // But the existing logic checks for columns.
             // I will need to remove that check in the implementation.
@@ -431,9 +460,12 @@ test.describe("CSV Import", () => {
             await importButton.click();
 
             // 2. Upload file
-            const fixturePath = path.join(__dirname, "fixtures", "error-invalid-type.csv");
+            const fixturePath = path.join(__dirname, "fixtures", "nodes_invalid_bad_type.csv");
             const fileInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
             await fileInput.setInputFiles(fixturePath);
+
+            const edgesPath = path.join(__dirname, "fixtures", "edges_valid_basic.csv");
+            await page.getByTestId("dropzone-edges").locator('input[type="file"]').setInputFiles(edgesPath);
 
             // Click Next
             const nextButton = page.getByRole("button", { name: "Next", exact: true });
@@ -462,9 +494,12 @@ test.describe("CSV Import", () => {
             await importButton.click();
 
             // 2. Upload file
-            const fixturePath = path.join(__dirname, "fixtures", "error-duplicate-ids.csv");
+            const fixturePath = path.join(__dirname, "fixtures", "nodes_invalid_duplicate_ids.csv");
             const fileInput = page.getByTestId("dropzone-nodes").locator('input[type="file"]');
             await fileInput.setInputFiles(fixturePath);
+
+            const edgesPath = path.join(__dirname, "fixtures", "edges_valid_basic.csv");
+            await page.getByTestId("dropzone-edges").locator('input[type="file"]').setInputFiles(edgesPath);
 
             // Click Next
             const nextButton = page.getByRole("button", { name: "Next", exact: true });
@@ -484,6 +519,59 @@ test.describe("CSV Import", () => {
             await expect(modal).not.toBeVisible();
 
             await expect(page.locator(".react-flow__node")).toHaveCount(2);
+        });
+
+        test("should disable Next button if Source and Target columns are the same", async ({ page }) => {
+            // 1. Upload files
+            await page.getByRole("button", { name: "Import CSV" }).click();
+            const nodesPath = path.join(__dirname, "fixtures", "nodes_valid_basic.csv");
+            await page.getByTestId("dropzone-nodes").locator('input[type="file"]').setInputFiles(nodesPath);
+            const edgesPath = path.join(__dirname, "fixtures", "edges_valid_basic.csv");
+            await page.getByTestId("dropzone-edges").locator('input[type="file"]').setInputFiles(edgesPath);
+            await page.getByRole("button", { name: "Next", exact: true }).click();
+
+            // 2. Map Nodes
+            await page.getByTestId("mapping-select-id").selectOption({ label: "id" });
+            await page.getByTestId("mapping-select-title").selectOption({ label: "title" });
+            await page.getByTestId("mapping-select-type").selectOption({ label: "type" });
+
+            // 3. Map Edges
+            await page.getByTestId("mapping-select-source").selectOption({ label: "source" });
+
+            // Verify 'source' option in target select is disabled (Smart Filtering)
+            const targetSelect = page.getByTestId("mapping-select-target");
+            const sourceOption = targetSelect.locator('option[value="source"]');
+            await expect(sourceOption).toBeDisabled();
+
+            // 4. Verify Next button disabled (because Target is not mapped yet)
+            const nextButton = page.getByRole("button", { name: "Next", exact: true });
+            await expect(nextButton).toBeDisabled();
+
+            // 5. Fix mapping
+            await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
+            await expect(nextButton).toBeEnabled();
+        });
+
+        test("should limit warning messages to 10", async ({ page }) => {
+            // 1. Upload files
+            await page.getByRole("button", { name: "Import CSV" }).click();
+            const nodesPath = path.join(__dirname, "fixtures", "nodes_stress_many_warnings.csv");
+            await page.getByTestId("dropzone-nodes").locator('input[type="file"]').setInputFiles(nodesPath);
+            const edgesPath = path.join(__dirname, "fixtures", "edges_valid_basic.csv");
+            await page.getByTestId("dropzone-edges").locator('input[type="file"]').setInputFiles(edgesPath);
+            await page.getByRole("button", { name: "Next", exact: true }).click();
+
+            // 2. Complete Mapping
+            await completeMappingStep(page);
+
+            // 3. Verify warnings are limited
+            const modal = page.getByRole("dialog");
+            await expect(modal).toContainText("12 nodes dropped");
+            // Check that we have exactly 11 warning items displayed (10 warnings + 1 truncation message)
+            // Note: The first warning is in a div, and the rest are also in divs.
+            const warningItems = page.locator(".rounded-md.bg-yellow-500\\/15 > div");
+            await expect(warningItems).toHaveCount(11);
+            await expect(modal).toContainText("more warnings");
         });
     });
 
