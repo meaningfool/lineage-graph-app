@@ -103,7 +103,7 @@ test.describe("CSV Import", () => {
 
     // ========== 2. WORKFLOW & STATE ==========
     test.describe("Workflow & State", () => {
-        test.skip("should reset wizard state when modal is closed and reopened", async ({ page }) => {
+        test("should reset wizard state when modal is closed and reopened", async ({ page }) => {
             // 1. Open Modal
             await page.getByRole("button", { name: "Import CSV" }).click();
 
@@ -120,7 +120,7 @@ test.describe("CSV Import", () => {
             await expect(page.getByText("Column Mapping")).toBeVisible();
 
             // 4. Close Modal (Cancel)
-            await page.getByTestId("import-close-button").click();
+            await page.getByTestId("dialog-close-button").click();
             // Note: The X button might not be visible in Mapping step if we didn't add it to StepMapping component?
             // Let's check StepMapping. If not, we use Esc or click outside.
             // The modal usually has a close button in the header.
@@ -141,7 +141,7 @@ test.describe("CSV Import", () => {
             await expect(nextButton2).toBeDisabled();
         });
 
-        test.skip("should show error for malformed CSV", async ({ page }) => {
+        test("should show error for malformed CSV", async ({ page }) => {
             // 1. Open Modal
             await page.getByRole("button", { name: "Import CSV" }).click();
 
@@ -178,7 +178,7 @@ test.describe("CSV Import", () => {
             await expect(page.getByRole("dialog")).toContainText("Failed to read CSV headers");
         });
 
-        test.skip("should replace graph on second import", async ({ page }) => {
+        test("should replace graph on second import", async ({ page }) => {
             // 1. First Import (Graph A)
             await page.getByRole("button", { name: "Import CSV" }).click();
             const nodesAPath = path.join(__dirname, "fixtures", "nodes_valid_basic.csv"); // 2 nodes
@@ -191,7 +191,7 @@ test.describe("CSV Import", () => {
             await nextButton.click();
 
             await completeMappingStep(page);
-            await page.getByTestId("import-close-button").click();
+            await page.getByTestId("dialog-close-button").click();
 
             // Verify Graph A (First Node)
             await expect(page.locator(".react-flow__node").filter({ hasText: "First Node" })).toBeVisible();
@@ -215,7 +215,7 @@ test.describe("CSV Import", () => {
             await completeMappingStep(page, true);
 
             // Close
-            await page.getByTestId("import-close-button").click();
+            await page.getByTestId("dialog-close-button").click();
 
             // 3. Verify Graph B is present
             await expect(page.locator(".react-flow__node").filter({ hasText: "Third Node" })).toBeVisible();
@@ -316,7 +316,7 @@ test.describe("CSV Import", () => {
             await expect(modal).toContainText("node-2: Invalid type");
 
             // Verify import success for valid node
-            await page.getByTestId("import-close-button").click();
+            await page.getByTestId("dialog-close-button").click();
             await expect(page.locator(".react-flow__node")).toHaveCount(1);
         });
 
@@ -333,7 +333,7 @@ test.describe("CSV Import", () => {
             await expect(modal).toContainText("1 node dropped");
             await expect(modal).toContainText("node-1: Duplicate Node ID");
 
-            await page.getByTestId("import-close-button").click();
+            await page.getByTestId("dialog-close-button").click();
             await expect(page.locator(".react-flow__node")).toHaveCount(2);
         });
 

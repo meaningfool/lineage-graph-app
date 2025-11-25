@@ -59,7 +59,12 @@ export const parseFileHeaders = (file: File): Promise<string[]> => {
             header: true,
             preview: 1, // Only read first row for headers
             complete: (results) => {
-                resolve(results.meta.fields || []);
+                const fields = results.meta.fields || [];
+                if (fields.length === 0) {
+                    reject(new Error("No headers found"));
+                } else {
+                    resolve(fields);
+                }
             },
             error: (err) => reject(err),
         });

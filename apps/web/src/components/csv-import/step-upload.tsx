@@ -8,9 +8,10 @@ interface StepUploadProps {
     onUploadNodes: (file: File) => void;
     onUploadEdges: (file: File) => void;
     onNext: () => void;
+    error?: string | null;
 }
 
-export function StepUpload({ files, onUploadNodes, onUploadEdges, onNext }: StepUploadProps) {
+export function StepUpload({ files, onUploadNodes, onUploadEdges, onNext, error }: StepUploadProps) {
     const onDropNodes = useCallback(
         (acceptedFiles: File[]) => {
             if (acceptedFiles[0]) onUploadNodes(acceptedFiles[0]);
@@ -47,6 +48,12 @@ export function StepUpload({ files, onUploadNodes, onUploadEdges, onNext }: Step
 
     return (
         <div className="space-y-4">
+            {error && (
+                <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive font-medium">
+                    {error}
+                </div>
+            )}
+
             {/* Nodes Dropzone */}
             <div className="space-y-2">
                 <Label>Nodes CSV (Required)</Label>

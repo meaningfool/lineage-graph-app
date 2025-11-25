@@ -51,8 +51,14 @@ export function CSVImportModal({ isOpen: controlledIsOpen, onClose: controlledOn
 
     const handleOpenChange = (open: boolean) => {
         if (isControlled && controlledOnClose) {
-            if (!open) controlledOnClose();
+            if (!open) {
+                actions.reset();
+                controlledOnClose();
+            }
         } else {
+            if (!open) {
+                actions.reset();
+            }
             setInternalIsOpen(open);
         }
     };
@@ -67,12 +73,7 @@ export function CSVImportModal({ isOpen: controlledIsOpen, onClose: controlledOn
                     </Button>
                 </DialogTrigger>
             )}
-            <DialogContent
-                className="sm:max-w-[600px]"
-                onAnimationEnd={() => {
-                    if (!isOpen) actions.reset();
-                }}
-            >
+            <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
                     <DialogTitle>Import CSV</DialogTitle>
                     <DialogDescription>
@@ -93,6 +94,7 @@ export function CSVImportModal({ isOpen: controlledIsOpen, onClose: controlledOn
                         onUploadNodes={actions.setNodesFile}
                         onUploadEdges={actions.setEdgesFile}
                         onNext={actions.handleUploadNext}
+                        error={feedback.error}
                     />
                 )}
 
