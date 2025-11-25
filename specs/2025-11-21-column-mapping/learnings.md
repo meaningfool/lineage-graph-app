@@ -44,3 +44,26 @@ Instead of checking "is this valid?" at every step (and using `!` or `?`), defin
 
 **Best Practice**: `onAnimationEnd`
 *   **Solution**: Use the browser's native event to trigger cleanup exactly when the animation finishes. Avoid hardcoded timing constants ("magic numbers") in logic.
+
+## Refactoring & Polish (Cycle 4)
+
+## Refactoring & Polish (Cycle 4)
+
+### State Reset in Uncontrolled Components
+**Insight**: Attempting to manually reset internal state via external props (`isOpen`) or internal handlers creates tight coupling and fragile logic.
+**Solution**: Use the **Key-based Reset Pattern**. By changing the component's `key` (or conditionally rendering it) when it closes, React automatically unmounts and destroys the instance. The next time it opens, a fresh instance is created with pristine state. This requires **zero** reset logic inside the component itself.
+
+### Layered Architecture for Complex Modals
+**Insight**: The `CSVImportModal` was becoming a "God Component", handling UI, state, and complex CSV parsing logic all in one file. This made it hard to test and maintain.
+**Solution**: We split the feature into three distinct layers:
+1.  **Domain Layer** (`lib/csv-graph-importer.ts`): Pure functions for parsing and validation. Testable without React.
+2.  **State Layer** (`hooks/use-csv-import-wizard.ts`): A custom hook managing the wizard's state machine.
+3.  **UI Layer** (`components/csv-import/*`): Dumb presentational components (`StepUpload`, `StepMapping`) orchestrated by a thin container (`CSVImportModal`).
+
+### Explicit State Clearing
+**Insight**: If a file upload fails validation, simply showing an error message is not enough. The invalid file object might persist in the component state, causing the UI to look "ready" when it's not.
+**Solution**: Explicitly clear the invalid data from the state (e.g., `setFiles(..., nodes: null)`) immediately upon catching the validation error.
+
+### Component Simplification (YAGNI)
+**Insight**: We initially built `CSVImportModal` to support both Controlled and Uncontrolled modes "just in case". This added unnecessary complexity (conditional logic, dual state).
+**Solution**: We verified that only Uncontrolled mode was used and removed the Controlled mode logic. **Lesson**: Don't build for hypothetical use cases; refactor when the need actually arises.

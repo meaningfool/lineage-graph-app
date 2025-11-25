@@ -43,14 +43,6 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
 
     // --- Actions ---
 
-    const reset = useCallback(() => {
-        setFiles({ nodes: null, edges: null });
-        setColumns({ nodes: [], edges: [] });
-        setFeedback({ error: null, warnings: [] });
-        setMapping({});
-        setCurrentStep("upload");
-    }, []);
-
     const setNodesFile = useCallback((file: File) => {
         setFiles((prev) => ({ ...prev, nodes: file }));
     }, []);
@@ -192,7 +184,6 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
             updateMapping,
             handleUploadNext,
             handleFinalImport,
-            reset,
             setCurrentStep, // Exposed for "Back" button
         },
     };

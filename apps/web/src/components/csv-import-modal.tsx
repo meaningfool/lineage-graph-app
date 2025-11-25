@@ -17,16 +17,10 @@ import { StepResults } from "./csv-import/step-results";
 
 interface CSVImportModalProps {
     onImport: (nodes: Node[], edges: Edge[]) => void;
+    onClose: () => void;
 }
 
-export function CSVImportModal({ onImport }: CSVImportModalProps) {
-    const [isOpen, setIsOpen] = React.useState(false);
-
-    const handleClose = () => {
-        actions.reset();
-        setIsOpen(false);
-    };
-
+export function CSVImportModal({ onImport, onClose }: CSVImportModalProps) {
     const {
         currentStep,
         files,
@@ -37,24 +31,14 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
         actions,
     } = useCSVImportWizard({
         onImport,
-        onClose: handleClose,
+        onClose,
     });
 
-    const handleOpenChange = (open: boolean) => {
-        if (!open) {
-            actions.reset();
-        }
-        setIsOpen(open);
-    };
+    // No internal open state or reset logic needed!
+    // The component is unmounted when closed by the parent.
 
     return (
-        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="outline">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Import CSV
-                </Button>
-            </DialogTrigger>
+        <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
                     <DialogTitle>Import CSV</DialogTitle>
@@ -95,7 +79,7 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
                 {currentStep === 'results' && (
                     <StepResults
                         feedback={feedback}
-                        onClose={handleClose}
+                        onClose={onClose}
                     />
                 )}
             </DialogContent>
