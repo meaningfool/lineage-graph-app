@@ -168,14 +168,7 @@ test.describe("CSV Import", () => {
             // Does StepUpload show error? No, it doesn't take `error` prop.
             // This might be a BUG/Missing Feature in UI.
             // But let's check if the modal shows global error?
-            // The modal renders `StepUpload` inside `DialogContent`.
-            // If `feedback.error` is set, is it rendered?
-            // I need to check `csv-import-modal.tsx`.
-
-            // For now, let's assume we might need to fix the code to show error.
-            // But let's check the test expectation.
-            // If the test fails finding the error text, I'll know.
-            await expect(page.getByRole("dialog")).toContainText("Failed to read CSV headers");
+            await expect(page.getByRole("dialog")).toContainText("Failed to read nodes file: malformed.csv");
         });
 
         test("should replace graph on second import", async ({ page }) => {

@@ -66,19 +66,30 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
     const handleUploadNext = async () => {
         if (!files.nodes || !files.edges) return;
 
-        try {
-            const [nCols, eCols] = await Promise.all([
-                parseFileHeaders(files.nodes),
-                parseFileHeaders(files.edges),
-            ]);
+        let nCols: string[] = [];
+        let eCols: string[] = [];
 
-            setColumns({ nodes: nCols, edges: eCols });
-            setCurrentStep("mapping");
-            setFeedback({ error: null, warnings: [] });
+        try {
+            nCols = await parseFileHeaders(files.nodes);
         } catch (err) {
-            console.error("Header Parse Error:", err);
-            setFeedback((prev) => ({ ...prev, error: "Failed to read CSV headers" }));
+            console.error("Nodes Header Parse Error:", err);
+            setFeedback((prev) => ({ ...prev, error: `Failed to read nodes file: ${files.nodes?.name}` }));
+            setFiles((prev) => ({ ...prev, nodes: null }));
+            return;
         }
+
+        try {
+            eCols = await parseFileHeaders(files.edges);
+        } catch (err) {
+            console.error("Edges Header Parse Error:", err);
+            setFeedback((prev) => ({ ...prev, error: `Failed to read edges file: ${files.edges?.name}` }));
+            setFiles((prev) => ({ ...prev, edges: null }));
+            return;
+        }
+
+        setColumns({ nodes: nCols, edges: eCols });
+        setCurrentStep("mapping");
+        setFeedback({ error: null, warnings: [] });
     };
 
     const handleFinalImport = async () => {
