@@ -23,6 +23,7 @@ export function CSVImportModal({ onImport }: CSVImportModalProps) {
     const [isOpen, setIsOpen] = React.useState(false);
 
     const handleClose = () => {
+        actions.reset();
         setIsOpen(false);
     };
 

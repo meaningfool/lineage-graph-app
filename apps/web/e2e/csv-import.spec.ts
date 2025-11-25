@@ -166,6 +166,32 @@ test.describe("CSV Import", () => {
             await expect(page.getByTestId("dropzone-edges")).not.toContainText("malformed.csv");
         });
 
+        test("should reset wizard after successful import", async ({ page }) => {
+            // 1. Perform a successful import
+            await page.getByRole("button", { name: "Import CSV" }).click();
+            const nodesPath = path.join(__dirname, "fixtures", "nodes_valid_basic.csv");
+            await page.getByTestId("dropzone-nodes").locator('input[type="file"]').setInputFiles(nodesPath);
+            const edgesPath = path.join(__dirname, "fixtures", "edges_valid_basic.csv");
+            await page.getByTestId("dropzone-edges").locator('input[type="file"]').setInputFiles(edgesPath);
+
+            await page.getByRole("button", { name: "Next" }).click();
+            await completeMappingStep(page);
+
+            // 2. Verify Success Step
+            await expect(page.getByText("Import successful")).toBeVisible();
+
+            // 3. Close via the "Close" button in the Results step
+            await page.getByTestId("import-close-button").click();
+            await expect(page.getByRole("dialog")).not.toBeVisible();
+
+            // 4. Re-open Modal
+            await page.getByRole("button", { name: "Import CSV" }).click();
+
+            // 5. Verify we are back at Upload step
+            await expect(page.getByText("Upload CSV")).toBeVisible();
+            await expect(page.getByTestId("dropzone-nodes")).toBeVisible();
+        });
+
         test("should replace graph on second import", async ({ page }) => {
             // 1. First Import (Graph A)
             await page.getByRole("button", { name: "Import CSV" }).click();
