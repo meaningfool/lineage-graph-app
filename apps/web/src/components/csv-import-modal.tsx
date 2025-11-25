@@ -16,24 +16,14 @@ import { StepMapping } from "./csv-import/step-mapping";
 import { StepResults } from "./csv-import/step-results";
 
 interface CSVImportModalProps {
-    isOpen?: boolean; // Optional controlled state
-    onClose?: () => void; // Optional controlled close handler
     onImport: (nodes: Node[], edges: Edge[]) => void;
 }
 
-export function CSVImportModal({ isOpen: controlledIsOpen, onClose: controlledOnClose, onImport }: CSVImportModalProps) {
-    const [internalIsOpen, setInternalIsOpen] = React.useState(false);
-
-    // Determine effective state (Controlled vs Uncontrolled)
-    const isControlled = controlledIsOpen !== undefined;
-    const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
+export function CSVImportModal({ onImport }: CSVImportModalProps) {
+    const [isOpen, setIsOpen] = React.useState(false);
 
     const handleClose = () => {
-        if (isControlled && controlledOnClose) {
-            controlledOnClose();
-        } else {
-            setInternalIsOpen(false);
-        }
+        setIsOpen(false);
     };
 
     const {
@@ -50,29 +40,20 @@ export function CSVImportModal({ isOpen: controlledIsOpen, onClose: controlledOn
     });
 
     const handleOpenChange = (open: boolean) => {
-        if (isControlled && controlledOnClose) {
-            if (!open) {
-                actions.reset();
-                controlledOnClose();
-            }
-        } else {
-            if (!open) {
-                actions.reset();
-            }
-            setInternalIsOpen(open);
+        if (!open) {
+            actions.reset();
         }
+        setIsOpen(open);
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-            {!isControlled && (
-                <DialogTrigger asChild>
-                    <Button variant="outline">
-                        <Upload className="mr-2 h-4 w-4" />
-                        Import CSV
-                    </Button>
-                </DialogTrigger>
-            )}
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Import CSV
+                </Button>
+            </DialogTrigger>
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
                     <DialogTitle>Import CSV</DialogTitle>
