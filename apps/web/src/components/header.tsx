@@ -1,6 +1,9 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
+import { Upload } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { ModeToggle } from "./mode-toggle";
 import { CSVImportModal } from "./csv-import-modal";
 
@@ -9,6 +12,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onImport }: HeaderProps) {
+	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 	const links = [{ to: "/", label: "Home" }];
 
 	return (
@@ -24,7 +28,16 @@ export default function Header({ onImport }: HeaderProps) {
 					})}
 				</nav>
 				<div className="flex items-center gap-2">
-					<CSVImportModal onImport={onImport} />
+					<Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
+						<Upload className="mr-2 h-4 w-4" />
+						Import CSV
+					</Button>
+					{isImportModalOpen && (
+						<CSVImportModal
+							onImport={onImport}
+							onClose={() => setIsImportModalOpen(false)}
+						/>
+					)}
 					<ModeToggle />
 				</div>
 			</div>

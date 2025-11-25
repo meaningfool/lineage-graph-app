@@ -41,3 +41,9 @@ When using a fixture, the test file **MUST** include a comment block explaining:
 1.  **What** the fixture contains (summary).
 2.  **Why** it is used (e.g., "Standard valid node set").
 3.  **Where** it is located.
+
+## Technical Reviews
+
+### Cycle 4: Column Mapping & Edge Import
+*   **Document**: [`cycle4-technical-review.md`](../2025-11-21-column-mapping/cycle4-technical-review.md)
+*   **Key Insights**: Detailed analysis of state management, validation logic, and type safety for the import wizard. Includes decisions on "Parse, Don't Validate" and strict typing.
