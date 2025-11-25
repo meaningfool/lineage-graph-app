@@ -149,26 +149,24 @@ test.describe("CSV Import", () => {
             const malformedPath = path.join(__dirname, "fixtures", "malformed.csv");
             await page.getByTestId("dropzone-nodes").locator('input[type="file"]').setInputFiles(malformedPath);
 
-            // 3. Upload valid Edges (Required to enable Next)
-            const edgesPath = path.join(__dirname, "fixtures", "edges_valid_basic.csv");
-            await page.getByTestId("dropzone-edges").locator('input[type="file"]').setInputFiles(edgesPath);
+            // 3. Upload malformed file as Edges
+            await page.getByTestId("dropzone-edges").locator('input[type="file"]').setInputFiles(malformedPath);
 
             // 4. Click Next
             const nextButton = page.getByRole("button", { name: "Next", exact: true });
             await expect(nextButton).toBeEnabled();
             await nextButton.click();
 
-            // 5. Verify Error Message
-            // If parsing headers fails, we expect an error.
-            // "Failed to read CSV headers" is what the hook sets.
-            // But where is it displayed? StepResults? Or StepUpload?
-            // If error is set, do we switch to StepResults?
-            // Hook: `setFeedback(...)` but `setCurrentStep` is NOT changed in `catch` block of `handleUploadNext`.
-            // So on error, we stay on Upload.
-            // Does StepUpload show error? No, it doesn't take `error` prop.
-            // This might be a BUG/Missing Feature in UI.
-            // But let's check if the modal shows global error?
-            await expect(page.getByRole("dialog")).toContainText("Failed to read nodes file: malformed.csv");
+            // 5. Verify Error Message contains both errors
+            const dialog = page.getByRole("dialog");
+            await expect(dialog).toContainText("Failed to read nodes file: malformed.csv");
+            // Note: Currently the code returns early, so this second assertion WILL FAIL until we fix the code.
+            // But we want to see it fail first.
+            await expect(dialog).toContainText("Failed to read edges file: malformed.csv");
+
+            // 6. Verify BOTH dropzones are cleared
+            await expect(page.getByTestId("dropzone-nodes")).not.toContainText("malformed.csv");
+            await expect(page.getByTestId("dropzone-edges")).not.toContainText("malformed.csv");
         });
 
         test("should replace graph on second import", async ({ page }) => {
