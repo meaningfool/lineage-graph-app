@@ -1,0 +1,13 @@
+id,title,type
+ValidIn,Valid Input,INPUT
+Step1,Step One,STEP
+Step2,Step Two,STEP
+ValidOut,Valid Output,OUTPUT
+OrphanNode,Lonely Node,STEP
+BadIn,Invalid Input,INPUT
+BadOut,Invalid Output,OUTPUT
+BadStep,Stuck Step,STEP
+SelfLoopStep,Narcissist Step,STEP
+CycleA,Cycle Node A,STEP
+CycleB,Cycle Node B,STEP
+CycleC,Cycle Node C,STEP

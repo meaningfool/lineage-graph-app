@@ -1,0 +1,11 @@
+source,target
+ValidIn,Step1
+Step1,Step2
+Step2,ValidOut
+Step1,BadIn
+BadOut,Step2
+Step2,BadStep
+SelfLoopStep,SelfLoopStep
+CycleA,CycleB
+CycleB,CycleC
+CycleC,CycleA
