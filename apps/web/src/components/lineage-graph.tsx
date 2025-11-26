@@ -132,11 +132,13 @@ function CustomEdge({
 	let labelX = 0;
 	let labelY = 0;
 
+	// Detect backward edge on same horizontal level (approx)
+	// sourceX > targetX means backward (Right to Left)
+	// Math.abs(sourceY - targetY) < 50 means roughly same row
+	const isBackwardHorizontal = sourceX > targetX && Math.abs(sourceY - targetY) < 50;
+
 	if (isSelfLoop) {
 		// Draw a loop that goes up and over the node
-		// Source is Right handle, Target is Left handle
-		// We want to go from Source, curve up and left, to Target
-
 		const controlPoint1X = sourceX + 30;
 		const controlPoint1Y = sourceY - 60;
 		const controlPoint2X = targetX - 30;
@@ -145,8 +147,24 @@ function CustomEdge({
 		edgePath = `M ${sourceX} ${sourceY} C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${targetX} ${targetY}`;
 
 		// Approximate label position (top of the arch)
+		// Cubic bezier peak is approx 0.75 of the control point height
 		labelX = (sourceX + targetX) / 2;
-		labelY = sourceY - 60;
+		labelY = sourceY - (60 * 0.75);
+	} else if (isBackwardHorizontal) {
+		// Draw a curve that goes UP and over the intermediate nodes
+		// Similar to self-loop but wider
+		// We use a higher offset to clear the nodes clearly
+
+		const offset = 80; // Higher than self-loop (60)
+		const controlPoint1X = sourceX;
+		const controlPoint1Y = sourceY - offset;
+		const controlPoint2X = targetX;
+		const controlPoint2Y = targetY - offset;
+
+		edgePath = `M ${sourceX} ${sourceY} C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${targetX} ${targetY}`;
+
+		labelX = (sourceX + targetX) / 2;
+		labelY = sourceY - (offset * 0.75);
 	} else {
 		[edgePath, labelX, labelY] = getSmoothStepPath({
 			sourceX,
@@ -166,7 +184,7 @@ function CustomEdge({
 			<path
 				d={edgePath}
 				fill="none"
-				strokeOpacity={0}
+				stroke="transparent"
 				strokeWidth={20}
 				onMouseEnter={() => setIsHovered(true)}
 				onMouseLeave={() => setIsHovered(false)}
@@ -179,19 +197,21 @@ function CustomEdge({
 					<div
 						style={{
 							position: 'absolute',
-							transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+							transform: `translate(-50%, -100%) translate(${labelX}px,${labelY - 10}px)`, // Shift up to be above the line
 							pointerEvents: 'all',
 							opacity: isHovered ? 1 : 0,
 							transition: 'opacity 0.2s',
 							zIndex: 10,
 						}}
 						className="nodrag nopan"
+						onMouseEnter={() => setIsHovered(true)}
+						onMouseLeave={() => setIsHovered(false)}
 					>
 						<div className="px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-md whitespace-nowrap">
 							{data.validationErrors.map((err: string, i: number) => (
 								<div key={i}>{err}</div>
 							))}
-							{/* Arrow */}
+							{/* Arrow pointing down */}
 							<div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
 						</div>
 					</div>
