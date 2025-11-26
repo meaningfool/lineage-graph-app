@@ -56,12 +56,21 @@ test.describe("Graph Validation", () => {
         await expect(nodeContent).toHaveClass(/border-red-500/);
 
         // 8. Verify Tooltip (Phase 2)
-        // We implemented a simple 'title' attribute.
-        await expect(nodeContent).toHaveAttribute("title", "Orphan node: No connections found");
+        // We implemented a custom tooltip div that appears on hover.
+        // We hover the node content div.
+        await nodeContent.hover();
+
+        // Expect the tooltip text to be visible
+        await expect(page.getByText("Orphan node: No connections found")).toBeVisible();
+
+        // Capture screenshot for verification
+        await page.screenshot({ path: 'orphan-tooltip-verified.png' });
 
         // 9. Verify Connected Nodes (A, B) do NOT have error style
         const inputNode = page.locator(".react-flow__node").filter({ hasText: "Input Node" }).locator("div").first();
         await expect(inputNode).not.toHaveClass(/border-red-500/);
-        await expect(inputNode).not.toHaveAttribute("title");
+        // Ensure tooltip is NOT visible for valid node
+        await inputNode.hover();
+        await expect(page.getByText("Orphan node: No connections found")).not.toBeVisible();
     });
 });

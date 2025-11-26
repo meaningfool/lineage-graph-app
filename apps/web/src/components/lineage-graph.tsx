@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useState } from "react";
 import type { Edge, Node } from "reactflow";
 import ReactFlow, {
 	Background,
@@ -6,6 +7,7 @@ import ReactFlow, {
 	MarkerType,
 	Position,
 	ReactFlowProvider,
+	NodeToolbar,
 } from "reactflow";
 import "reactflow/dist/style.css";
 
@@ -19,16 +21,34 @@ interface NodeData {
 
 // Custom node component that displays label and all properties
 function CustomNode({ data }: { data: NodeData }) {
+	const [isHovered, setIsHovered] = useState(false);
 	const hasErrors = data.validationErrors && data.validationErrors.length > 0;
 	const borderColor = hasErrors ? "border-red-500" : "border-gray-200";
-	const title = hasErrors ? data.validationErrors?.join("\n") : undefined;
 
 	return (
 		<div
-			className={`min-w-[150px] max-w-[200px] rounded-sm border ${borderColor} bg-white px-3 py-2 shadow-sm`}
+			className={`min-w-[150px] max-w-[200px] rounded-sm border ${borderColor} bg-white px-3 py-2 shadow-sm relative group`}
 			style={{ borderColor: hasErrors ? "#ef4444" : undefined }}
-			title={title}
+			onMouseEnter={() => setIsHovered(true)}
+			onMouseLeave={() => setIsHovered(false)}
 		>
+			{/* Tooltip using NodeToolbar to escape clipping */}
+			{hasErrors && (
+				<NodeToolbar
+					isVisible={isHovered}
+					position={Position.Top}
+					offset={10}
+				>
+					<div className="px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-md whitespace-nowrap">
+						{data.validationErrors?.map((err, i) => (
+							<div key={i}>{err}</div>
+						))}
+						{/* Arrow */}
+						<div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+					</div>
+				</NodeToolbar>
+			)}
+
 			<Handle
 				type="target"
 				position={Position.Left}
