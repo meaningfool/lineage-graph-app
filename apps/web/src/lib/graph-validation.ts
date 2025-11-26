@@ -1,4 +1,4 @@
-import { GraphNode, GraphEdge } from "./csv-graph-importer";
+import type { GraphNode, GraphEdge } from "./csv-graph-importer";
 
 /**
  * Validates the graph structure and returns a map of errors for each node.
@@ -37,6 +37,12 @@ export function validateGraph(nodes: GraphNode[], edges: GraphEdge[]): Map<strin
             // Must have 0 incoming AND > 0 outgoing
             if (inDegree > 0 || outDegree === 0) {
                 nodeErrors.push("Input node must have at least one outgoing connection and no incoming connections");
+            }
+        } else if (node.type === 'OUTPUT') {
+            // Slice 2.2: Output Node Rules
+            // Must have > 0 incoming AND 0 outgoing
+            if (inDegree === 0 || outDegree > 0) {
+                nodeErrors.push("Output node must have at least one incoming connection and no outgoing connections");
             }
         } else {
             // Fallback for other nodes (Slice 1 logic)
