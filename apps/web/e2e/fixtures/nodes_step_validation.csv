@@ -1,0 +1,9 @@
+id,title,type
+A,Valid Step,STEP
+B,Invalid Source Step,STEP
+C,Invalid Sink Step,STEP
+D,Invalid Orphan Step,STEP
+In1,Source 1,INPUT
+Out1,Target 1,OUTPUT
+Out2,Target 2,OUTPUT
+In2,Source 2,INPUT

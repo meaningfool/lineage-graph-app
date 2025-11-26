@@ -44,11 +44,11 @@ export function validateGraph(nodes: GraphNode[], edges: GraphEdge[]): Map<strin
             if (inDegree === 0 || outDegree > 0) {
                 nodeErrors.push("Output node must have at least one incoming connection and no outgoing connections");
             }
-        } else {
-            // Fallback for other nodes (Slice 1 logic)
-            // Check for Orphans (0 incoming AND 0 outgoing)
-            if (inDegree === 0 && outDegree === 0) {
-                nodeErrors.push("Orphan node: No connections found");
+        } else if (node.type === 'STEP') {
+            // Slice 2.3: Step Node Rules
+            // Must have > 0 incoming AND > 0 outgoing
+            if (inDegree === 0 || outDegree === 0) {
+                nodeErrors.push("Step node must have at least one incoming connection and at least one outgoing connection");
             }
         }
 
