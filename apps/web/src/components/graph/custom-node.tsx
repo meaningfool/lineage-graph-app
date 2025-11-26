@@ -9,7 +9,18 @@ export interface NodeData {
     validationErrors?: string[];
 }
 
-// Custom node component that displays label and all properties
+/**
+ * Custom Node Component
+ * 
+ * Role: Presentational Component (Dumb Component)
+ * 
+ * Responsibilities:
+ * 1. Render the node content (Label, Properties).
+ * 2. Render validation feedback (Red border, Tooltip).
+ * 3. Provide handles for ReactFlow connections.
+ * 
+ * It does NOT contain any business logic. It simply renders the data passed to it.
+ */
 export function CustomNode({ data }: { data: NodeData }) {
     const [isHovered, setIsHovered] = useState(false);
     const hasErrors = data.validationErrors && data.validationErrors.length > 0;

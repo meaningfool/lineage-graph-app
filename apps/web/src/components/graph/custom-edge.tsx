@@ -2,7 +2,21 @@ import React, { useState } from "react";
 import { BaseEdge, EdgeLabelRenderer, type EdgeProps } from "reactflow";
 import { calculateEdgePath } from "../../lib/edge-path-utils";
 
-// Custom Edge Component
+/**
+ * Custom Edge Component
+ * 
+ * Role: Smart Presentational Component
+ * 
+ * Responsibilities:
+ * 1. Delegates complex path calculation to `edge-path-utils`.
+ * 2. Renders the SVG path.
+ * 3. Renders the invisible "hit area" for easier hovering.
+ * 4. Renders the tooltip for validation errors.
+ * 
+ * Architecture Note:
+ * This component "owns" the visual logic for edges (self-loops, backward arcs),
+ * keeping the main `LineageGraph` component clean.
+ */
 export function CustomEdge({
     id,
     sourceX,

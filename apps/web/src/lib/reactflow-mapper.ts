@@ -6,6 +6,18 @@ export interface ValidationResults {
     edgeErrors: Map<string, string[]>;
 }
 
+/**
+ * ReactFlow Mapper (Adapter Pattern)
+ * 
+ * Purpose: Acts as an "Anti-Corruption Layer" between the Domain Model and the UI Library.
+ * 
+ * Why?
+ * - The Domain (`GraphNode`, `GraphEdge`) should not know about ReactFlow.
+ * - The UI (`ReactFlow`) expects specific data structures (`Node`, `Edge`).
+ * 
+ * This function translates the pure domain objects + validation results into
+ * the format required by the visualization library.
+ */
 export function mapToReactFlow(
     nodes: GraphNode[],
     edges: GraphEdge[],

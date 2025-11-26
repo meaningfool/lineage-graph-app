@@ -16,6 +16,18 @@ export interface PathResult {
     labelY: number;
 }
 
+/**
+ * Edge Path Calculator
+ * 
+ * Purpose: Determines the SVG path string for an edge based on its source and target positions.
+ * 
+ * Logic:
+ * 1. Self-Loops: Draws a cubic bezier curve that loops over the node.
+ * 2. Backward Horizontal Edges: Draws a wide arch over intermediate nodes to avoid visual clutter.
+ * 3. Standard Edges: Uses ReactFlow's default `getSmoothStepPath`.
+ * 
+ * This utility keeps the `CustomEdge` component clean and testable.
+ */
 export function calculateEdgePath({
     sourceX,
     sourceY,
