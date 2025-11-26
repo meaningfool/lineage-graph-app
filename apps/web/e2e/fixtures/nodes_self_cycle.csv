@@ -1,0 +1,4 @@
+id,title,type
+A,Valid Input,INPUT
+B,Self Cycle Step,STEP
+Out,Valid Output,OUTPUT

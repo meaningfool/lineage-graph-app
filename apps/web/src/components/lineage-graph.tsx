@@ -104,18 +104,24 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 	// Memoize edges conversion to prevent unnecessary re-renders
 	const customEdges = useMemo(
 		() =>
-			edges.map((edge) => ({
-				...edge,
-				type: "smoothstep", // Use smoothstep for balanced structure and flow
-				animated: false, // Remove animation
-				style: { stroke: "#6b7280", strokeWidth: 2 }, // Plain line style
-				markerEnd: {
-					type: MarkerType.ArrowClosed, // Use closed arrow for solid triangle
-					width: 12,
-					height: 12,
-					color: "#6b7280",
-				},
-			})),
+			edges.map((edge) => {
+				const hasErrors = edge.data?.validationErrors && edge.data.validationErrors.length > 0;
+				return {
+					...edge,
+					type: "smoothstep", // Use smoothstep for balanced structure and flow
+					animated: false, // Remove animation
+					style: {
+						stroke: hasErrors ? "#ef4444" : "#6b7280",
+						strokeWidth: 2
+					},
+					markerEnd: {
+						type: MarkerType.ArrowClosed, // Use closed arrow for solid triangle
+						width: 12,
+						height: 12,
+						color: hasErrors ? "#ef4444" : "#6b7280",
+					},
+				};
+			}),
 		[edges],
 	);
 

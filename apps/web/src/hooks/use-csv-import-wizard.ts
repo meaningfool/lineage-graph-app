@@ -158,7 +158,8 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
             }
 
             // 5. Run Graph Validation (Orphans, Cycles, etc.)
-            const validationErrors = validateGraph(result.nodes, result.edges);
+            const { nodeErrors, edgeErrors } = validateGraph(result.nodes, result.edges);
+            console.log("Edge Errors:", Array.from(edgeErrors.entries()));
 
             // 6. Map Domain Types to React Flow Types (UI Decoupling)
             // We convert our internal "GraphNode" format to the format "ReactFlow" expects.
@@ -167,16 +168,22 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
                 type: "custom", // Our custom node type
                 data: {
                     label: n.title,
-                    validationErrors: validationErrors.get(n.id)
+                    validationErrors: nodeErrors.get(n.id) || []
                 },
                 position: { x: 0, y: 0 }, // Default position (layout will fix this later)
             }));
 
-            const reactFlowEdges: Edge[] = result.edges.map((e) => ({
-                id: `e-${e.source}-${e.target}`,
-                source: e.source,
-                target: e.target,
-            }));
+            const reactFlowEdges: Edge[] = result.edges.map((e) => {
+                const edgeKey = `${e.source}-${e.target}`;
+                return {
+                    id: `e-${e.source}-${e.target}`,
+                    source: e.source,
+                    target: e.target,
+                    data: {
+                        validationErrors: edgeErrors.get(edgeKey) || []
+                    }
+                };
+            });
 
             if (result.warnings.length > 0) {
                 // If there are warnings (e.g., some rows dropped), show them to the user.

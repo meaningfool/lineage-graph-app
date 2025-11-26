@@ -7,8 +7,9 @@ import type { GraphNode, GraphEdge } from "./csv-graph-importer";
  * @param edges List of edges in the graph
  * @returns Map<NodeId, ErrorMessages[]>
  */
-export function validateGraph(nodes: GraphNode[], edges: GraphEdge[]): Map<string, string[]> {
-    const errors = new Map<string, string[]>();
+export function validateGraph(nodes: GraphNode[], edges: GraphEdge[]): { nodeErrors: Map<string, string[]>, edgeErrors: Map<string, string[]> } {
+    const nodeErrors = new Map<string, string[]>();
+    const edgeErrors = new Map<string, string[]>();
 
     // 1. Build Degree Maps
     const inDegreeMap = new Map<string, number>();
@@ -20,42 +21,50 @@ export function validateGraph(nodes: GraphNode[], edges: GraphEdge[]): Map<strin
         outDegreeMap.set(node.id, 0);
     });
 
-    // Calculate degrees
+    // Calculate degrees & Detect Self-Cycles (Slice 3.1)
     edges.forEach(edge => {
         outDegreeMap.set(edge.source, (outDegreeMap.get(edge.source) || 0) + 1);
         inDegreeMap.set(edge.target, (inDegreeMap.get(edge.target) || 0) + 1);
+
+        // Slice 3.1: Self-Cycle Detection
+        if (edge.source === edge.target) {
+            const edgeKey = `${edge.source}-${edge.target}`;
+            const currentErrors = edgeErrors.get(edgeKey) || [];
+            currentErrors.push("Cycle detected: Node connects to itself");
+            edgeErrors.set(edgeKey, currentErrors);
+        }
     });
 
     // 2. Validate Nodes
     nodes.forEach(node => {
         const inDegree = inDegreeMap.get(node.id) || 0;
         const outDegree = outDegreeMap.get(node.id) || 0;
-        const nodeErrors = errors.get(node.id) || [];
+        const currentErrors = nodeErrors.get(node.id) || [];
 
         if (node.type === 'INPUT') {
             // Slice 2.1: Input Node Rules
             // Must have 0 incoming AND > 0 outgoing
             if (inDegree > 0 || outDegree === 0) {
-                nodeErrors.push("Input node must have at least one outgoing connection and no incoming connections");
+                currentErrors.push("Input node must have at least one outgoing connection and no incoming connections");
             }
         } else if (node.type === 'OUTPUT') {
             // Slice 2.2: Output Node Rules
             // Must have > 0 incoming AND 0 outgoing
             if (inDegree === 0 || outDegree > 0) {
-                nodeErrors.push("Output node must have at least one incoming connection and no outgoing connections");
+                currentErrors.push("Output node must have at least one incoming connection and no outgoing connections");
             }
         } else if (node.type === 'STEP') {
             // Slice 2.3: Step Node Rules
             // Must have > 0 incoming AND > 0 outgoing
             if (inDegree === 0 || outDegree === 0) {
-                nodeErrors.push("Step node must have at least one incoming connection and at least one outgoing connection");
+                currentErrors.push("Step node must have at least one incoming connection and at least one outgoing connection");
             }
         }
 
-        if (nodeErrors.length > 0) {
-            errors.set(node.id, nodeErrors);
+        if (currentErrors.length > 0) {
+            nodeErrors.set(node.id, currentErrors);
         }
     });
 
-    return errors;
+    return { nodeErrors, edgeErrors };
 }
