@@ -297,4 +297,68 @@ test.describe("Graph Validation", () => {
         // 6. Capture Visual Proof
         await page.screenshot({ path: 'self-cycle-verified.png' });
     });
+
+    test("should detect multi-node cycles (Slice 3.2)", async ({ page }) => {
+        // 1. Navigate to the app
+        await page.goto("http://localhost:3001");
+
+        // 2. Open Import Modal
+        await page.getByRole("button", { name: "Import CSV" }).click();
+
+        // 3. Upload Files
+        const nodesBuffer = fs.readFileSync(path.join(__dirname, "fixtures/nodes_cycle.csv"));
+        const edgesBuffer = fs.readFileSync(path.join(__dirname, "fixtures/edges_cycle.csv"));
+
+        const nodesDataTransfer = await page.evaluateHandle((data) => {
+            const dt = new DataTransfer();
+            const file = new File([data], "nodes_cycle.csv", { type: "text/csv" });
+            dt.items.add(file);
+            return dt;
+        }, nodesBuffer.toString());
+
+        const edgesDataTransfer = await page.evaluateHandle((data) => {
+            const dt = new DataTransfer();
+            const file = new File([data], "edges_cycle.csv", { type: "text/csv" });
+            dt.items.add(file);
+            return dt;
+        }, edgesBuffer.toString());
+
+        await page.dispatchEvent('[data-testid="dropzone-nodes"] input', "drop", { dataTransfer: nodesDataTransfer });
+        await page.dispatchEvent('[data-testid="dropzone-edges"] input', "drop", { dataTransfer: edgesDataTransfer });
+
+        // 4. Proceed through wizard
+        await page.getByRole("button", { name: "Next" }).click();
+
+        // Map Columns
+        await page.getByTestId("mapping-select-id").selectOption({ label: "id" });
+        await page.getByTestId("mapping-select-title").selectOption({ label: "title" });
+        await page.getByTestId("mapping-select-type").selectOption({ label: "type" });
+        await page.getByTestId("mapping-select-source").selectOption({ label: "source" });
+        await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
+
+        await page.getByRole("button", { name: "Next" }).click();
+        await page.getByRole("button", { name: "Close" }).click();
+
+        // 5. Verify Multi-Node Cycle Edges (A->B, B->C, C->A)
+        // All edges in the cycle should be red.
+
+        // Wait for graph to render
+        await expect(page.locator(".react-flow__edge")).toHaveCount(3, { timeout: 10000 });
+
+        // Check if edges are red
+        const hasRedEdges = await page.evaluate(() => {
+            const paths = document.querySelectorAll('.react-flow__edge path');
+            // We expect ALL 3 edges to be red
+            const redPaths = Array.from(paths).filter(path => {
+                const style = window.getComputedStyle(path);
+                return style.stroke === 'rgb(239, 68, 68)' || path.getAttribute('style')?.includes('#ef4444');
+            });
+            return redPaths.length === 3;
+        });
+
+        expect(hasRedEdges).toBe(true);
+
+        // 6. Capture Visual Proof
+        await page.screenshot({ path: 'multi-node-cycle-verified.png' });
+    });
 });
