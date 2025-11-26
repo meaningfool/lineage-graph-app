@@ -1,0 +1,9 @@
+id,title,type
+A,Valid Input,INPUT
+B,Invalid Sink Input,INPUT
+C,Invalid PassThrough Input,INPUT
+D,Invalid Orphan Input,INPUT
+Step1,Target 1,STEP
+Step2,Source 1,STEP
+Step3,Source 2,STEP
+Step4,Target 2,STEP

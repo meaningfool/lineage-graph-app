@@ -10,30 +10,43 @@ import { GraphNode, GraphEdge } from "./csv-graph-importer";
 export function validateGraph(nodes: GraphNode[], edges: GraphEdge[]): Map<string, string[]> {
     const errors = new Map<string, string[]>();
 
-    // 1. Build Degree Map
-    const degreeMap = new Map<string, number>();
+    // 1. Build Degree Maps
+    const inDegreeMap = new Map<string, number>();
+    const outDegreeMap = new Map<string, number>();
 
     // Initialize degrees
     nodes.forEach(node => {
-        degreeMap.set(node.id, 0);
+        inDegreeMap.set(node.id, 0);
+        outDegreeMap.set(node.id, 0);
     });
 
     // Calculate degrees
     edges.forEach(edge => {
-        const sourceDegree = degreeMap.get(edge.source) || 0;
-        const targetDegree = degreeMap.get(edge.target) || 0;
-
-        degreeMap.set(edge.source, sourceDegree + 1);
-        degreeMap.set(edge.target, targetDegree + 1);
+        outDegreeMap.set(edge.source, (outDegreeMap.get(edge.source) || 0) + 1);
+        inDegreeMap.set(edge.target, (inDegreeMap.get(edge.target) || 0) + 1);
     });
 
-    // 2. Check for Orphans
+    // 2. Validate Nodes
     nodes.forEach(node => {
-        const degree = degreeMap.get(node.id) || 0;
+        const inDegree = inDegreeMap.get(node.id) || 0;
+        const outDegree = outDegreeMap.get(node.id) || 0;
+        const nodeErrors = errors.get(node.id) || [];
 
-        if (degree === 0) {
-            const nodeErrors = errors.get(node.id) || [];
-            nodeErrors.push("Orphan node: No connections found");
+        if (node.type === 'INPUT') {
+            // Slice 2.1: Input Node Rules
+            // Must have 0 incoming AND > 0 outgoing
+            if (inDegree > 0 || outDegree === 0) {
+                nodeErrors.push("Input node must have at least one outgoing connection and no incoming connections");
+            }
+        } else {
+            // Fallback for other nodes (Slice 1 logic)
+            // Check for Orphans (0 incoming AND 0 outgoing)
+            if (inDegree === 0 && outDegree === 0) {
+                nodeErrors.push("Orphan node: No connections found");
+            }
+        }
+
+        if (nodeErrors.length > 0) {
             errors.set(node.id, nodeErrors);
         }
     });
