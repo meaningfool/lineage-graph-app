@@ -1,6 +1,5 @@
-import React, { useMemo } from "react";
-import { useState } from "react";
-import type { Edge, Node } from "reactflow";
+import React, { useMemo, useState } from "react";
+import type { Edge, Node, EdgeProps } from "reactflow";
 import ReactFlow, {
 	Background,
 	Handle,
@@ -8,6 +7,10 @@ import ReactFlow, {
 	Position,
 	ReactFlowProvider,
 	NodeToolbar,
+	BaseEdge,
+	EdgeLabelRenderer,
+	getSmoothStepPath,
+	getBezierPath,
 } from "reactflow";
 import "reactflow/dist/style.css";
 
@@ -80,9 +83,131 @@ function CustomNode({ data }: { data: NodeData }) {
 	);
 }
 
+// Custom Edge Component
+function CustomEdge({
+	id,
+	sourceX,
+	sourceY,
+	targetX,
+	targetY,
+	sourcePosition,
+	targetPosition,
+	style = {},
+	markerEnd,
+	data,
+}: EdgeProps) {
+	const [isHovered, setIsHovered] = useState(false);
+	const hasErrors = data?.validationErrors && data.validationErrors.length > 0;
+
+	// Use Bezier for self-loops (sourceX approx targetX and sourceY approx targetY, or same node ID if we had it, but coords are enough proxy)
+	// Actually, checking if source and target are close might be flaky.
+	// Better: The parent component knows if it's a self loop.
+	// But we don't pass source/target IDs here easily without prop drilling.
+	// However, ReactFlow passes source and target IDs in EdgeProps!
+	// Wait, EdgeProps has source and target? No, it has sourceX, sourceY etc.
+	// It DOES have source and target string IDs.
+	// Let's check the type definition or just assume standard props.
+	// Standard EdgeProps: id, source, target, sourceX, sourceY, targetX, targetY, ...
+
+	// Check for self-loop based on coordinates or passed data?
+	// Let's use getBezierPath for everything if it's a self-loop, or just default to smoothstep.
+	// But the user specifically said self-cycle is not readable.
+	// If we use Bezier for self-loops, it draws a loop.
+	// If we use SmoothStep for self-loops, it draws a box.
+
+	// Let's try to detect self-loop by checking if source and target are the same.
+	// But we don't have source/target IDs in the destructured props above.
+	// Let's add them.
+
+	// Actually, let's just use Bezier for everything for now? No, user likes smoothstep (orthogonal).
+	// Let's use getBezierPath if it looks like a self loop (distance is small? No).
+	// Let's rely on the fact that for a self-loop, ReactFlow usually handles it if we use the right path function.
+	// But `getSmoothStepPath` on a self-loop (Right to Left) might be weird.
+
+	// Let's use `getBezierPath` if `data.isSelfLoop` is true. We can pass that from parent.
+
+	const isSelfLoop = data?.isSelfLoop;
+
+	let edgePath = '';
+	let labelX = 0;
+	let labelY = 0;
+
+	if (isSelfLoop) {
+		// Draw a loop that goes up and over the node
+		// Source is Right handle, Target is Left handle
+		// We want to go from Source, curve up and left, to Target
+
+		const controlPoint1X = sourceX + 30;
+		const controlPoint1Y = sourceY - 60;
+		const controlPoint2X = targetX - 30;
+		const controlPoint2Y = targetY - 60;
+
+		edgePath = `M ${sourceX} ${sourceY} C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${targetX} ${targetY}`;
+
+		// Approximate label position (top of the arch)
+		labelX = (sourceX + targetX) / 2;
+		labelY = sourceY - 60;
+	} else {
+		[edgePath, labelX, labelY] = getSmoothStepPath({
+			sourceX,
+			sourceY,
+			sourcePosition,
+			targetX,
+			targetY,
+			targetPosition,
+		});
+	}
+
+	return (
+		<>
+			<BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
+
+			{/* Invisible path for wider hover area */}
+			<path
+				d={edgePath}
+				fill="none"
+				strokeOpacity={0}
+				strokeWidth={20}
+				onMouseEnter={() => setIsHovered(true)}
+				onMouseLeave={() => setIsHovered(false)}
+				style={{ cursor: 'pointer' }}
+			/>
+
+			{/* Tooltip */}
+			{hasErrors && (
+				<EdgeLabelRenderer>
+					<div
+						style={{
+							position: 'absolute',
+							transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+							pointerEvents: 'all',
+							opacity: isHovered ? 1 : 0,
+							transition: 'opacity 0.2s',
+							zIndex: 10,
+						}}
+						className="nodrag nopan"
+					>
+						<div className="px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-md whitespace-nowrap">
+							{data.validationErrors.map((err: string, i: number) => (
+								<div key={i}>{err}</div>
+							))}
+							{/* Arrow */}
+							<div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+						</div>
+					</div>
+				</EdgeLabelRenderer>
+			)}
+		</>
+	);
+}
+
 // Define nodeTypes outside component to prevent recreation on every render
 const nodeTypes = {
 	custom: CustomNode,
+};
+
+const edgeTypes = {
+	custom: CustomEdge,
 };
 
 interface LineageGraphProps {
@@ -106,10 +231,16 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 		() =>
 			edges.map((edge) => {
 				const hasErrors = edge.data?.validationErrors && edge.data.validationErrors.length > 0;
+				const isSelfLoop = edge.source === edge.target;
+
 				return {
 					...edge,
-					type: "smoothstep", // Use smoothstep for balanced structure and flow
+					type: "custom", // Use our custom edge
 					animated: false, // Remove animation
+					data: {
+						...edge.data,
+						isSelfLoop, // Pass this flag
+					},
 					style: {
 						stroke: hasErrors ? "#ef4444" : "#6b7280",
 						strokeWidth: 2
@@ -143,6 +274,7 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 					nodes={customNodes}
 					edges={customEdges}
 					nodeTypes={nodeTypes}
+					edgeTypes={edgeTypes}
 					fitView
 					fitViewOptions={{ padding: 0.2 }}
 					minZoom={0.1}
