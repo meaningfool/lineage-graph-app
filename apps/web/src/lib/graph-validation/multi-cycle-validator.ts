@@ -1,5 +1,18 @@
 import type { GraphNode, GraphEdge } from "../csv-graph-importer";
 
+/**
+ * Multi-Node Cycle Validator
+ * 
+ * Purpose: Detects complex cycles involving 2 or more nodes (e.g., A -> B -> C -> A).
+ * 
+ * Algorithm: Depth-First Search (DFS)
+ * - We traverse the graph recursively.
+ * - We track the current "recursion stack" (path we are currently exploring).
+ * - If we encounter a node that is already in the recursion stack, we found a cycle.
+ * 
+ * Note: We explicitly exclude self-loops here because they are handled by the 
+ * cheaper `detectSelfCycles` validator.
+ */
 export function detectMultiNodeCycles(nodes: GraphNode[], edges: GraphEdge[]): Map<string, string[]> {
     const edgeErrors = new Map<string, string[]>();
     const visited = new Set<string>();

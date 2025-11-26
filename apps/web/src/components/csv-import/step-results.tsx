@@ -30,7 +30,7 @@ export function StepResults({ feedback, onClose }: StepResultsProps) {
 
             <div className="flex justify-end">
                 <Button data-testid="import-close-button" onClick={onClose}>
-                    Close Wizard
+                    Done
                 </Button>
             </div>
         </div>

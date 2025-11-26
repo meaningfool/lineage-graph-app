@@ -17,6 +17,7 @@ We use a strict **Spec-Driven Workflow** to manage features and context.
 *   **Testing Rules**:
     *   **Visual Verification**: When a feature involves visual cues (hidden/shown elements, styles, layout), you MUST verify it visually.
     *   **Automated Proof**: Prefer capturing screenshots *within* the E2E test (e.g., `page.screenshot()`) over manual browser sessions. This ensures reproducibility and provides a permanent artifact.
+    *   **Robust Selectors**: ALWAYS use `data-testid` for selecting elements in tests. Do NOT rely on text content (e.g., button labels) or CSS classes, as these change frequently. We have configured Next.js to strip these attributes in production, so use them freely.
 
 ## 🚀 How to Start
 When starting a new chat, the agent should:

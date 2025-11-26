@@ -1,5 +1,17 @@
 import type { GraphNode } from "../csv-graph-importer";
 
+/**
+ * Node Connectivity Validator
+ * 
+ * Purpose: Enforces structural rules based on the Node Type (Input, Output, Step).
+ * 
+ * Rules:
+ * - INPUT: Must start the flow (0 incoming, >0 outgoing).
+ * - OUTPUT: Must end the flow (>0 incoming, 0 outgoing).
+ * - STEP: Must be in the middle (>0 incoming, >0 outgoing).
+ * 
+ * This validator relies on the pre-calculated Degree Maps for efficiency.
+ */
 export function validateNodeConnectivity(
     nodes: GraphNode[],
     inDegree: Map<string, number>,

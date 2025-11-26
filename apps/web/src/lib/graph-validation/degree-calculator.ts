@@ -1,5 +1,14 @@
 import type { GraphNode, GraphEdge } from "../csv-graph-importer";
 
+/**
+ * Degree Calculator Utility
+ * 
+ * Purpose: Efficiently calculates the number of incoming and outgoing edges for every node.
+ * 
+ * Why separate this?
+ * - Performance: We iterate through edges ONCE (O(E)) instead of filtering edges for every node (O(N*E)).
+ * - Reusability: Multiple validators (Connectivity, Orphans, etc.) need this data.
+ */
 export function buildDegreeMap(nodes: GraphNode[], edges: GraphEdge[]): {
     inDegree: Map<string, number>;
     outDegree: Map<string, number>;
