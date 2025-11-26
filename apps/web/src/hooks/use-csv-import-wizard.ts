@@ -8,6 +8,7 @@ import {
     type ValidatedNodeMapping,
     type ValidatedEdgeMapping,
 } from "../lib/csv-graph-importer";
+import { validateGraph } from "../lib/graph-validation";
 
 // --- PROPS ---
 // These are the inputs this hook needs to function.
@@ -156,12 +157,18 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
                 return;
             }
 
-            // 5. Map Domain Types to React Flow Types (UI Decoupling)
+            // 5. Run Graph Validation (Orphans, Cycles, etc.)
+            const validationErrors = validateGraph(result.nodes, result.edges);
+
+            // 6. Map Domain Types to React Flow Types (UI Decoupling)
             // We convert our internal "GraphNode" format to the format "ReactFlow" expects.
             const reactFlowNodes: Node[] = result.nodes.map((n) => ({
                 id: n.id,
                 type: "custom", // Our custom node type
-                data: { label: n.title },
+                data: {
+                    label: n.title,
+                    validationErrors: validationErrors.get(n.id)
+                },
                 position: { x: 0, y: 0 }, // Default position (layout will fix this later)
             }));
 

@@ -14,12 +14,21 @@ interface NodeData {
 	properties?: {
 		[key: string]: any;
 	};
+	validationErrors?: string[];
 }
 
 // Custom node component that displays label and all properties
 function CustomNode({ data }: { data: NodeData }) {
+	const hasErrors = data.validationErrors && data.validationErrors.length > 0;
+	const borderColor = hasErrors ? "border-red-500" : "border-gray-200";
+	const title = hasErrors ? data.validationErrors?.join("\n") : undefined;
+
 	return (
-		<div className="min-w-[150px] max-w-[200px] rounded-sm border border-gray-200 bg-white px-3 py-2 shadow-sm">
+		<div
+			className={`min-w-[150px] max-w-[200px] rounded-sm border ${borderColor} bg-white px-3 py-2 shadow-sm`}
+			style={{ borderColor: hasErrors ? "#ef4444" : undefined }}
+			title={title}
+		>
 			<Handle
 				type="target"
 				position={Position.Left}

@@ -14,6 +14,8 @@ We use a strict **Spec-Driven Workflow** to manage features and context.
 *   **Implementation Plan Rules**:
     *   Implementation plans (e.g., `02-node-validation.md`) MUST explicitly list which **existing tests need updates**, not just new tests to create.
     *   When a change affects existing behavior, document what changes in each test and why (e.g., "Add: Click Close button; Change: Error in results step").
+*   **Testing Rules**:
+    *   **Visual Verification**: When a feature involves visual cues (hidden/shown elements, styles, layout), you MUST verify it visually using the browser capabilities (e.g., screenshots, visual assertions) or explicit manual verification steps. Do not rely solely on DOM assertions (e.g., `toHaveClass`).
 
 ## 🚀 How to Start
 When starting a new chat, the agent should:
