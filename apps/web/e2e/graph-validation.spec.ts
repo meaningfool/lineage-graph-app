@@ -48,7 +48,7 @@ test.describe("Graph Validation", () => {
         await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
 
         await page.getByRole("button", { name: "Next" }).click();
-        await page.getByRole("button", { name: "Close" }).click();
+        await page.getByRole("button", { name: "Close Wizard" }).click();
 
         // 5. Verify Valid Node (A)
         const validNode = page.locator(".react-flow__node").filter({ hasText: "Valid Input" }).locator("div").first();
@@ -115,7 +115,7 @@ test.describe("Graph Validation", () => {
         await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
 
         await page.getByRole("button", { name: "Next" }).click();
-        await page.getByRole("button", { name: "Close" }).click();
+        await page.getByRole("button", { name: "Close Wizard" }).click();
 
         // 5. Verify Valid Node (A)
         const validNode = page.locator(".react-flow__node").filter({ hasText: "Valid Output" }).locator("div").first();
@@ -182,7 +182,7 @@ test.describe("Graph Validation", () => {
         await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
 
         await page.getByRole("button", { name: "Next" }).click();
-        await page.getByRole("button", { name: "Close" }).click();
+        await page.getByRole("button", { name: "Close Wizard" }).click();
 
         // 5. Verify Valid Node (A)
         const validNode = page.locator(".react-flow__node").filter({ hasText: "Valid Step" }).locator("div").first();
@@ -249,7 +249,7 @@ test.describe("Graph Validation", () => {
         await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
 
         await page.getByRole("button", { name: "Next" }).click();
-        await page.getByRole("button", { name: "Close" }).click();
+        await page.getByRole("button", { name: "Close Wizard" }).click();
 
         // 5. Verify Self-Cycle Edge (B -> B)
         // We expect the edge B->B to have a red stroke.
@@ -337,7 +337,7 @@ test.describe("Graph Validation", () => {
         await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
 
         await page.getByRole("button", { name: "Next" }).click();
-        await page.getByRole("button", { name: "Close" }).click();
+        await page.getByRole("button", { name: "Close Wizard" }).click();
 
         // 5. Verify Multi-Node Cycle Edges (A->B, B->C, C->A)
         // All edges in the cycle should be red.
