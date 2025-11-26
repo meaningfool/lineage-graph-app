@@ -1,4 +1,0 @@
-id,title,type
-A,Input Node,INPUT
-B,Step Node,STEP
-C,Orphan Node,OUTPUT
