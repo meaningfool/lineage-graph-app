@@ -80,7 +80,9 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 - `assignLayers(nodes, maxLayers)`:
   - OUTPUTs → Layer 0
   - INPUTs → Layer maxLayers
-  - STEPs → TBD (simple distribution for now)
+  - STEPs → Use longest undirected path from any OUTPUT/INPUT to determine layer
+    - For each STEP, calculate distance from nearest OUTPUT and INPUT
+    - Position proportionally between Layer 0 and Layer max
 
 ---
 
@@ -102,25 +104,29 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 
 **1. Invalid Source Direction**
 ```csv
-# Input1 → S1 → S2 → S3 → S4 → Output1 (but one edge reversed!)
-# (invalid: source=Output1, target=S1 violates OUTPUT rule)
+# Input1 → S1 → S2 → S3 → S4 ← Output1 (backward!)
+# (invalid: source=Output1, target=S4 violates OUTPUT rule)
 ```
 - Expect: Still renders, 6 layers total (undirected counting)
 - Expect: `Output1` at Layer 0 (leftmost), `Input1` at Layer 5 (rightmost)
 - S1, S2, S3, S4 distributed in middle Layers 1-4
 
-**2. Complex Divergent with Invalid Edge**
+**2. Orphaned Chain (Missing OUTPUT)**
 ```csv
-# Valid branch:   Input1 → S1 → S2 → Output1
-# Invalid branch: Input2 → T2 → T3 → T4 → T5 (missing OUTPUT node)
-#   T5 has no outgoing edge to OUTPUT, making it orphaned
-#   Or: T5 → Input2 would be invalid (INPUT can't be target)
+# Component with valid flow:   Input1 → S1 → S2 → Output1 (4 nodes)
+# Component with orphaned end: Input2 → T1 → T2 → T3 (4 nodes, no OUTPUT!)
 ```
-- Total nodes in longest undirected chain: 7 (Input2-T2-T3-T4-T5-S2-S1 or similar)
-- Expect: 7 layers allocated (undirected traversal counts all nodes)
-- Expect: Output1 at Layer 0, Input1/Input2 at Layer 6
-- Expect: S1, S2, T2, T3, T4, T5 distributed across Layers 1-5
-- Orphaned nodes (T5 if no OUTPUT) placed in middle layers
+**What's invalid**: T3 has no outgoing edge to any OUTPUT node, violating flow semantics
+
+**Expected behavior**:
+- Undirected traversal: Longest chain across both components = 4 nodes
+- Layers allocated: 4 (Output at L0, Steps at L1-L2, Input at L3)
+- **Valid component**: Output1(L0) ← S2(L1) ← S1(L2) ← Input1(L3)
+- **Orphaned component**: 
+  - Output1 positioned at L0 (type-based, even though not connected)
+  - T3, T2, T1 positioned at L1, L2, L3 based on distance from Input2
+  - T3 ends up in middle layer (no OUTPUT to connect to)
+- Both components visible and properly spaced
 
 ### Implementation
 - **Undirected traversal**: Treat all edges as bidirectional for layer counting
@@ -147,15 +153,16 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 - Expect: 4 layers, both StepA and StepB in middle (Layers 1-2)
 - Cycle doesn't increase layer count (undirected traversal detects and breaks it)
 
-**3. Cycle with Multiple Inputs/Outputs**
+**3. Cycle of Length 3**
 ```csv
-# Input1 → StepA → StepB → Output1
-# Input2 → StepB → Output2
+# Input → StepA → StepB → StepC → Output
 # StepA → StepB (already exists)
-# StepB → StepA (creates cycle)
+# StepB → StepC (already exists)  
+# StepC → StepA (creates 3-node cycle)
 ```
-- Expect: 4 layers (both Outputs at L0, both Inputs at L3, Steps at L1-L2)
-- Cycle between Steps doesn't affect layer count
+- Expect: 5 layers total (Output-L0, StepA/B/C in L1-L3, Input-L4)
+- Cycle (StepA ↔ StepB ↔ StepC) doesn't increase layer count
+- Undirected traversal detects cycle and prevents infinite loop
 
 ### Implementation
 - Track visited nodes during undirected traversal to avoid infinite loops
