@@ -51,18 +51,25 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 # nodes.csv: Input, Step1, Step2, Output
 # edges.csv: Input→Step1, Step1→Step2, Step2→Output
 ```
-- Expect: `Output.x < Step1.x < Step2.x < Input.x`
-- Layers: 4
+**Assertions**:
+- Total layers: 4
+- `Output.x < Step2.x < Step1.x < Input.x` (visual left to right)
+- Output at Layer 0, Step2 at Layer 1, Step1 at Layer 2, Input at Layer 3
 
 **2. Convergent Flow (Longest Path)**
 ```csv
 # Input1 → StepA → StepB → Output1
 # Input2 → StepB → Output1
 ```
-- Expect: `StepB` at Layer 2 (longest path from Input1)
-- Expect: `Output1.x < StepB.x < StepA.x < Input1.x` (visual left to right)
-- Expect: `Output1.x < StepB.x < Input2.x` (visual left to right)
-- Layers: 4
+**Assertions**:
+- Total layers: 4
+- StepB at Layer 2 (longest path is Input1→StepA→StepB)
+- `Output1.x < StepB.x < StepA.x < Input1.x`
+- `Output1.x < StepB.x < Input2.x`
+- Output1 at Layer 0
+- StepB at Layer 2
+- StepA at Layer 1, Input2 at Layer 3
+- Input1 at Layer 3
 
 **3. Divergent Flow**
 ```csv
@@ -70,10 +77,14 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 #              ↓
 #           Output2
 ```
-- Expect: Both Output1 and Output2 at Layer 0 (leftmost layer)
-- Expect: `Output1.x < StepB.x < StepA.x < Input1.x`
-- Expect: `Output2.x < StepA.x < Input1.x`
-- Layers: 4
+**Assertions**:
+- Total layers: 4
+- Both Output1 and Output2 at Layer 0 (leftmost)
+- `Output1.x < StepB.x < StepA.x < Input1.x`
+- `Output2.x < StepA.x < Input1.x`
+- Output1 at Layer 0, Output2 at Layer 0
+- StepB at Layer 1, StepA at Layer 2
+- Input1 at Layer 3
 
 ### Implementation
 - `computeMaxLayers(nodes, edges)`: Use undirected BFS/DFS to find longest path
@@ -107,9 +118,12 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 # Input1 → S1 → S2 → S3 → S4 ← Output1 (backward!)
 # (invalid: source=Output1, target=S4 violates OUTPUT rule)
 ```
-- Expect: Still renders, 6 layers total (undirected counting)
-- Expect: `Output1` at Layer 0 (leftmost), `Input1` at Layer 5 (rightmost)
-- S1, S2, S3, S4 distributed in middle Layers 1-4
+**Assertions**:
+- Total layers: 6 (undirected counting)
+- `Output1.x < S4.x < S3.x < S2.x < S1.x < Input1.x`
+- Output1 at Layer 0, Input1 at Layer 5
+- S4 at Layer 1, S3 at Layer 2, S2 at Layer 3, S1 at Layer 4
+- Graph still renders despite invalid edge
 
 **2. Orphaned Chain (Missing OUTPUT)**
 ```csv
@@ -118,17 +132,19 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 ```
 **What's invalid**: T3 has no outgoing edge to any OUTPUT node, violating flow semantics
 
-**Expected behavior**:
-- Undirected traversal: Longest chain across both components = 4 nodes
-- **Layers allocated: 5** (must have dedicated INPUT layer)
-  - Layer 0: OUTPUTs only (Output1)
-  - Layers 1-3: STEPs only (S2/T3, S1/T2, T1)
-  - Layer 4: INPUTs only (Input1, Input2)
-- **Valid component**: Output1(L0) ← S2(L1) ← S1(L2) ← Input1(L4)
-- **Orphaned component**: 
-  - T3 at L1, T2 at L2, T1 at L3 (no OUTPUT connection, but properly layered)
-  - Input2 at L4 (rightmost INPUT-only layer)
-- **Key principle**: INPUTs must never share a layer with STEPs
+**Assertions**:
+- Total layers: 5 (must have dedicated INPUT layer)
+- Layer structure:
+  - Layer 0: Only Output1
+  - Layers 1-3: Only STEPs (S2/T3, S1/T2, T1)
+  - Layer 4: Only INPUTs (Input1, Input2)
+- **Valid component**:
+  - Output1 at L0, S2 at L1, S1 at L2, Input1 at L4
+  - `Output1.x < S2.x < S1.x < Input1.x`
+- **Orphaned component**:
+  - T3 at L1, T2 at L2, T1 at L3, Input2 at L4
+  - `T3.x < T2.x < T1.x < Input2.x`
+- **Key assertion**: No STEP node shares a layer with an INPUT node
 
 ### Implementation
 - **Undirected traversal**: Treat all edges as bidirectional for layer counting
@@ -144,16 +160,21 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 ### Test Cases (CSV)
 
 **1. Self-Cycle**: `StepA → StepA`
-- Expect: Render without crash
-- StepA positioned in middle layer
+**Assertions**:
+- Graph renders without crash
+- StepA positioned in middle layer (not Layer 0 or max)
+- Self-loop edge visible
 
 **2. Feedback Loop**: `StepA ↔ StepB`
 ```csv
 # Input → StepA → StepB → Output
 #         StepA ← StepB (creates cycle)
 ```
-- Expect: 4 layers, both StepA and StepB in middle (Layers 1-2)
-- Cycle doesn't increase layer count (undirected traversal detects and breaks it)
+**Assertions**:
+- Total layers: 4
+- StepA at Layer 2, StepB at Layer 1 (or both in Layers 1-2)
+- `Output.x < StepB.x < StepA.x < Input.x`
+- Cycle doesn't increase layer count beyond undirected path length
 
 **3. Cycle of Length 3 with Convergent Path**
 ```csv
@@ -163,11 +184,15 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 # StepB → StepC (already exists)  
 # StepC → StepA (creates 3-node cycle)
 ```
-- Expect: 5 layers total (Outputs-L0, StepA/B/C in L1-L3, Input-L4)
+**Assertions**:
+- Total layers: 5
+- Output1 at Layer 0, Output2 at Layer 0
+- StepC at Layer 1, StepB at Layer 2, StepA at Layer 3
+- Input at Layer 4
+- `Output1.x < StepC.x < StepB.x < StepA.x < Input.x`
+- `Output2.x < StepA.x` (convergent path)
 - Cycle (StepA ↔ StepB ↔ StepC) doesn't increase layer count
-- Convergent path (Output2 → StepA) doesn't affect layer count
-- Undirected traversal detects cycle and prevents infinite loop
-- Both Output1 and Output2 positioned at Layer 0
+- Both outputs share Layer 0
 
 ### Implementation
 - Track visited nodes during undirected traversal to avoid infinite loops
