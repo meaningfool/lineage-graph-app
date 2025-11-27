@@ -81,35 +81,46 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 
 ---
 
-## Slice 2: Invalid Graphs (Backward Edges)
+## Slice 2: Invalid Graphs (Edge Direction Violations)
 
-**Goal**: Handle graphs with backward edges gracefully.
+**Goal**: Handle graphs with edges that violate data flow semantics.
+
+**Edge Direction Semantics**:
+- **Data Flow**: INPUT → STEP → OUTPUT (data originates at INPUT, ends at OUTPUT)
+- **Valid edges**: 
+  - `source=INPUT, target=STEP` ✅
+  - `source=STEP, target=OUTPUT` ✅
+  - `source=STEP, target=STEP` ✅
+- **Invalid edges** (violate flow):
+  - `source=OUTPUT, target=*` (OUTPUT can't be source)
+  - `source=*, target=INPUT` (INPUT can't be target)
 
 ### Test Cases (CSV)
 
-**1. Backward Edge in Simple Flow**
+**1. Invalid Source Direction**
 ```csv
-# Output1 ← S1 → S2 → S3 → S4 → Input1
-# (backward edge: S1→Output1 instead of Output1→S1)
+# Output1 → S1 → S2 → S3 → S4 → Input1
+# (invalid: source=Output1, target=S1 violates OUTPUT rule)
 ```
 - Expect: Still renders, 6 layers total
 - Expect: `Output1` at Layer 0, `Input1` at Layer 5
 - S1, S2, S3, S4 distributed in Layers 1-4
 
-**2. Complex Divergent with Backward Edge** (Your Example)
+**2. Complex Divergent with Invalid Edge**
 ```csv
-# Valid branch:   Output1 → S1 → S2 → Input1
-# Invalid branch: S1 → T2 → T3 → T4 → T5 ← Input2 (backward!)
+# Valid branch:   Input1 → S1 → S2 → Output1
+# Invalid branch: Input2 → T2 → T3 → T4 → T5 (no OUTPUT!)
+#                 (T5 → Input2 would be invalid target)
 ```
-- Total nodes in longest chain: 7 (Output1, S1, T2, T3, T4, T5, Input2)
+- Total nodes in longest chain: 7
 - Expect: 7 layers allocated
-- Expect: Valid branch fits in Layers 0-3
-- Expect: Invalid branch spreads across remaining layers
+- Expect: Valid branch fits appropriately
+- Expect: Invalid branch handled gracefully
 
 ### Implementation
 - **Undirected traversal**: Treat all edges as bidirectional for layer counting
-- **Orphan handling**: STEPs with no valid incoming edges get placed in middle layers
-- **Cycle breaking** (if needed): Detect cycles in undirected graph, break arbitrarily
+- **Orphan handling**: Nodes not reachable via valid edges get placed in middle layers
+- **Type-based guarantee**: OUTPUTs always Layer 0, INPUTs always Layer max
 
 ---
 
