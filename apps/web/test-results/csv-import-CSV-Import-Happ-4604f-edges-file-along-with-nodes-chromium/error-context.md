@@ -1,0 +1,53 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - navigation:
+            - link:
+              - /url: /
+              - text: Home
+          - generic:
+            - button:
+              - img
+              - text: Import CSV
+            - button:
+              - img
+              - generic: Toggle theme
+        - separator
+      - generic:
+        - generic: No nodes to display
+  - generic:
+    - generic:
+      - img
+    - button:
+      - img
+  - region "Notifications alt+T"
+  - alert
+  - button [ref=e6] [cursor=pointer]:
+    - img [ref=e7]
+  - dialog "Import CSV" [ref=e11]:
+    - generic [ref=e12]:
+      - heading "Import CSV" [level=2] [ref=e13]
+      - paragraph [ref=e14]: Import nodes and edges from CSV files.
+    - heading "Upload CSV" [level=2] [ref=e16]
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]: Nodes CSV (Required)
+        - generic [active] [ref=e20] [cursor=pointer]:
+          - button "Choose File" [ref=e21]
+          - paragraph [ref=e22]: Drag & drop nodes.csv here
+      - generic [ref=e23]:
+        - generic [ref=e24]: Edges CSV (Required)
+        - generic [ref=e25] [cursor=pointer]:
+          - button "Choose File" [ref=e26]
+          - paragraph [ref=e27]: Drag & drop edges.csv here
+      - generic [ref=e28]:
+        - button "Next" [disabled]
+    - button "Close" [ref=e29] [cursor=pointer]:
+      - img
+      - generic [ref=e30]: Close
+```
