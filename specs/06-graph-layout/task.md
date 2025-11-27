@@ -26,8 +26,4 @@
 - [ ] Implement cycle detection in undirected traversal <!-- id: 16 -->
 - [ ] Verify pass <!-- id: 17 -->
 
-## Implementation (Slice 4: Disconnected Components)
-- [ ] Add Slice 4 test cases to E2E <!-- id: 18 -->
-- [ ] Ensure multi-component support <!-- id: 19 -->
-- [ ] Verify pass <!-- id: 20 -->
 
