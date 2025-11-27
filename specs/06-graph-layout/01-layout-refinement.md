@@ -46,10 +46,10 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 
 ### Test Cases (CSV)
 
-**1. Chain Flow**: `Output → Step1 → Step2 → Input`
+**1. Chain Flow**: `Input → Step1 → Step2 → Output`
 ```csv
-# nodes.csv: Output, Step1, Step2, Input
-# edges.csv: Output→Step1, Step1→Step2, Step2→Input
+# nodes.csv: Input, Step1, Step2, Output
+# edges.csv: Input→Step1, Step1→Step2, Step2→Output
 ```
 - Expect: `Output.x < Step1.x < Step2.x < Input.x`
 - Layers: 4
@@ -65,11 +65,11 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 
 **3. Divergent Flow**
 ```csv
-# Output → StepA → StepB → Input1
+# Input1 → StepA → StepB → Output
 #              ↓
-#             Input2
+#             Output2
 ```
-- Expect: Both Input1 and Input2 at Layer 3 (final layer)
+- Expect: Both Output1 and Output2 at Layer 0 (leftmost layer)
 - Layers: 4
 
 ### Implementation
@@ -99,12 +99,12 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 
 **1. Invalid Source Direction**
 ```csv
-# Output1 → S1 → S2 → S3 → S4 → Input1
+# Input1 → S1 → S2 → S3 → S4 → Output1 (but one edge reversed!)
 # (invalid: source=Output1, target=S1 violates OUTPUT rule)
 ```
-- Expect: Still renders, 6 layers total
-- Expect: `Output1` at Layer 0, `Input1` at Layer 5
-- S1, S2, S3, S4 distributed in Layers 1-4
+- Expect: Still renders, 6 layers total (undirected counting)
+- Expect: `Output1` at Layer 0 (leftmost), `Input1` at Layer 5 (rightmost)
+- S1, S2, S3, S4 distributed in middle Layers 1-4
 
 **2. Complex Divergent with Invalid Edge**
 ```csv
@@ -139,9 +139,9 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 
 **3. Cycle in Valid Flow**
 ```csv
-# Output → StepA ↔ StepB → Input
+# Input → StepA ↔ StepB → Output
 ```
-- Expect: 4 layers (Output, StepA, StepB, Input)
+- Expect: 4 layers (Output, StepA, StepB, Input in visual order)
 - Cycle doesn't affect layer count
 
 ### Implementation
@@ -158,8 +158,8 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 
 **1. Two Isolated Flows**
 ```csv
-# Component 1: Output1 → Input1
-# Component 2: Output2 → Step → Input2
+# Component 1: Input1 → Output1
+# Component 2: Input2 → Step → Output2
 ```
 - Expect: Max layers = 3 (from Component 2)
 - Both components visible, likely stacked vertically
