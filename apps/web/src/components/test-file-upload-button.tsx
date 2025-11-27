@@ -20,7 +20,7 @@ export function TestFileUploadButton() {
         accept: { "text/csv": [".csv"] },
         multiple: false,
         // TOGGLE THIS LINE TO TEST HYPOTHESIS
-        useFsAccessApi: true, // Set to true to reproduce failure, false to fix
+        useFsAccessApi: false, // Set to true to reproduce failure, false to fix
     });
 
     if (!isMounted) return null;

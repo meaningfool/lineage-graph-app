@@ -8,23 +8,22 @@ test.describe("Test File Upload - Hypothesis Validation", () => {
     });
 
     test("should upload file with useFsAccessApi: false", async ({ page }) => {
-        // 1. Wait for and click test button using role
-        const testButton = page.getByRole("button", { name: "Test File Upload" });
+        // 1. Wait for and click test button
+        const testButton = page.getByTestId("test-file-upload-button");
         await expect(testButton).toBeVisible({ timeout: 10000 });
         await testButton.click();
 
         // 2. Wait for dialog to be visible
         await expect(page.getByRole("dialog")).toBeVisible();
 
-        // 3. Wait for dropzone text to appear
-        await expect(page.getByText("Drop CSV here")).toBeVisible();
+        // 3. Wait for dropzone to be visible
+        await expect(page.getByTestId("test-dropzone")).toBeVisible();
 
-        // 4. Upload file - find input within the dialog
+        // 4. Upload file using data-testid pattern
         const filePath = path.join(__dirname, "fixtures", "nodes_valid_basic.csv");
-        const fileInput = page.locator('input[type="file"]');
-        await fileInput.setInputFiles(filePath);
+        await page.getByTestId("test-dropzone").locator('input[type="file"]').setInputFiles(filePath);
 
-        // 5. Verify file was uploaded by checking filename appears
-        await expect(page.getByText("nodes_valid_basic.csv")).toBeVisible();
+        // 5. Verify file was uploaded
+        await expect(page.getByTestId("uploaded-filename")).toHaveText("nodes_valid_basic.csv");
     });
 });
