@@ -1,0 +1,5 @@
+id,title,type
+input-1,Input Node,INPUT
+step-1,Step 1,STEP
+step-2,Step 2,STEP
+output-1,Output Node,OUTPUT

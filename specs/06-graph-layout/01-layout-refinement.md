@@ -138,44 +138,115 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
   - `source=*, target=INPUT` (INPUT can't be target)
 
 ### Test Cases (CSV)
-
-**1. Invalid Source Direction**
-```csv
-# Input1 → S1 → S2 → S3 → S4 ← Output1 (backward!)
-# (invalid: source=Output1, target=S4 violates OUTPUT rule)
+ 
+ **1. Invalid Source Direction**
+ ```csv
+ # Input1 → S1 → S2 → S3 → S4 ← Output1 (backward!)
+ # (invalid: source=Output1, target=S4 violates OUTPUT rule)
+ ```
+ **Assertions**:
+ - Total layers: 6
+ - `Output1.x < S4.x < S3.x < S2.x < S1.x < Input1.x`
+ - Output1 at Layer 0, Input1 at Layer 5
+ - S4 at Layer 1 (anchored to Output1)
+ 
+ **2. Missing Output (Input Chain)**
+ ```csv
+ # Input1 → StepA → StepB
+ ```
+ **Assertions**:
+ - Total layers: 3
+ - `StepB.x < StepA.x < Input1.x`
+ - Input1 at Layer 2 (Max), StepA at Layer 1, StepB at Layer 0
+ - Anchored to Input (Right)
+ 
+ **3. Missing Input (Output Chain)**
+ ```csv
+ # StepA → StepB → Output1
+ ```
+ **Assertions**:
+ - Total layers: 3
+ - `Output1.x < StepB.x < StepA.x`
+ - Output1 at Layer 0, StepB at Layer 1, StepA at Layer 2
+ - Anchored to Output (Left)
+ 
+ **4. Isolated Chain (No Input, No Output)**
+ ```csv
+ # StepA → StepB → StepC
+ ```
+ **Assertions**:
+ - Total layers: 3
+ - `StepC.x < StepB.x < StepA.x`
+ - StepC (Sink) at Layer 1, StepB at Layer 2, StepA (Source) at Layer 3
+ - Anchored to Sink (Left), Flow Right -> Left
+ 
+ **5. Mixed: Valid Chain + Missing Output**
+ ```csv
+ # Valid: Input1 → S1 → S2 → S3 → S4 → Output1 (Length 5 edges, 6 nodes)
+ # Invalid: Input2 → T1 → T2 (Missing Output)
+ ```
+ **Assertions**:
+ - Total layers: 6 (defined by valid chain)
+ - **Valid Chain**: Output1 (L0) ... Input1 (L5)
+ - **Invalid Chain**: 
+   - Input2 at Layer 5 (Global Max, Right-aligned)
+   - T1 at Layer 4, T2 at Layer 3
+   - `T2.x < T1.x < Input2.x`
+   - T2 ends at Layer 3 (Middle), not Layer 0
+ 
+ **6. Mixed: Valid Chain + Missing Input**
+ ```csv
+ # Valid: Input1 → S1 → S2 → S3 → S4 → Output1
+ # Invalid: T1 → T2 → Output2 (Missing Input)
+ ```
+ **Assertions**:
+ - Total layers: 6
+ - **Valid Chain**: Output1 (L0) ... Input1 (L5)
+ - **Invalid Chain**:
+   - Output2 at Layer 0 (Global Min, Left-aligned)
+   - T2 at Layer 1, T1 at Layer 2
+   - `Output2.x < T2.x < T1.x`
+   - T1 starts at Layer 2, not Layer 5
+ 
+ **7. Mixed: Valid Chain + Isolated Chain**
+ ```csv
+ # Valid: Input1 → S1 → S2 → S3 → S4 → Output1
+ # Invalid: T1 → T2 → T3 (Isolated)
+ ```
+ **Assertions**:
+ - Total layers: 6
+ - **Valid Chain**: Output1 (L0) ... Input1 (L5)
+ - **Invalid Chain**:
+   - **Constraint**: Steps cannot be at Layer 0 (Output) or Layer 5 (Input).
+   - **Flow**: Right to Left (T1 -> T2 -> T3).
+   - T3 (Sink) at Layer 1 (Closest to Output).
 ```
-**Assertions**:
-- Total layers: 6 (undirected counting)
-- `Output1.x < S4.x < S3.x < S2.x < S1.x < Input1.x`
-- Output1 at Layer 0, Input1 at Layer 5
-- S4 at Layer 1, S3 at Layer 2, S2 at Layer 3, S1 at Layer 4
-- Graph still renders despite invalid edge
-
-**2. Orphaned Chain (Missing OUTPUT)**
-```csv
-# Component with valid flow:   Input1 → S1 → S2 → Output1 (4 nodes)
-# Component with orphaned end: Input2 → T1 → T2 → T3 (4 nodes, no OUTPUT!)
-```
-**What's invalid**: T3 has no outgoing edge to any OUTPUT node, violating flow semantics
-
-**Assertions**:
-- Total layers: 5 (must have dedicated INPUT layer)
-- Layer structure:
-  - Layer 0: Only Output1
-  - Layers 1-3: Only STEPs (S2/T3, S1/T2, T1)
-  - Layer 4: Only INPUTs (Input1, Input2)
-- **Valid component**:
-  - Output1 at L0, S2 at L1, S1 at L2, Input1 at L4
-  - `Output1.x < S2.x < S1.x < Input1.x`
-- **Orphaned component**:
-  - T3 at L1, T2 at L2, T1 at L3, Input2 at L4
-  - `T3.x < T2.x < T1.x < Input2.x`
-- **Key assertion**: No STEP node shares a layer with an INPUT node
+   - T2 at Layer 2.
+   - T1 (Source) at Layer 3.
+   - `T3.x < T2.x < T1.x`
+   - Chain is centered/left-aligned within the valid step layers (1-4).
+ 
+ **8. Input-Input Connection**
+ ```csv
+ # Input1 → Input2
+ ```
+ **Assertions**:
+ - Total layers: 2 (min layers for visibility, or just 1 if allowed)
+ - `Input1.x == Input2.x` (Same Layer)
+ - Both at Layer Max (Input Layer).
+ 
+ **9. Output-Output Connection**
+ ```csv
+ # Output1 → Output2
+ ```
+ **Assertions**:
+ - Total layers: 2
+ - `Output1.x == Output2.x` (Same Layer)
+ - Both at Layer 0 (Output Layer).
 
 ### Implementation
-- **Undirected traversal**: Treat all edges as bidirectional for layer counting
-- **Orphan handling**: Nodes not reachable via valid edges get placed in middle layers
-- **Type-based guarantee**: OUTPUTs always Layer 0, INPUTs always Layer max
+ 
+ See [layout-algorithm-details.md](./layout-algorithm-details.md) for the detailed **Multi-Pass Anchoring** strategy and **Selective Reversal** logic.
 
 ---
 

@@ -28,6 +28,7 @@ export function mapToReactFlow(
         type: "custom", // Our custom node type
         data: {
             label: n.title,
+            type: n.type, // Add type for layout algorithm
             validationErrors: validation.nodeErrors.get(n.id) || [],
         },
         position: { x: 0, y: 0 }, // Default position (layout will fix this later)
