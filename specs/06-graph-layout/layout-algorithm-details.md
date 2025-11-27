@@ -20,50 +20,73 @@ To handle invalid edges that violate the data flow (e.g., `Output -> Step`), we 
   - `Output -> Step`  becomes `Step -> Output`
   - `Step -> Input`   becomes `Input -> Step`
   - `Output -> Input` becomes `Input -> Output`
+- **Ignored Edges** (Exclude from Flow Graph):
+  - `Input -> Input`
+  - `Output -> Output`
+  - **Why**: These cannot be made valid by reversal and add no value to the flow hierarchy. Ignoring them prevents traversal issues.
 
 **Why?** This allows us to treat "backward" edges as part of the valid flow for layering purposes, effectively "unwinding" them visually.
 
-## The Algorithm: Single Pass + Post-Processing
+## The Algorithm: Single Pass + Max Path Tracking
 
-We assign layers in a single upstream pass, anchored to "Sinks", followed by a strict enforcement of Input placement.
+We assign layers in a single upstream pass, anchored to "Sinks", with real-time tracking of the longest path.
+
+### 0. Early Exit: Input-Only Graph
+**Check**: If the graph contains **ONLY INPUT nodes** (no Outputs, no Steps):
+- **Action**: Assign all nodes to **Layer 0**.
+- **Stop**: Do not proceed to traversal.
+- **Why**: There are no sinks to anchor to, and no flow to traverse.
 
 ### 1. Identify Sinks
 In the **Flow Graph**, identify nodes that act as sinks (destinations):
 - **OUTPUT Nodes**: Always Sinks. **Base Layer = 0**.
 - **Dead-end STEP Nodes**: Step nodes with **no outgoing edges** in the Flow Graph. **Base Layer = 1**.
-- **INPUT Nodes**: **NEVER** treated as sinks for traversal (even if they have no outgoing edges). They are handled in Post-Processing.
+- **INPUT Nodes**: **NEVER** treated as sinks for traversal.
 
-### 2. Single Pass Traversal (Upstream)
-**Goal**: Layer all nodes reachable upstream from a Sink.
+### 2. Single Pass Traversal (Upstream) with Tracking
+**Goal**: Layer all nodes reachable upstream from a Sink AND track the global maximum depth.
 **Traversal**: **Target -> Source** (Incoming Edges in Flow Graph).
+**Tracking Variables**:
+- `GlobalMaxDepth`: The highest layer number assigned so far.
+- `NodeAtMaxDepth`: The node (or type) that sits at `GlobalMaxDepth`.
+- `Visited`: Set of visited nodes in the current path (to detect cycles).
+
 **Logic**:
 - Start BFS/DFS from all identified Sinks.
-- `Layer = BaseLayer + Distance`.
-- **Example**: `StepA -> StepB -> Output`.
-  - Output (Sink): L0.
-  - StepB: L1.
-  - StepA: L2.
+- **Cycle Detection**: Maintain a `visited` set for the current recursion stack (DFS) or path. If a node is re-visited in the same path, stop traversal for that branch (break the loop).
+- `Layer = BaseLayer + MAX(Distance)`.
+- **Update Tracking**:
+  - If `Layer > GlobalMaxDepth`:
+    - `GlobalMaxDepth = Layer`
+    - `NodeAtMaxDepth = CurrentNode`
+  - If `Layer == GlobalMaxDepth` AND `CurrentNode` is NOT an Input:
+    - `NodeAtMaxDepth = CurrentNode` (Prioritize non-inputs to force separation if conflict).
 
-### 3. Post-Processing: Input Alignment
-**Goal**: Ensure all Inputs are at the far right, regardless of connectivity.
+### 3. Final Input Alignment
+**Goal**: Ensure strict separation for Inputs.
 **Logic**:
-- Determine `GlobalMaxLayer` (the highest layer assigned during traversal).
-- **Force ALL INPUT Nodes** to `GlobalMaxLayer` (or `GlobalMaxLayer + 1` if distinct separation is desired).
-- If an Input was already layered (e.g., `Input -> Output`), move it to Max.
-- If an Input was unlayered (e.g., `Input1 -> Input2`), assign it to Max.
+- Determine `FinalInputLayer`:
+  - If `NodeAtMaxDepth` is **INPUT**: `FinalInputLayer = GlobalMaxDepth`.
+  - If `NodeAtMaxDepth` is **NOT INPUT**: `FinalInputLayer = GlobalMaxDepth + 1`.
+- **Force ALL INPUT Nodes**: Assign all Input nodes to `FinalInputLayer`.
 
 **Result**:
-- `Input1 -> Input2`: Both forced to Layer Max.
-- `Input -> Step`: Step at L1, Input moved to Max.
-- `Step -> Step` (Island): Sink Step at L1, upstream Step at L2.
+- `Input -> Step -> Output`:
+  - Max Depth = L2 (Input). Node = Input.
+  - Final Input Layer = L2.
+- `Step -> Output` + `Input` (Isolated):
+  - Max Depth = L1 (Step). Node = Step.
+  - Final Input Layer = L1 + 1 = L2.
+  - Input forced to L2. (Strict separation).
 
 ## Summary of Logic
 
 | Step | Action | Direction | Rule |
 | :--- | :--- | :--- | :--- |
-| **1** | **Identify Sinks** | N/A | Output=0, Dead-end Step=1. Inputs ignored. |
-| **2** | **Traverse** | **Target -> Source** (Upstream) | `Layer = Base + Dist` |
-| **3** | **Post-Process** | N/A | **All Inputs = GlobalMaxLayer** |
+| **0** | **Early Exit** | N/A | If Input-Only, All Layer 0. Stop. |
+| **1** | **Identify Sinks** | N/A | Output=0, Dead-end Step=1. |
+| **2** | **Traverse** | **Target -> Source** | `Layer = Base + MAX(Dist)`. Track Max. |
+| **3** | **Align Inputs** | N/A | `Inputs = MaxDepth (+1 if Non-Input at Max)` |
 
 > [!WARNING]
 > When implementing, ensure you use the **Flow Graph** (with reversed invalid edges) for the traversal.

@@ -244,9 +244,18 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
  - `Output1.x == Output2.x` (Same Layer)
  - Both at Layer 0 (Output Layer).
 
-### Implementation
+ **10. Input-Only Graph**
+ ```csv
+ # Input1, Input2 (No edges or disconnected)
+ ```
+ **Assertions**:
+ - Total layers: 1
+ - `Input1.x == Input2.x` (Same Layer)
+ - Both at Layer 0 (Default for Input-Only).
  
- See [layout-algorithm-details.md](./layout-algorithm-details.md) for the detailed **Multi-Pass Anchoring** strategy and **Selective Reversal** logic.
+ ### Implementation
+  
+ See [layout-algorithm-details.md](./layout-algorithm-details.md) for the detailed **Single Pass Sink-Anchored** strategy and **Selective Reversal** logic.
 
 ---
 
