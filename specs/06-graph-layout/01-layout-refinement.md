@@ -56,20 +56,23 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 
 **2. Convergent Flow (Longest Path)**
 ```csv
-# Output1 → StepA → StepB → Input
-# Output2 → StepB
+# Input1 → StepA → StepB → Output1
+# Input2 → StepB → Output1
 ```
-- Expect: `StepB` at Layer 2 (longest path from Output1)
-- Expect: `Output1.x < StepA.x < StepB.x < Input.x`
+- Expect: `StepB` at Layer 2 (longest path from Input1)
+- Expect: `Output1.x < StepB.x < StepA.x < Input1.x` (visual left to right)
+- Expect: `Output1.x < StepB.x < Input2.x` (visual left to right)
 - Layers: 4
 
 **3. Divergent Flow**
 ```csv
-# Input1 → StepA → StepB → Output
+# Input1 → StepA → StepB → Output1
 #              ↓
-#             Output2
+#           Output2
 ```
 - Expect: Both Output1 and Output2 at Layer 0 (leftmost layer)
+- Expect: `Output1.x < StepB.x < StepA.x < Input1.x`
+- Expect: `Output2.x < StepA.x < Input1.x`
 - Layers: 4
 
 ### Implementation
@@ -109,13 +112,15 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 **2. Complex Divergent with Invalid Edge**
 ```csv
 # Valid branch:   Input1 → S1 → S2 → Output1
-# Invalid branch: Input2 → T2 → T3 → T4 → T5 (no OUTPUT!)
-#                 (T5 → Input2 would be invalid target)
+# Invalid branch: Input2 → T2 → T3 → T4 → T5 (missing OUTPUT node)
+#   T5 has no outgoing edge to OUTPUT, making it orphaned
+#   Or: T5 → Input2 would be invalid (INPUT can't be target)
 ```
-- Total nodes in longest chain: 7
-- Expect: 7 layers allocated
-- Expect: Valid branch fits appropriately
-- Expect: Invalid branch handled gracefully
+- Total nodes in longest undirected chain: 7 (Input2-T2-T3-T4-T5-S2-S1 or similar)
+- Expect: 7 layers allocated (undirected traversal counts all nodes)
+- Expect: Output1 at Layer 0, Input1/Input2 at Layer 6
+- Expect: S1, S2, T2, T3, T4, T5 distributed across Layers 1-5
+- Orphaned nodes (T5 if no OUTPUT) placed in middle layers
 
 ### Implementation
 - **Undirected traversal**: Treat all edges as bidirectional for layer counting
@@ -135,14 +140,22 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 - StepA positioned in middle layer
 
 **2. Feedback Loop**: `StepA ↔ StepB`
-- Expect: Both positioned in middle layers
-
-**3. Cycle in Valid Flow**
 ```csv
-# Input → StepA ↔ StepB → Output
+# Input → StepA → StepB → Output
+#         StepA ← StepB (creates cycle)
 ```
-- Expect: 4 layers (Output, StepA, StepB, Input in visual order)
-- Cycle doesn't affect layer count
+- Expect: 4 layers, both StepA and StepB in middle (Layers 1-2)
+- Cycle doesn't increase layer count (undirected traversal detects and breaks it)
+
+**3. Cycle with Multiple Inputs/Outputs**
+```csv
+# Input1 → StepA → StepB → Output1
+# Input2 → StepB → Output2
+# StepA → StepB (already exists)
+# StepB → StepA (creates cycle)
+```
+- Expect: 4 layers (both Outputs at L0, both Inputs at L3, Steps at L1-L2)
+- Cycle between Steps doesn't affect layer count
 
 ### Implementation
 - Track visited nodes during undirected traversal to avoid infinite loops
@@ -150,24 +163,17 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 
 ---
 
-## Slice 4: Disconnected Components
+---
 
-**Goal**: Handle graphs with multiple disconnected subgraphs.
+## Notes on Disconnected Components
 
-### Test Cases (CSV)
+The algorithm naturally handles disconnected components via undirected traversal:
+- Each component is traversed independently
+- Max layers = longest component across all components
+- All OUTPUTs go to Layer 0, all INPUTs to Layer max
+- ReactFlow handles vertical spacing automatically
 
-**1. Two Isolated Flows**
-```csv
-# Component 1: Input1 → Output1
-# Component 2: Input2 → Step → Output2
-```
-- Expect: Max layers = 3 (from Component 2)
-- Both components visible, likely stacked vertically
-
-### Implementation
-- Find connected components (undirected)
-- Max layers = longest component
-- Components positioned independently (ReactFlow handles vertical spacing)
+**No special test needed** - existing tests with single components are sufficient.
 
 ---
 
