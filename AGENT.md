@@ -18,6 +18,7 @@ We use a strict **Spec-Driven Workflow** to manage features and context.
     *   **Visual Verification**: When a feature involves visual cues (hidden/shown elements, styles, layout), you MUST verify it visually.
     *   **Automated Proof**: Prefer capturing screenshots *within* the E2E test (e.g., `page.screenshot()`) over manual browser sessions. This ensures reproducibility and provides a permanent artifact.
     *   **Robust Selectors**: ALWAYS use `data-testid` for selecting elements in tests. Do NOT rely on text content (e.g., button labels) or CSS classes, as these change frequently. We have configured Next.js to strip these attributes in production, so use them freely.
+    *   **Strict E2E-First TDD**: If E2E tests fail due to environment or infrastructure issues (e.g., timeouts, connection refused, element not found due to crash), you **MUST** fix the environment first. You are **FORBIDDEN** from switching to Unit Tests or Implementation code until the E2E tests are running successfully and failing for the correct reason (Assertion Error). Never bypass E2E verification to "save time".
 
 ## 🚀 How to Start
 When starting a new chat, the agent should:
