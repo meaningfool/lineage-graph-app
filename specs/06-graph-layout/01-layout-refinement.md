@@ -120,13 +120,15 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 
 **Expected behavior**:
 - Undirected traversal: Longest chain across both components = 4 nodes
-- Layers allocated: 4 (Output at L0, Steps at L1-L2, Input at L3)
-- **Valid component**: Output1(L0) ← S2(L1) ← S1(L2) ← Input1(L3)
+- **Layers allocated: 5** (must have dedicated INPUT layer)
+  - Layer 0: OUTPUTs only (Output1)
+  - Layers 1-3: STEPs only (S2/T3, S1/T2, T1)
+  - Layer 4: INPUTs only (Input1, Input2)
+- **Valid component**: Output1(L0) ← S2(L1) ← S1(L2) ← Input1(L4)
 - **Orphaned component**: 
-  - Output1 positioned at L0 (type-based, even though not connected)
-  - T3, T2, T1 positioned at L1, L2, L3 based on distance from Input2
-  - T3 ends up in middle layer (no OUTPUT to connect to)
-- Both components visible and properly spaced
+  - T3 at L1, T2 at L2, T1 at L3 (no OUTPUT connection, but properly layered)
+  - Input2 at L4 (rightmost INPUT-only layer)
+- **Key principle**: INPUTs must never share a layer with STEPs
 
 ### Implementation
 - **Undirected traversal**: Treat all edges as bidirectional for layer counting
@@ -153,16 +155,19 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
 - Expect: 4 layers, both StepA and StepB in middle (Layers 1-2)
 - Cycle doesn't increase layer count (undirected traversal detects and breaks it)
 
-**3. Cycle of Length 3**
+**3. Cycle of Length 3 with Convergent Path**
 ```csv
-# Input → StepA → StepB → StepC → Output
+# Input → StepA → StepB → StepC → Output1
+# Output2 → StepA (convergent path - Output2 connects directly to StepA)
 # StepA → StepB (already exists)
 # StepB → StepC (already exists)  
 # StepC → StepA (creates 3-node cycle)
 ```
-- Expect: 5 layers total (Output-L0, StepA/B/C in L1-L3, Input-L4)
+- Expect: 5 layers total (Outputs-L0, StepA/B/C in L1-L3, Input-L4)
 - Cycle (StepA ↔ StepB ↔ StepC) doesn't increase layer count
+- Convergent path (Output2 → StepA) doesn't affect layer count
 - Undirected traversal detects cycle and prevents infinite loop
+- Both Output1 and Output2 positioned at Layer 0
 
 ### Implementation
 - Track visited nodes during undirected traversal to avoid infinite loops
