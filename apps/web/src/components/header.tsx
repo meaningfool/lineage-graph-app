@@ -6,6 +6,7 @@ import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "./mode-toggle";
 import { CSVImportModal } from "./csv-import-modal";
+import { TestFileUploadButton } from "./test-file-upload-button";
 
 interface HeaderProps {
 	onImport: (nodes: any[], edges: any[]) => void;
@@ -28,6 +29,7 @@ export default function Header({ onImport }: HeaderProps) {
 					})}
 				</nav>
 				<div className="flex items-center gap-2">
+					<TestFileUploadButton />
 					<Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
 						<Upload className="mr-2 h-4 w-4" />
 						Import CSV
