@@ -27,7 +27,29 @@ maxLayers = longestUndirectedPath(allNodes, allEdges);
 OUTPUTs → Layer 0
 INPUTs → Layer maxLayers
 STEPs → Distributed across Layers 1 to (maxLayers-1)
+
+// 3. Add data-layer attribute for testing
+node.data.layer = calculatedLayer; // ✅ Testable in Playwright
 ```
+
+### 4. Testing Strategy
+
+**Two-layer verification** to ensure both algorithm and rendering are correct:
+
+**Layer 1: Algorithm Correctness** (via `data-layer` attribute)
+- Each node gets `data-layer` attribute from algorithm
+- E2E tests assert: `await node.getAttribute('data-layer')`
+- Example: `expect(stepA_layer).toBe('2')`
+
+**Layer 2: Visual Positioning** (via x-coordinates)
+- Each layer translates to x-coordinate: `x = layer * LAYER_WIDTH`
+- E2E tests assert: `nodeA.x < nodeB.x < nodeC.x`
+- Ensures rendering matches algorithm output
+
+**Why both?**
+- `data-layer`: Tests algorithm logic (computeLayers)
+- `x-coordinates`: Tests visual rendering (assignCoordinates)
+- Failures indicate which layer failed
 
 ---
 
@@ -94,6 +116,10 @@ We will implement this feature in strict "vertical slices," driven by E2E tests.
   - STEPs → Use longest undirected path from any OUTPUT/INPUT to determine layer
     - For each STEP, calculate distance from nearest OUTPUT and INPUT
     - Position proportionally between Layer 0 and Layer max
+  - **Add `data-layer` attribute**: `node.data.layer = calculatedLayer` (for E2E testing)
+- `assignCoordinates(nodes)`:
+  - Convert layer to x-coordinate: `x = layer * LAYER_WIDTH`
+  - Y-coordinate: Simple vertical stacking within layer
 
 ---
 
