@@ -3,6 +3,8 @@ import { Handle, Position, NodeToolbar } from "reactflow";
 
 export interface NodeData {
     label: string;
+    type?: string;
+    layer?: number;
     properties?: {
         [key: string]: any;
     };
@@ -30,6 +32,7 @@ export function CustomNode({ data }: { data: NodeData }) {
         <div
             className={`min-w-[150px] max-w-[200px] rounded-sm border ${borderColor} bg-white px-3 py-2 shadow-sm relative group`}
             style={{ borderColor: hasErrors ? "#ef4444" : undefined }}
+            data-layer={data.layer}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
@@ -52,7 +55,7 @@ export function CustomNode({ data }: { data: NodeData }) {
 
             <Handle
                 type="target"
-                position={Position.Left}
+                position={Position.Right}
                 className="h-1.5 w-1.5 opacity-0"
             />
             <div className="flex flex-col gap-0.5">
@@ -74,7 +77,7 @@ export function CustomNode({ data }: { data: NodeData }) {
             </div>
             <Handle
                 type="source"
-                position={Position.Right}
+                position={Position.Left}
                 className="h-1.5 w-1.5 opacity-0"
             />
         </div>
