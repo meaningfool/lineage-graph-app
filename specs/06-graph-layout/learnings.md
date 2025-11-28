@@ -13,39 +13,14 @@
 2.  **Layer 2: Visual Rendering**: Assert on the relative X-coordinates of nodes (e.g., `expect(nodeA.x).toBeLessThan(nodeB.x)`).
 **Benefit**: Decouples logic verification from pixel-perfect rendering, making tests more robust and easier to debug.
 
-## 3. Handling Invalid & Degenerate Graphs
-**Context**: Implementing Slice 2 (Invalid Graphs) revealed edge cases that standard algorithms miss.
-**Insights**:
--   **Input-Only Graphs**: A graph with only Inputs has no "Sinks" (Outputs or Dead-ends) to anchor traversal.
-    -   *Solution*: **Early Exit**. Check for this degenerate case at the start and assign all nodes to Layer 0 immediately.
--   **Strict Input Separation**: Simply placing Inputs at `MaxLayer` isn't enough. If `MaxLayer` contains a Step node (e.g., `Step -> Output`), placing an Input there creates visual ambiguity.
-    -   *Solution*: If `MaxLayer` is occupied by a Non-Input, force Inputs to `MaxLayer + 1`.
--   **Traversal Direction**: "Upstream" vs "Downstream" is confusing when the visual flow is Right-to-Left (Input -> Output).
-    -   *Rule*: Always define traversal in terms of graph topology (`Target -> Source` or `Source -> Target`), not visual direction. For our "Sink-Anchored" strategy, we traverse **Upstream** (`Target -> Source`).
-
-## 4. Handling Floating Cycles (Pseudo-Sink Strategy)
-**Context**: "Floating Cycles" are isolated graph components with no Inputs or Outputs (e.g., `A -> B -> C -> A`).
-**Problem**: The standard "Sink-Anchored" algorithm relies on starting traversal from Outputs or Dead-ends. Floating cycles have neither, so they remain "unvisited" and default to Layer 1, resulting in a confusing vertical stack of nodes.
-**Solution**: **Greedy Deterministic Leader**.
-- After the main traversal, identify all unvisited nodes.
-- Sort them by ID (for stability).
-- Pick the first node as a "Pseudo-Sink".
-- Anchor it to **Layer 1** and run the upstream traversal.
-- **Result**: The cycle is "unrolled" into a linear flow (e.g., `B -> C -> A`), which is much easier to read.
-
-## 5. Visualizing Dense Graphs (Edge Routing)
-**Context**: Complex graphs with cycles and backward edges.
-**Problem**: The default `SmoothStep` edge type creates significant visual clutter. Edges often overlap perfectly or run parallel in tight groups, making it impossible to trace individual connections.
-**Solution**: **Bezier Curves**.
-- Switched to `getBezierPath` with a custom `curvature` of **0.35**.
-- **Benefit**: Curves naturally separate from each other, reducing overlap. The smoother lines make it easier for the eye to follow the "flow" compared to rigid right angles.
-
-## 6. Implementing Right-to-Left (RTL) Flow
-**Context**: The business requirement is for data to flow from Right (Input) to Left (Output).
-**Challenges**:
-- ReactFlow and standard path utilities often assume Left-to-Right (LTR).
-- **Handle Positions**: Must be explicitly swapped. Source handles on the **Left**, Target handles on the **Right**.
-- **Edge Calculation**: Logic for "Backward" edges must be inverted.
-    - LTR Backward: `sourceX > targetX`
-    - RTL Backward: `sourceX < targetX`
-- **Bezier Control Points**: Must be adjusted to arc "outward" from the new handle positions (e.g., `sourceX - 30` instead of `+ 30`).
+## 3. The "Single Pass Sink-Anchored" Algorithm
+**Context**: We needed a robust layout algorithm that handles valid flows, invalid graphs (loops, dead-ends), and floating cycles in a single pass.
+**Key Components**:
+1.  **Sink Identification**: The algorithm anchors traversal at "Sinks" (Outputs and Dead-end Steps).
+2.  **Upstream Traversal**: It traverses **Upstream** (`Target -> Source`) from sinks to assign layers. This handles the Right-to-Left visual flow naturally by following the graph topology.
+3.  **Degenerate Cases**:
+    -   **Input-Only**: Early exit assigns Layer 0 immediately.
+    -   **Strict Separation**: Inputs are forced to `MaxLayer + 1` if `MaxLayer` is occupied by non-inputs, preventing ambiguity.
+4.  **Floating Cycles (Pseudo-Sink Strategy)**:
+    -   *Problem*: Isolated cycles (e.g., `A->B->C->A`) have no sinks and remain unvisited.
+    -   *Solution*: **Greedy Deterministic Leader**. We sort unvisited nodes by ID, pick the first as a "Pseudo-Sink", anchor it to Layer 1, and unroll the cycle upstream. This turns a vertical stack into a readable horizontal flow.
