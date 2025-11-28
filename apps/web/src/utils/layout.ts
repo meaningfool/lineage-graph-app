@@ -17,13 +17,10 @@ export const getLayoutedElements = (
 
 	console.log("--- CUSTOM LAYOUT ACTIVE ---");
 
-	// 1. Compute max layers needed (undirected traversal)
-	const maxLayers = computeMaxLayers(nodes, edges);
+	// 1. Assign layers to nodes based on type (Single Pass Algorithm)
+	const layeredNodes = assignLayers(nodes, edges);
 
-	// 2. Assign layers to nodes based on type
-	const layeredNodes = assignLayers(nodes, edges, maxLayers);
-
-	// 3. Convert layers to x/y coordinates
+	// 2. Convert layers to x/y coordinates
 	const layoutedNodes = assignCoordinates(layeredNodes, 250);
 
 	return { nodes: layoutedNodes, edges };

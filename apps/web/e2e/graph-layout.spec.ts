@@ -255,9 +255,9 @@ test.describe("Graph Layout", () => {
             const stepALayer = await getNodeLayer(page, "Step A");
             const input1Layer = await getNodeLayer(page, "Input 1");
 
-            expect(stepBLayer).toBe("0"); // StepB at Layer 0 (sink)
-            expect(stepALayer).toBe("1"); // StepA at Layer 1
-            expect(input1Layer).toBe("2"); // Input at Layer 2 (max)
+            expect(stepBLayer).toBe("1"); // StepB at Layer 1 (dead-end sink)
+            expect(stepALayer).toBe("2"); // StepA at Layer 2
+            expect(input1Layer).toBe("3"); // Input at Layer 3 (max)
         });
 
         test("3. Missing Input: Step chain ending at output", async ({ page }) => {
@@ -358,8 +358,8 @@ test.describe("Graph Layout", () => {
             expect(output1Layer).toBe("0"); // Output1 at Layer 0
             expect(input1Layer).toBe("5"); // Input1 at Layer 5 (global max)
             expect(input2Layer).toBe("5"); // Input2 also at Layer 5 (right-aligned)
-            expect(t1Layer).toBe("4"); // T1 at Layer 4
-            expect(t2Layer).toBe("3"); // T2 at Layer 3 (ends in middle)
+            expect(t1Layer).toBe("2"); // T1 at Layer 2
+            expect(t2Layer).toBe("1"); // T2 at Layer 1 (dead-end sink)
         });
 
         test("6. Mixed: Valid chain + Missing Input chain", async ({ page }) => {
@@ -464,7 +464,7 @@ test.describe("Graph Layout", () => {
             const input2Layer = await getNodeLayer(page, "Input 2");
 
             expect(input1Layer).toBe(input2Layer); // Same layer
-            expect(input1Layer).toBe("1"); // At Layer 1 (max for 2-layer graph)
+            expect(input1Layer).toBe("0"); // At Layer 0 (Early Exit for Input-Only/Ignored Edges)
         });
 
         test("9. Output-Output Connection", async ({ page }) => {
