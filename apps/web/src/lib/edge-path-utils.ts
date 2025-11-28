@@ -84,6 +84,7 @@ export function calculateEdgePath({
             targetX,
             targetY,
             targetPosition,
+            curvature: 0.5,
         });
     }
 
