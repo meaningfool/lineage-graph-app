@@ -553,19 +553,23 @@ test.describe("Graph Layout", () => {
             const nodeB = await getNodePosition(page, "Node B");
             const nodeC = await getNodePosition(page, "Node C");
 
-            // Verify all are at the same layer (Layer 1 default for floating steps)
-            // because there are no sinks to anchor them.
-            expect(nodeA.x).toBe(nodeB.x);
-            expect(nodeB.x).toBe(nodeC.x);
+            // Verify nodes are NOT all at the same layer (unrolled)
+            // With Pseudo-Sink strategy:
+            // Node A (lowest ID) -> Layer 1
+            // Node C -> Layer 2
+            // Node B -> Layer 3
+            // So x coordinates should be different
+            expect(nodeA.x).not.toBe(nodeB.x);
+            expect(nodeB.x).not.toBe(nodeC.x);
 
             // Verify layer assignments
             const nodeALayer = await getNodeLayer(page, "Node A");
-            const nodeBLayer = await getNodeLayer(page, "Node B");
             const nodeCLayer = await getNodeLayer(page, "Node C");
+            const nodeBLayer = await getNodeLayer(page, "Node B");
 
-            expect(nodeALayer).toBe("1");
-            expect(nodeBLayer).toBe("1");
-            expect(nodeCLayer).toBe("1");
+            expect(nodeALayer).toBe("1"); // Pseudo-Sink
+            expect(nodeCLayer).toBe("2");
+            expect(nodeBLayer).toBe("3");
         });
     });
 });

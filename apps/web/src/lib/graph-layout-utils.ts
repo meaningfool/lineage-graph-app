@@ -198,17 +198,32 @@ function computeLayers(nodes: Node[], edges: Edge[]): Map<string, number> {
         }
     });
 
-    // Ensure all nodes have a layer (orphans might be missed if not connected to sinks)
-    nodes.forEach(node => {
-        if (!layerMap.has(node.id)) {
-            const type = (node.data.type as string)?.toUpperCase();
-            if (type === "STEP") {
-                layerMap.set(node.id, 1);
-            } else if (type === "OUTPUT") {
-                layerMap.set(node.id, 0);
-            }
+    // 4. Handle Floating Cycles (Pseudo-Sinks)
+    // Identify all nodes not yet visited (Floating Components)
+    let unvisitedNodes = nodes.filter(n => !layerMap.has(n.id));
+
+    // Sort by ID to ensure deterministic leader selection
+    unvisitedNodes.sort((a, b) => a.id.localeCompare(b.id));
+
+    // Greedy Loop: Pick a leader, traverse, repeat
+    while (unvisitedNodes.length > 0) {
+        const pseudoSink = unvisitedNodes[0];
+
+        // Anchor Pseudo-Sink to Layer 1
+        layerMap.set(pseudoSink.id, 1);
+
+        // Traverse Upstream from this Pseudo-Sink
+        // This unrolls the component starting from this node
+        const parents = upstreamAdjacency.get(pseudoSink.id) || new Set();
+        visitedInPath.add(pseudoSink.id);
+        for (const parentId of parents) {
+            dfs(parentId, 2); // Start at Layer 2 (1 + 1)
         }
-    });
+        visitedInPath.delete(pseudoSink.id);
+
+        // Update unvisited list
+        unvisitedNodes = unvisitedNodes.filter(n => !layerMap.has(n.id));
+    }
 
     return layerMap;
 }

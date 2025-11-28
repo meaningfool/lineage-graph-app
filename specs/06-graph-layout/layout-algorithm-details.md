@@ -62,7 +62,27 @@ In the **Flow Graph**, identify nodes that act as sinks (destinations):
   - If `Layer == GlobalMaxDepth` AND `CurrentNode` is NOT an Input:
     - `NodeAtMaxDepth = CurrentNode` (Prioritize non-inputs to force separation if conflict).
 
-### 3. Final Input Alignment
+### 3. Handle Floating Cycles (Pseudo-Sinks)
+**Goal**: Unroll "Floating Cycles" (isolated components with no Inputs/Outputs) that were not visited in the main traversal.
+**Strategy**: Greedy Deterministic Leader.
+
+**Logic**:
+- Identify all **Unvisited Nodes** (nodes with no layer assigned).
+- **Sort** unvisited nodes by ID (alphanumeric) to ensure deterministic behavior.
+- **Loop** while unvisited nodes exist:
+  1. Pick the **First Node** as the **Pseudo-Sink**.
+  2. Assign it to **Layer 1**.
+  3. Traverse Upstream from this Pseudo-Sink (using the same logic as Step 2).
+  4. Update the list of unvisited nodes (remove newly visited ones).
+  5. Repeat.
+
+**Result**: A cycle `A -> B -> C -> A` (where A is lowest ID) becomes:
+- `A` (Layer 1)
+- `C` (Layer 2) -> `A`
+- `B` (Layer 3) -> `C`
+- `A` -> `B` (Back edge)
+
+### 4. Final Input Alignment
 **Goal**: Ensure strict separation for Inputs.
 **Logic**:
 - Determine `FinalInputLayer`:
@@ -86,7 +106,8 @@ In the **Flow Graph**, identify nodes that act as sinks (destinations):
 | **0** | **Early Exit** | N/A | If Input-Only, All Layer 0. Stop. |
 | **1** | **Identify Sinks** | N/A | Output=0, Dead-end Step=1. |
 | **2** | **Traverse** | **Target -> Source** | `Layer = Base + MAX(Dist)`. Track Max. |
-| **3** | **Align Inputs** | N/A | `Inputs = MaxDepth (+1 if Non-Input at Max)` |
+| **3** | **Floating Cycles** | **Target -> Source** | Pick Unvisited Leader (Min ID) -> Layer 1. Traverse. |
+| **4** | **Align Inputs** | N/A | `Inputs = MaxDepth (+1 if Non-Input at Max)` |
 
 > [!WARNING]
 > When implementing, ensure you use the **Flow Graph** (with reversed invalid edges) for the traversal.
