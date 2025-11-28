@@ -1,0 +1,52 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - navigation [ref=e6]:
+          - link "Home" [ref=e7] [cursor=pointer]:
+            - /url: /
+        - generic [ref=e8]:
+          - button "Import CSV" [ref=e9] [cursor=pointer]:
+            - img
+            - text: Import CSV
+          - button "Toggle theme" [ref=e10] [cursor=pointer]:
+            - img
+            - img
+            - generic [ref=e11]: Toggle theme
+      - separator [ref=e12]
+    - generic [ref=e14]:
+      - generic [ref=e16]:
+        - generic:
+          - img:
+            - generic:
+              - button "Edge from input-1 to step-1" [ref=e17] [cursor=pointer]
+              - button "Edge from step-1 to step-2" [ref=e21] [cursor=pointer]
+              - button "Edge from step-2 to step-3" [ref=e25] [cursor=pointer]
+              - button "Edge from step-3 to step-4" [ref=e29] [cursor=pointer]
+              - button "Edge from output-1 to step-4" [ref=e33] [cursor=pointer]
+          - generic:
+            - button "Input 1" [ref=e37]:
+              - generic [ref=e41]: Input 1
+            - button "S1" [ref=e43]:
+              - generic [ref=e47]: S1
+            - button "S2" [ref=e49]:
+              - generic [ref=e53]: S2
+            - button "S3" [ref=e55]:
+              - generic [ref=e59]: S3
+            - button "S4" [ref=e61]:
+              - generic [ref=e65]: S4
+            - button "Output 1" [ref=e67]:
+              - generic [ref=e71]: Output 1
+      - img [ref=e73]
+  - generic [ref=e76]:
+    - img [ref=e78]
+    - button "Open Tanstack query devtools" [ref=e126] [cursor=pointer]:
+      - img [ref=e127]
+  - region "Notifications alt+T"
+  - alert [ref=e175]
+  - button "Open Next.js Dev Tools" [ref=e181] [cursor=pointer]:
+    - img [ref=e182]
+```
