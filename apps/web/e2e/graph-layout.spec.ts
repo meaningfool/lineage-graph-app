@@ -511,4 +511,61 @@ test.describe("Graph Layout", () => {
             expect(input2Layer).toBe("0"); // Layer 0 (early exit for input-only)
         });
     });
+
+    test.describe("Slice 3: Cycles (Self-Loops & Feedback)", () => {
+        test("1. Self-Cycle: Step with self-loop in valid chain", async ({ page }) => {
+            await importCSV(page, "nodes_self_cycle.csv", "edges_self_cycle.csv");
+
+            // Verify nodes are visible
+            await expect(getNode(page, "Valid Input")).toBeVisible();
+            await expect(getNode(page, "Self Cycle Step")).toBeVisible();
+            await expect(getNode(page, "Valid Output")).toBeVisible();
+
+            // Get positions
+            const output = await getNodePosition(page, "Valid Output");
+            const step = await getNodePosition(page, "Self Cycle Step");
+            const input = await getNodePosition(page, "Valid Input");
+
+            // Verify horizontal ordering: Output < Step < Input
+            expect(output.x).toBeLessThan(step.x);
+            expect(step.x).toBeLessThan(input.x);
+
+            // Verify layer assignments
+            const outputLayer = await getNodeLayer(page, "Valid Output");
+            const stepLayer = await getNodeLayer(page, "Self Cycle Step");
+            const inputLayer = await getNodeLayer(page, "Valid Input");
+
+            expect(outputLayer).toBe("0");
+            expect(stepLayer).toBe("1");
+            expect(inputLayer).toBe("2");
+        });
+
+        test("2. Isolated Cycle: 3-node cycle (Floating)", async ({ page }) => {
+            await importCSV(page, "nodes_cycle.csv", "edges_cycle.csv");
+
+            // Verify nodes are visible
+            await expect(getNode(page, "Node A")).toBeVisible();
+            await expect(getNode(page, "Node B")).toBeVisible();
+            await expect(getNode(page, "Node C")).toBeVisible();
+
+            // Get positions
+            const nodeA = await getNodePosition(page, "Node A");
+            const nodeB = await getNodePosition(page, "Node B");
+            const nodeC = await getNodePosition(page, "Node C");
+
+            // Verify all are at the same layer (Layer 1 default for floating steps)
+            // because there are no sinks to anchor them.
+            expect(nodeA.x).toBe(nodeB.x);
+            expect(nodeB.x).toBe(nodeC.x);
+
+            // Verify layer assignments
+            const nodeALayer = await getNodeLayer(page, "Node A");
+            const nodeBLayer = await getNodeLayer(page, "Node B");
+            const nodeCLayer = await getNodeLayer(page, "Node C");
+
+            expect(nodeALayer).toBe("1");
+            expect(nodeBLayer).toBe("1");
+            expect(nodeCLayer).toBe("1");
+        });
+    });
 });
