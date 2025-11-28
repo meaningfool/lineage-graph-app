@@ -55,7 +55,7 @@ export function CustomNode({ data }: { data: NodeData }) {
 
             <Handle
                 type="target"
-                position={Position.Left}
+                position={Position.Right}
                 className="h-1.5 w-1.5 opacity-0"
             />
             <div className="flex flex-col gap-0.5">
@@ -77,7 +77,7 @@ export function CustomNode({ data }: { data: NodeData }) {
             </div>
             <Handle
                 type="source"
-                position={Position.Right}
+                position={Position.Left}
                 className="h-1.5 w-1.5 opacity-0"
             />
         </div>
