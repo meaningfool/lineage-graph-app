@@ -1,4 +1,4 @@
-import { Position, getSmoothStepPath } from "reactflow";
+import { Position, getBezierPath } from "reactflow";
 
 export interface EdgePathParams {
     sourceX: number;
@@ -77,7 +77,7 @@ export function calculateEdgePath({
         labelX = (sourceX + targetX) / 2;
         labelY = sourceY - offset * 0.75;
     } else {
-        [edgePath, labelX, labelY] = getSmoothStepPath({
+        [edgePath, labelX, labelY] = getBezierPath({
             sourceX,
             sourceY,
             sourcePosition,
