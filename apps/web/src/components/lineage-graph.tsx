@@ -24,8 +24,13 @@ interface LineageGraphProps {
 	edges: Edge[];
 }
 
+import { ErrorToggle } from "./ui/error-toggle";
+
+// ... existing imports
+
 export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 	const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(null);
+	const [isErrorPanelOpen, setIsErrorPanelOpen] = React.useState(false);
 
 	// Memoize nodes conversion to prevent unnecessary re-renders
 	const customNodes = useMemo(
@@ -36,6 +41,18 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 			})),
 		[nodes],
 	);
+
+	// Calculate total errors
+	const totalErrors = useMemo(() => {
+		let count = 0;
+		nodes.forEach(n => {
+			if (n.data?.validationErrors) count += n.data.validationErrors.length;
+		});
+		edges.forEach(e => {
+			if (e.data?.validationErrors) count += e.data.validationErrors.length;
+		});
+		return count;
+	}, [nodes, edges]);
 
 	// Memoize edges conversion to prevent unnecessary re-renders
 	const customEdges = useMemo(
@@ -94,6 +111,10 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 
 	return (
 		<div className="w-full relative" style={{ height: "100vh", minHeight: "600px" }}>
+			<ErrorToggle
+				errorCount={totalErrors}
+				onClick={() => setIsErrorPanelOpen(true)}
+			/>
 			{selectedNode && (
 				<NodeDetailsPanel
 					node={selectedNode}

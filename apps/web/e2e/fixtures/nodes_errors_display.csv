@@ -1,0 +1,6 @@
+id,label,type,description
+node1,Node 1,INPUT,Valid node
+node2,Node 2,,Missing type error
+node3,Node 3,STEP,Valid node
+node4,Node 4,OUTPUT,Valid node
+node5,Node 5,INVALID_TYPE,Invalid type error
