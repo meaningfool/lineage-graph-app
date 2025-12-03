@@ -25,6 +25,7 @@ interface LineageGraphProps {
 }
 
 import { ErrorToggle } from "./ui/error-toggle";
+import { ErrorListPanel } from "./ui/error-list-panel";
 
 // ... existing imports
 
@@ -115,6 +116,9 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 				errorCount={totalErrors}
 				onClick={() => setIsErrorPanelOpen(true)}
 			/>
+			{isErrorPanelOpen && (
+				<ErrorListPanel onClose={() => setIsErrorPanelOpen(false)} />
+			)}
 			{selectedNode && (
 				<NodeDetailsPanel
 					node={selectedNode}

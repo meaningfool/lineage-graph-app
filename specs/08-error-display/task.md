@@ -10,11 +10,11 @@
 - [x] Verify Slice 1 with E2E tests <!-- id: 4 -->
 
 ### Slice 2: Error Panel Shell
-- [ ] Add "Opening the Panel" and "Closing the Panel" scenarios to E2E test <!-- id: 5 -->
-- [ ] Create `ErrorListPanel` component (shell) <!-- id: 6 -->
-- [ ] Add `isErrorPanelOpen` state to `LineageGraph` <!-- id: 7 -->
-- [ ] Wire up Toggle and Close buttons <!-- id: 8 -->
-- [ ] Verify Slice 2 with E2E tests <!-- id: 9 -->
+- [x] Add "Opening the Panel" and "Closing the Panel" scenarios to E2E test <!-- id: 5 -->
+- [x] Create `ErrorListPanel` component (shell) <!-- id: 6 -->
+- [x] Add `isErrorPanelOpen` state to `LineageGraph` <!-- id: 7 -->
+- [x] Wire up Toggle and Close buttons <!-- id: 8 -->
+- [x] Verify Slice 2 with E2E tests <!-- id: 9 -->
 
 ### Slice 3: Error List Content
 - [ ] Add "List Accuracy" and "Multiple Errors" scenarios to E2E test <!-- id: 10 -->
