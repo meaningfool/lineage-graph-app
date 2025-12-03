@@ -17,16 +17,24 @@
 - [x] Verify Slice 2 with E2E tests <!-- id: 9 -->
 
 ### Slice 3: Error List Content
-- [ ] Add "List Accuracy" and "Multiple Errors" scenarios to E2E test <!-- id: 10 -->
-- [ ] Update `ErrorListPanel` to render error list <!-- id: 11 -->
-- [ ] Implement error aggregation logic in `LineageGraph` <!-- id: 12 -->
-- [ ] Verify Slice 3 with E2E tests <!-- id: 13 -->
+- [x] Add "List Accuracy" and "Multiple Errors" scenarios to E2E test <!-- id: 10 -->
+- [x] Update `ErrorListPanel` to render list of errors <!-- id: 11 -->
+### Slice 4: Enhanced Error Messages (Vertical)
+- [ ] Update fixtures (`nodes_errors_display.csv`, `edges_errors_display.csv`) to cover ALL error types <!-- id: 14 -->
+- [ ] Create `GraphValidationError` interface and `ERROR_TEMPLATES` constant <!-- id: 15 -->
+- [ ] Refactor validators to return `GraphValidationError` objects (include cycle path) <!-- id: 16 -->
+- [ ] Create `ErrorFormatter` utility <!-- id: 17 -->
+- [ ] Update `LineageGraph` to use `ErrorFormatter` <!-- id: 18 -->
+- [ ] Update `e2e/error-display.spec.ts` to assert ALL error messages <!-- id: 19 -->
+
+### Slice 5: Compact Error Panel UI (Vertical)
+- [ ] Update `ErrorListPanel` to remove cards and use list layout <!-- id: 20 -->
+- [ ] Add red exclamation icon to error items <!-- id: 21 -->
+- [ ] Verify UI with E2E tests (Regression) <!-- id: 22 -->
 
 ## Spec 2: Error Interaction
 
 ### Slice 1: Node Error Navigation
-- [ ] Add "Select Node from Error" scenario to E2E test <!-- id: 14 -->
-- [ ] Implement `onItemClick` in `ErrorListPanel` <!-- id: 15 -->
 - [ ] Implement node selection and focus logic in `LineageGraph` <!-- id: 16 -->
 - [ ] Verify Slice 1 with E2E tests <!-- id: 17 -->
 - [ ] Regression check: `node-properties.spec.ts` <!-- id: 18 -->

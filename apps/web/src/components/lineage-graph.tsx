@@ -25,13 +25,48 @@ interface LineageGraphProps {
 }
 
 import { ErrorToggle } from "./ui/error-toggle";
-import { ErrorListPanel } from "./ui/error-list-panel";
+import { ErrorListPanel, type GraphError } from "./ui/error-list-panel";
 
 // ... existing imports
 
 export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 	const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(null);
 	const [isErrorPanelOpen, setIsErrorPanelOpen] = React.useState(false);
+
+	// Calculate error list
+	const errorList = useMemo<GraphError[]>(() => {
+		const errors: GraphError[] = [];
+
+		nodes.forEach(n => {
+			if (n.data?.validationErrors) {
+				n.data.validationErrors.forEach((msg: string) => {
+					errors.push({
+						id: n.id,
+						type: "node",
+						message: msg,
+						label: n.data.label
+					});
+				});
+			}
+		});
+
+		edges.forEach(e => {
+			if (e.data?.validationErrors) {
+				e.data.validationErrors.forEach((msg: string) => {
+					errors.push({
+						id: e.id,
+						type: "edge",
+						message: msg,
+						label: e.data?.label || e.id // Fallback to ID if no label
+					});
+				});
+			}
+		});
+
+		return errors;
+	}, [nodes, edges]);
+
+	const totalErrors = errorList.length;
 
 	// Memoize nodes conversion to prevent unnecessary re-renders
 	const customNodes = useMemo(
@@ -42,18 +77,6 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 			})),
 		[nodes],
 	);
-
-	// Calculate total errors
-	const totalErrors = useMemo(() => {
-		let count = 0;
-		nodes.forEach(n => {
-			if (n.data?.validationErrors) count += n.data.validationErrors.length;
-		});
-		edges.forEach(e => {
-			if (e.data?.validationErrors) count += e.data.validationErrors.length;
-		});
-		return count;
-	}, [nodes, edges]);
 
 	// Memoize edges conversion to prevent unnecessary re-renders
 	const customEdges = useMemo(
@@ -117,7 +140,10 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 				onClick={() => setIsErrorPanelOpen(true)}
 			/>
 			{isErrorPanelOpen && (
-				<ErrorListPanel onClose={() => setIsErrorPanelOpen(false)} />
+				<ErrorListPanel
+					errors={errorList}
+					onClose={() => setIsErrorPanelOpen(false)}
+				/>
 			)}
 			{selectedNode && (
 				<NodeDetailsPanel

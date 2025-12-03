@@ -144,4 +144,80 @@ test.describe("Error Display Feature", () => {
         // 3. Assertion: Error Panel is NOT visible
         await expect(panel).not.toBeVisible();
     });
+
+    test("Scenario 5: List Accuracy [NEW]", async ({ page }) => {
+        // 1. Setup: Import and Open Panel
+        await page.getByRole("button", { name: "Import CSV" }).click();
+        const nodesPath = path.join(__dirname, "fixtures", "nodes_errors_display.csv");
+        await page.getByTestId("dropzone-nodes").locator('input[type="file"]').setInputFiles(nodesPath);
+        const edgesPath = path.join(__dirname, "fixtures", "edges_errors_display.csv");
+        await page.getByTestId("dropzone-edges").locator('input[type="file"]').setInputFiles(edgesPath);
+        await page.getByRole("button", { name: "Next", exact: true }).click();
+
+        // Map columns
+        await page.getByTestId("mapping-select-id-trigger").click();
+        await page.getByRole("option", { name: "id", exact: true }).click();
+        await page.getByTestId("mapping-select-title-trigger").click();
+        await page.getByRole("option", { name: "label", exact: true }).click();
+        await page.getByTestId("mapping-select-type-trigger").click();
+        await page.getByRole("option", { name: "type", exact: true }).click();
+        await page.getByTestId("mapping-select-source-trigger").click();
+        await page.getByRole("option", { name: "source", exact: true }).click();
+        await page.getByTestId("mapping-select-target-trigger").click();
+        await page.getByRole("option", { name: "target", exact: true }).click();
+
+        await page.getByRole("button", { name: "Next", exact: true }).click();
+        await page.getByTestId("dialog-close-button").click();
+
+        await page.getByTestId("error-toggle").click();
+        const panel = page.getByTestId("error-list-panel");
+
+        // 2. Assertion: Check for specific error content
+        // Note: Nodes with invalid types (node2, node5) are DROPPED by the importer, so they don't appear in the graph.
+        // The errors we see are structural (cycles, connectivity) on the remaining nodes/edges.
+
+        // node1 has incoming edge (from cycle), which is invalid for INPUT
+        await expect(panel).toContainText("Node 1");
+
+        // edge3 (node3->node3) has generated ID "e-node3-node3"
+        await expect(panel).toContainText("e-node3-node3");
+
+        // edge5 (node4->node1) has generated ID "e-node4-node1"
+        await expect(panel).toContainText("e-node4-node1");
+    });
+
+    test("Scenario 6: Multiple Errors [NEW]", async ({ page }) => {
+        // This scenario is implicitly covered by Scenario 5 since we have multiple errors.
+        // But let's verify we have a list of items.
+
+        // 1. Setup: Open Panel
+        await page.getByRole("button", { name: "Import CSV" }).click();
+        const nodesPath = path.join(__dirname, "fixtures", "nodes_errors_display.csv");
+        await page.getByTestId("dropzone-nodes").locator('input[type="file"]').setInputFiles(nodesPath);
+        const edgesPath = path.join(__dirname, "fixtures", "edges_errors_display.csv");
+        await page.getByTestId("dropzone-edges").locator('input[type="file"]').setInputFiles(edgesPath);
+        await page.getByRole("button", { name: "Next", exact: true }).click();
+
+        // Map columns
+        await page.getByTestId("mapping-select-id-trigger").click();
+        await page.getByRole("option", { name: "id", exact: true }).click();
+        await page.getByTestId("mapping-select-title-trigger").click();
+        await page.getByRole("option", { name: "label", exact: true }).click();
+        await page.getByTestId("mapping-select-type-trigger").click();
+        await page.getByRole("option", { name: "type", exact: true }).click();
+        await page.getByTestId("mapping-select-source-trigger").click();
+        await page.getByRole("option", { name: "source", exact: true }).click();
+        await page.getByTestId("mapping-select-target-trigger").click();
+        await page.getByRole("option", { name: "target", exact: true }).click();
+
+        await page.getByRole("button", { name: "Next", exact: true }).click();
+        await page.getByTestId("dialog-close-button").click();
+
+        await page.getByTestId("error-toggle").click();
+
+        // 2. Assertion: Check number of error items
+        // We expect 3 items (as per previous slice findings)
+        const items = page.getByTestId("error-item");
+        await expect(items).toHaveCount(3);
+    });
 });
