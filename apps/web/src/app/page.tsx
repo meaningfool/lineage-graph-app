@@ -6,6 +6,7 @@ import nodeData from "@/data/target-lineage.json";
 import { getLayoutedElements } from "@/utils/layout";
 import Header from "@/components/header"; // We might need to move Header here or use a Context
 
+
 export default function Home() {
 	// Load node data from file
 	// TODO: Remove this once we have a proper data loading mechanism
@@ -43,6 +44,9 @@ export default function Home() {
 	return (
 		<div className="flex flex-col h-full w-full">
 			<Header onImport={handleImport} />
+			<div className="p-2">
+
+			</div>
 			<LineageGraph nodes={layouted.nodes} edges={layouted.edges} />
 		</div>
 	);

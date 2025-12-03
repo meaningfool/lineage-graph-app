@@ -44,6 +44,12 @@ specs/
 6.  **Commit**:
     *   Always commit the `specs/` files along with the code changes. This preserves the "Why" and "How" alongside the "What".
 
+7.  **Feature Completion Protocol**:
+    *   **Merge Strategy**: Use "Squash and Merge" (or equivalent) to create a single commit on `main` corresponding to the feature.
+    *   **Branch Lifecycle**: Keep the feature branch alive (do not delete it) after merging. This allows for future reference or hotfixes.
+    *   **Commit Message**: The commit message on `main` (or the merge commit) **MUST** include the insights from `learnings.md`. This ensures that high-level lessons are permanently logged in the project history.
+        *   **Format**: Add "LEARNINGS:" followed by a line break and the list of insights as bullet points.
+
 ## Naming Conventions
 *   **Spec Folders (In Progress)**: `NN-[feature-slug]` where `NN` is the next available number (e.g., `01-cleanup-codebase`, `02-csv-import`)
 *   **Spec Folders (Planned)**: `[feature-slug]` (no number prefix until work begins)

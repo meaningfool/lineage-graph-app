@@ -50,6 +50,7 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
         type?: string;
         source?: string;
         target?: string;
+        properties?: string[];
     }>({});
 
     // Stores error messages or warnings to display to the user.
@@ -72,7 +73,7 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
     }, []);
 
     // Updates a single field in the mapping state.
-    const updateMapping = useCallback((field: keyof typeof mapping, value: string | undefined) => {
+    const updateMapping = useCallback((field: keyof typeof mapping, value: string | string[] | undefined) => {
         setMapping((prev) => ({ ...prev, [field]: value }));
     }, []);
 

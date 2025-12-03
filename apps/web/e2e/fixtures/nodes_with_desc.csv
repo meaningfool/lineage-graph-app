@@ -1,0 +1,3 @@
+id,title,type,description
+user_table,User Table,INPUT,Core user table
+orders_table,Orders Table,INPUT,All orders

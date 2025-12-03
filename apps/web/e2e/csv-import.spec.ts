@@ -14,14 +14,24 @@ test.describe("CSV Import", () => {
         await expect(page.getByText("Column Mapping")).toBeVisible();
 
         // Select Node columns
-        await page.getByTestId("mapping-select-id").selectOption({ label: "id" });
-        await page.getByTestId("mapping-select-title").selectOption({ label: "title" });
-        await page.getByTestId("mapping-select-type").selectOption({ label: "type" });
+        // ID
+        await page.getByTestId("mapping-select-id-trigger").click();
+        await page.getByRole("option", { name: "id", exact: true }).click();
+        // Title
+        await page.getByTestId("mapping-select-title-trigger").click();
+        await page.getByRole("option", { name: "title", exact: true }).click();
+        // Type
+        await page.getByTestId("mapping-select-type-trigger").click();
+        await page.getByRole("option", { name: "type", exact: true }).click();
 
         // Select Edge columns if edges are present
         if (hasEdges) {
-            await page.getByTestId("mapping-select-source").selectOption({ label: "source" });
-            await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
+            // Source
+            await page.getByTestId("mapping-select-source-trigger").click();
+            await page.getByRole("option", { name: "source", exact: true }).click();
+            // Target
+            await page.getByTestId("mapping-select-target-trigger").click();
+            await page.getByRole("option", { name: "target", exact: true }).click();
         }
 
         // Click Next
@@ -45,11 +55,21 @@ test.describe("CSV Import", () => {
             await page.getByRole("button", { name: "Next", exact: true }).click();
 
             // 4. Map columns (node_id -> id, name -> title, node_type -> type)
-            await page.getByTestId("mapping-select-id").selectOption({ label: "node_id" });
-            await page.getByTestId("mapping-select-title").selectOption({ label: "name" });
-            await page.getByTestId("mapping-select-type").selectOption({ label: "node_type" });
-            await page.getByTestId("mapping-select-source").selectOption({ label: "source" });
-            await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
+            // 4. Map columns (node_id -> id, name -> title, node_type -> type)
+            await page.getByTestId("mapping-select-id-trigger").click();
+            await page.getByRole("option", { name: "node_id" }).click();
+
+            await page.getByTestId("mapping-select-title-trigger").click();
+            await page.getByRole("option", { name: "name" }).click();
+
+            await page.getByTestId("mapping-select-type-trigger").click();
+            await page.getByRole("option", { name: "node_type" }).click();
+
+            await page.getByTestId("mapping-select-source-trigger").click();
+            await page.getByRole("option", { name: "source" }).click();
+
+            await page.getByTestId("mapping-select-target-trigger").click();
+            await page.getByRole("option", { name: "target" }).click();
 
             // 5. Click Next to import
             await page.getByRole("button", { name: "Next", exact: true }).click();
@@ -269,17 +289,23 @@ test.describe("CSV Import", () => {
             const nextButton = page.getByRole("button", { name: "Next", exact: true });
             await expect(nextButton).toBeDisabled();
 
-            await page.getByTestId("mapping-select-id").selectOption({ label: "node_id" });
+            await page.getByTestId("mapping-select-id-trigger").click();
+            await page.getByRole("option", { name: "node_id" }).click();
             await expect(nextButton).toBeDisabled();
 
-            await page.getByTestId("mapping-select-title").selectOption({ label: "name" });
+            await page.getByTestId("mapping-select-title-trigger").click();
+            await page.getByRole("option", { name: "name" }).click();
             await expect(nextButton).toBeDisabled();
 
-            await page.getByTestId("mapping-select-type").selectOption({ label: "node_type" });
+            await page.getByTestId("mapping-select-type-trigger").click();
+            await page.getByRole("option", { name: "node_type" }).click();
             await expect(nextButton).toBeDisabled();
 
-            await page.getByTestId("mapping-select-source").selectOption({ label: "source" });
-            await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
+            await page.getByTestId("mapping-select-source-trigger").click();
+            await page.getByRole("option", { name: "source" }).click();
+
+            await page.getByTestId("mapping-select-target-trigger").click();
+            await page.getByRole("option", { name: "target" }).click();
             await expect(nextButton).toBeEnabled();
         });
 
@@ -292,24 +318,33 @@ test.describe("CSV Import", () => {
             await page.getByRole("button", { name: "Next", exact: true }).click();
 
             // Map Nodes
-            await page.getByTestId("mapping-select-id").selectOption({ label: "id" });
-            await page.getByTestId("mapping-select-title").selectOption({ label: "title" });
-            await page.getByTestId("mapping-select-type").selectOption({ label: "type" });
+            await page.getByTestId("mapping-select-id-trigger").click();
+            await page.getByRole("option", { name: "id", exact: true }).click();
+
+            await page.getByTestId("mapping-select-title-trigger").click();
+            await page.getByRole("option", { name: "title", exact: true }).click();
+
+            await page.getByTestId("mapping-select-type-trigger").click();
+            await page.getByRole("option", { name: "type", exact: true }).click();
 
             // Map Edges
-            await page.getByTestId("mapping-select-source").selectOption({ label: "source" });
+            await page.getByTestId("mapping-select-source-trigger").click();
+            await page.getByRole("option", { name: "source", exact: true }).click();
 
             // Verify 'source' option in target select is disabled (Smart Filtering)
-            const targetSelect = page.getByTestId("mapping-select-target");
-            const sourceOption = targetSelect.locator('option[value="source"]');
+            await page.getByTestId("mapping-select-target-trigger").click();
+            const sourceOption = page.getByRole("option", { name: "source", exact: true });
             await expect(sourceOption).toBeDisabled();
+            // Close the dropdown to proceed (clicking trigger again closes it)
+            await page.getByTestId("mapping-select-target-trigger").click();
 
             // Verify Next button disabled
             const nextButton = page.getByRole("button", { name: "Next", exact: true });
             await expect(nextButton).toBeDisabled();
 
             // Fix mapping
-            await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
+            await page.getByTestId("mapping-select-target-trigger").click();
+            await page.getByRole("option", { name: "target", exact: true }).click();
             await expect(nextButton).toBeEnabled();
         });
     });

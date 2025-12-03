@@ -29,9 +29,11 @@ export function mapToReactFlow(
         data: {
             label: n.title,
             type: n.type, // Add type for layout algorithm
+            properties: n.properties,
             validationErrors: validation.nodeErrors.get(n.id) || [],
         },
         position: { x: 0, y: 0 }, // Default position (layout will fix this later)
+        className: "cursor-pointer", // Ensure pointer cursor on hover
     }));
 
     const reactFlowEdges: Edge[] = edges.map((e) => {

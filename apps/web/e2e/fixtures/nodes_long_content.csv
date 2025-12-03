@@ -1,0 +1,5 @@
+id,title,type,description,prop1,prop2,prop3,prop4,prop5,prop6,prop7,prop8,prop9,prop10,prop11,prop12,prop13,prop14,prop15,prop16,prop17,prop18,prop19,prop20
+node_a,Node A,INPUT,Short description,,,,,,,,,,,,,,,,,,,,
+node_b,Node B,STEP,This is a very long description that should wrap around multiple lines in the side panel.,,,,,,,,,,,,,,,,,,,,
+node_c,Node C,OUTPUT,Another short description,,,,,,,,,,,,,,,,,,,,
+node_d,Node D,STEP,Node with many properties,Value 1 is somewhat long to take space,Value 2 is also taking some space here,Value 3,Value 4,Value 5,Value 6,Value 7,Value 8,Value 9,Value 10,Value 11,Value 12,Value 13,Value 14,Value 15,Value 16,Value 17,Value 18,Value 19,Value 20

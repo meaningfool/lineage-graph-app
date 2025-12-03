@@ -23,14 +23,21 @@ export interface NodeData {
  * 
  * It does NOT contain any business logic. It simply renders the data passed to it.
  */
-export function CustomNode({ data }: { data: NodeData }) {
+export function CustomNode({ id, data, selected }: { id: string; data: NodeData; selected?: boolean }) {
     const [isHovered, setIsHovered] = useState(false);
     const hasErrors = data.validationErrors && data.validationErrors.length > 0;
-    const borderColor = hasErrors ? "border-red-500" : "border-gray-200";
+
+    // Base border color (always present)
+    let borderColor = "border-gray-200";
+    if (hasErrors) borderColor = "border-red-500";
+
+    // Selection visual cue (stacked with border using ring)
+    const selectionClasses = selected ? "ring-4 ring-blue-400/30" : "";
 
     return (
         <div
-            className={`min-w-[150px] max-w-[200px] rounded-sm border ${borderColor} bg-white px-3 py-2 shadow-sm relative group`}
+            data-testid="custom-node-content"
+            className={`min-w-[150px] max-w-[200px] rounded-sm border ${borderColor} ${selectionClasses} bg-white px-3 py-2 shadow-sm relative group cursor-pointer transition-all`}
             style={{ borderColor: hasErrors ? "#ef4444" : undefined }}
             data-layer={data.layer}
             onMouseEnter={() => setIsHovered(true)}
@@ -59,21 +66,12 @@ export function CustomNode({ data }: { data: NodeData }) {
                 className="h-1.5 w-1.5 opacity-0"
             />
             <div className="flex flex-col gap-0.5">
-                <div className="border-gray-100 border-b pb-0.5 font-medium text-gray-900 text-xs">
+                <div className="font-semibold text-gray-900 text-base">
                     {data.label}
                 </div>
-                {data.properties && (
-                    <div className="space-y-0.5">
-                        {Object.entries(data.properties).map(([key, value]) => (
-                            <div key={key} className="text-xs">
-                                <span className="font-medium text-gray-600 text-xs capitalize">
-                                    {key.replace(/([A-Z])/g, " $1").trim()}:
-                                </span>
-                                <span className="ml-1 text-gray-500 text-xs">{value}</span>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                <div className="text-gray-500" style={{ fontSize: '12px' }}>
+                    # {id}
+                </div>
             </div>
             <Handle
                 type="source"

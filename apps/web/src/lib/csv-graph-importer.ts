@@ -9,6 +9,7 @@ export interface GraphNode {
     id: string;
     title: string;
     type: "INPUT" | "STEP" | "OUTPUT";
+    properties?: Record<string, any>;
 }
 
 // Represents an Edge (connection) between two nodes.
@@ -23,6 +24,7 @@ export interface ValidatedNodeMapping {
     id: string;
     title: string;
     type: string;
+    properties?: string[];
 }
 
 export interface ValidatedEdgeMapping {
@@ -53,16 +55,16 @@ export const isGraphEdge = (e: GraphEdge | null): e is GraphEdge => e !== null;
 // Validates that the user has mapped all required fields.
 // Returns null if anything is missing.
 export const parseMapping = (
-    raw: { id?: string; title?: string; type?: string; source?: string; target?: string }
+    raw: { id?: string; title?: string; type?: string; source?: string; target?: string; properties?: string[] }
 ): { nodes: ValidatedNodeMapping; edges: ValidatedEdgeMapping } | null => {
-    const { id, title, type, source, target } = raw;
+    const { id, title, type, source, target, properties } = raw;
 
     if (!id || !title || !type || !source || !target) {
         return null;
     }
 
     return {
-        nodes: { id, title, type },
+        nodes: { id, title, type, properties },
         edges: { source, target }
     };
 };
@@ -143,13 +145,25 @@ export const buildGraphFromCsv = (
                 return null;
             }
 
+            // Extract Properties (Explicit Import)
+            // Only import properties that are explicitly selected in the mapping
+            const properties: Record<string, any> = {};
+            const selectedProperties = nodeMapping.properties || [];
+
+            selectedProperties.forEach((key) => {
+                if (row[key] !== undefined && row[key] !== "") {
+                    properties[key] = row[key];
+                }
+            });
+
             return {
                 id: idValue,
                 title: titleValue,
                 type: normalizedType as "INPUT" | "STEP" | "OUTPUT",
-            };
+                properties: Object.keys(properties).length > 0 ? properties : undefined,
+            } as GraphNode;
         })
-        .filter(isGraphNode); // Remove nulls
+        .filter((n): n is GraphNode => n !== null); // Explicit type guard inline to be safe
 
     if (validationWarnings.length > 0 && droppedNodesCount > 0) {
         validationWarnings.unshift(`${droppedNodesCount} node${droppedNodesCount > 1 ? "s" : ""} dropped`);

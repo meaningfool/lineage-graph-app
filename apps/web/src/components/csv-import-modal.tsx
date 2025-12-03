@@ -62,13 +62,7 @@ export function CSVImportModal({ onImport, onClose }: CSVImportModalProps) {
                 </DialogHeader>
 
                 {/* Dynamic Header based on the current step */}
-                <DialogHeader>
-                    <DialogTitle>
-                        {currentStep === 'upload' && 'Upload CSV'}
-                        {currentStep === 'mapping' && 'Column Mapping'}
-                        {currentStep === 'results' && 'Import Results'}
-                    </DialogTitle>
-                </DialogHeader>
+
 
                 {/* --- STEP 1: UPLOAD --- */}
                 {/* We only show this block if currentStep is 'upload' */}

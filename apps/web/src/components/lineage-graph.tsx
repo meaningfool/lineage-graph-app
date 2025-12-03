@@ -8,6 +8,7 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import { CustomNode } from "./graph/custom-node";
 import { CustomEdge } from "./graph/custom-edge";
+import { NodeDetailsPanel } from "./ui/node-details-panel";
 
 // Define nodeTypes outside component to prevent recreation on every render
 const nodeTypes = {
@@ -24,6 +25,8 @@ interface LineageGraphProps {
 }
 
 export function LineageGraph({ nodes, edges }: LineageGraphProps) {
+	const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(null);
+
 	// Memoize nodes conversion to prevent unnecessary re-renders
 	const customNodes = useMemo(
 		() =>
@@ -65,8 +68,21 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 		[edges],
 	);
 
-	console.log("LineageGraph nodes:", customNodes);
-	console.log("LineageGraph edges:", customEdges);
+	const onNodeClick = React.useCallback((event: React.MouseEvent, node: Node) => {
+		setSelectedNodeId(node.id);
+	}, []);
+
+	const onPaneClick = React.useCallback(() => {
+		setSelectedNodeId(null);
+	}, []);
+
+	const selectedNode = useMemo(() =>
+		customNodes.find(n => n.id === selectedNodeId),
+		[customNodes, selectedNodeId]
+	);
+
+	// console.log("LineageGraph nodes:", customNodes);
+	// console.log("LineageGraph edges:", customEdges);
 
 	if (!customNodes.length) {
 		return (
@@ -77,13 +93,21 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 	}
 
 	return (
-		<div className="w-full" style={{ height: "100vh", minHeight: "600px" }}>
+		<div className="w-full relative" style={{ height: "100vh", minHeight: "600px" }}>
+			{selectedNode && (
+				<NodeDetailsPanel
+					node={selectedNode}
+					onClose={() => setSelectedNodeId(null)}
+				/>
+			)}
 			<ReactFlowProvider>
 				<ReactFlow
 					nodes={customNodes}
 					edges={customEdges}
 					nodeTypes={nodeTypes}
 					edgeTypes={edgeTypes}
+					onNodeClick={onNodeClick}
+					onPaneClick={onPaneClick}
 					fitView
 					fitViewOptions={{ padding: 0.2 }}
 					minZoom={0.1}

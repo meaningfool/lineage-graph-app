@@ -1,12 +1,16 @@
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { MultiSelect, type MultiSelectOption } from "@/components/ui/multi-select";
 
 // --- PROPS ---
-// This component needs to know:
-// 1. What columns are available in the CSV files?
-// 2. What is the current mapping?
-// 3. Functions to call when the user changes something or clicks buttons.
 interface StepMappingProps {
     columns: { nodes: string[]; edges: string[] };
     mapping: {
@@ -15,14 +19,13 @@ interface StepMappingProps {
         type?: string;
         source?: string;
         target?: string;
+        properties?: string[];
     };
-    // The parent (Wizard) handles the actual state update.
-    // We just tell it "Hey, the user changed the 'id' field to 'User ID'".
-    onChange: (field: "id" | "title" | "type" | "source" | "target", value: string | undefined) => void;
+    onChange: (field: "id" | "title" | "type" | "source" | "target" | "properties", value: string | string[] | undefined) => void;
     onNext: () => void;
     onBack: () => void;
-    isValid: boolean; // Can we proceed? (Are all fields mapped?)
-    hasEdgesFile: boolean; // Did the user upload an edges file?
+    isValid: boolean;
+    hasEdgesFile: boolean;
 }
 
 export function StepMapping({
@@ -34,131 +37,151 @@ export function StepMapping({
     isValid,
     hasEdgesFile,
 }: StepMappingProps) {
-    return (
-        <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-                Map your CSV columns to the required fields.
-            </p>
+    const propertyOptions: MultiSelectOption[] = columns.nodes.map((col) => ({
+        label: col,
+        value: col,
+    }));
 
+    return (
+        <div className="space-y-6">
             {/* --- NODES MAPPING SECTION --- */}
-            <div className="space-y-4 border rounded-md p-4">
-                <h4 className="font-medium text-sm">Nodes</h4>
+            <div className="space-y-4">
+                <h4 className="text-lg font-semibold">Nodes</h4>
                 <div className="grid gap-4">
 
                     {/* ID Field */}
                     <div className="grid gap-2">
                         <Label htmlFor="mapping-id">Node ID</Label>
-                        <select
-                            id="mapping-id"
-                            data-testid="mapping-select-id"
-                            // Standard styling for a select input
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        <Select
                             value={mapping.id || ""}
-                            onChange={(e) => onChange("id", e.target.value || undefined)}
+                            onValueChange={(value) => onChange("id", value)}
                         >
-                            <option value="">Select column...</option>
-                            {/* We map over the available columns to create options */}
-                            {columns.nodes.map((col) => (
-                                <option key={col} value={col}>
-                                    {col}
-                                </option>
-                            ))}
-                        </select>
+                            <SelectTrigger id="mapping-id" data-testid="mapping-select-id-trigger" className="cursor-pointer">
+                                <SelectValue placeholder="Select column..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {columns.nodes.map((col) => (
+                                    <SelectItem key={col} value={col}>
+                                        {col}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     {/* Title Field */}
                     <div className="grid gap-2">
                         <Label htmlFor="mapping-title">Title</Label>
-                        <select
-                            id="mapping-title"
-                            data-testid="mapping-select-title"
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        <Select
                             value={mapping.title || ""}
-                            onChange={(e) => onChange("title", e.target.value || undefined)}
+                            onValueChange={(value) => onChange("title", value)}
                         >
-                            <option value="">Select column...</option>
-                            {columns.nodes.map((col) => (
-                                <option key={col} value={col}>
-                                    {col}
-                                </option>
-                            ))}
-                        </select>
+                            <SelectTrigger id="mapping-title" data-testid="mapping-select-title-trigger" className="cursor-pointer">
+                                <SelectValue placeholder="Select column..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {columns.nodes.map((col) => (
+                                    <SelectItem key={col} value={col}>
+                                        {col}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     {/* Type Field */}
                     <div className="grid gap-2">
                         <Label htmlFor="mapping-type">Type</Label>
-                        <select
-                            id="mapping-type"
-                            data-testid="mapping-select-type"
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        <Select
                             value={mapping.type || ""}
-                            onChange={(e) => onChange("type", e.target.value || undefined)}
+                            onValueChange={(value) => onChange("type", value)}
                         >
-                            <option value="">Select column...</option>
-                            {columns.nodes.map((col) => (
-                                <option key={col} value={col}>
-                                    {col}
-                                </option>
-                            ))}
-                        </select>
+                            <SelectTrigger id="mapping-type" data-testid="mapping-select-type-trigger" className="cursor-pointer">
+                                <SelectValue placeholder="Select column..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {columns.nodes.map((col) => (
+                                    <SelectItem key={col} value={col}>
+                                        {col}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Properties Field */}
+                    <div className="grid gap-2">
+                        <Label>Properties (Optional)</Label>
+                        <MultiSelect
+                            id="mapping-properties"
+                            data-testid="mapping-select-properties-trigger"
+                            options={propertyOptions}
+                            onValueChange={(values) => onChange("properties", values)}
+                            defaultValue={mapping.properties || []}
+                            placeholder="Select properties to import..."
+                            variant="default"
+                            maxCount={3}
+                            modalPopover={true}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            Select columns to import as node properties.
+                        </p>
                     </div>
                 </div>
             </div>
 
             {/* --- EDGES MAPPING SECTION --- */}
-            {/* Only show this if the user actually uploaded an edges file */}
             {hasEdgesFile && (
-                <div className="space-y-4 border rounded-md p-4">
-                    <h4 className="font-medium text-sm">Edges</h4>
+                <div className="space-y-4 pt-4 border-t">
+                    <h4 className="text-lg font-semibold">Edges</h4>
                     <div className="grid gap-4">
 
                         {/* Source Field */}
                         <div className="grid gap-2">
                             <Label htmlFor="mapping-source">Source Node ID</Label>
-                            <select
-                                id="mapping-source"
-                                data-testid="mapping-select-source"
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            <Select
                                 value={mapping.source || ""}
-                                onChange={(e) => onChange("source", e.target.value || undefined)}
+                                onValueChange={(value) => onChange("source", value)}
                             >
-                                <option value="">Select column...</option>
-                                {columns.edges.map((col) => (
-                                    <option
-                                        key={col}
-                                        value={col}
-                                        // Prevent selecting the same column for source and target?
-                                        // Actually, here we just disable it if it's already selected as target.
-                                        disabled={col === mapping.target}
-                                    >
-                                        {col}
-                                    </option>
-                                ))}
-                            </select>
+                                <SelectTrigger id="mapping-source" data-testid="mapping-select-source-trigger" className="cursor-pointer">
+                                    <SelectValue placeholder="Select column..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {columns.edges.map((col) => (
+                                        <SelectItem
+                                            key={col}
+                                            value={col}
+                                            disabled={col === mapping.target}
+                                        >
+                                            {col}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         {/* Target Field */}
                         <div className="grid gap-2">
                             <Label htmlFor="mapping-target">Target Node ID</Label>
-                            <select
-                                id="mapping-target"
-                                data-testid="mapping-select-target"
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            <Select
                                 value={mapping.target || ""}
-                                onChange={(e) => onChange("target", e.target.value || undefined)}
+                                onValueChange={(value) => onChange("target", value)}
                             >
-                                <option value="">Select column...</option>
-                                {columns.edges.map((col) => (
-                                    <option
-                                        key={col}
-                                        value={col}
-                                        disabled={col === mapping.source}
-                                    >
-                                        {col}
-                                    </option>
-                                ))}
-                            </select>
+                                <SelectTrigger id="mapping-target" data-testid="mapping-select-target-trigger" className="cursor-pointer">
+                                    <SelectValue placeholder="Select column..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {columns.edges.map((col) => (
+                                        <SelectItem
+                                            key={col}
+                                            value={col}
+                                            disabled={col === mapping.source}
+                                        >
+                                            {col}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                 </div>
@@ -172,7 +195,7 @@ export function StepMapping({
                 <Button
                     data-testid="mapping-next-button"
                     onClick={onNext}
-                    disabled={!isValid} // Disable "Next" until mapping is complete
+                    disabled={!isValid}
                 >
                     Next
                 </Button>

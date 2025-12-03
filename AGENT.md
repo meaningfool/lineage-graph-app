@@ -19,6 +19,15 @@ We use a strict **Spec-Driven Workflow** to manage features and context.
     *   **Automated Proof**: Prefer capturing screenshots *within* the E2E test (e.g., `page.screenshot()`) over manual browser sessions. This ensures reproducibility and provides a permanent artifact.
     *   **Robust Selectors**: ALWAYS use `data-testid` for selecting elements in tests. Do NOT rely on text content (e.g., button labels) or CSS classes, as these change frequently. We have configured Next.js to strip these attributes in production, so use them freely.
     *   **Strict E2E-First TDD**: If E2E tests fail due to environment or infrastructure issues (e.g., timeouts, connection refused, element not found due to crash), you **MUST** fix the environment first. You are **FORBIDDEN** from switching to Unit Tests or Implementation code until the E2E tests are running successfully and failing for the correct reason (Assertion Error). Never bypass E2E verification to "save time".
+    *   **Vertical Slicing**: Every slice or iteration MUST result in a user-visible change (UI). Even deep backend changes should be verified by their effect on the UI.
+    *   **Systematic E2E Testing**: For every slice/iteration, you MUST explicitly detail:
+        *   **New E2E Tests**: Specific scenarios, setup, actions, and assertions.
+        *   **Existing Tests Updates**: What needs to change in existing tests to prevent staleness.
+        *   **Stale Test Prevention**: Explicitly check and plan for existing tests to ensure the suite remains up-to-date.
+    *   **E2E Failure Protocol**:
+        *   **Stop & Inspect**: If a test fails on a selector, STOP immediately. Do NOT guess. Use the browser tool to inspect the DOM.
+        *   **Policy Check**: Cross-reference the failing selector against `AGENT.md` rules (must be `data-testid` or stable attribute).
+        *   **Manual Fallback**: If the test cannot be fixed in **one attempt** after inspection, ask the user to verify the feature manually to unblock the workflow.
 
 ## 🚀 How to Start
 When starting a new chat, the agent should:
@@ -31,3 +40,29 @@ When starting a new chat, the agent should:
 *   **Framework**: Next.js 15, React 19, Tailwind v4.
 *   **Testing**: Vitest (Unit/Component), Playwright (E2E).
 *   **State**: We are currently implementing the CSV Import feature.
+
+## 🧪 Agent Playbook: How to Test & Verify
+**Future Agents:** Use this guide to reliably test the application and use the Browser Tool.
+
+### 1. The "Golden Flow" (Source of Truth)
+Do not guess the UI flow or selectors. Read the E2E tests to understand exactly how to interact with the app.
+*   **Reference File**: `apps/web/e2e/csv-import.spec.ts`
+*   **Why**: This file contains the canonical "Happy Path" for the CSV Import Wizard.
+*   **What to look for**:
+    *   **Steps**: The exact sequence of actions (e.g., Upload -> Wait -> Map -> Next).
+    *   **Selectors**: Stable `data-testid`s (e.g., `mapping-select-id-trigger`, `mapping-next-button`).
+    *   **Wait Conditions**: `await expect(...).toBeVisible()` lines tell you exactly what to wait for before proceeding.
+
+### 2. Browser Tool Best Practices
+When using the `browser_subagent` or `run_browser_action`:
+*   **Mimic the E2E Tests**: If the test waits for a dialog, you must wait for it too.
+*   **Use TestIDs**: Always prefer `data-testid` over text or classes.
+*   **Wait for Async**: The app is fast, but not instant. Always wait for a visual confirmation (e.g., "Import successful" text) before asserting success.
+
+### 3. Data Strategy
+*   **Do NOT invent data**: Use the existing CSV fixtures.
+*   **Location**: `apps/web/e2e/fixtures/`
+*   **Key Files**:
+    *   `nodes_valid_basic.csv` / `edges_valid_basic.csv`: Standard happy path data.
+    *   `nodes_with_desc.csv`: For testing properties.
+    *   `nodes_invalid_*.csv`: For testing validation errors.
