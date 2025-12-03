@@ -41,11 +41,16 @@ test.describe("Graph Validation", () => {
         await page.getByRole("button", { name: "Next" }).click();
 
         // Map Columns
-        await page.getByTestId("mapping-select-id").selectOption({ label: "id" });
-        await page.getByTestId("mapping-select-title").selectOption({ label: "title" });
-        await page.getByTestId("mapping-select-type").selectOption({ label: "type" });
-        await page.getByTestId("mapping-select-source").selectOption({ label: "source" });
-        await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
+        await page.getByTestId("mapping-select-id-trigger").click();
+        await page.getByRole("option", { name: "id", exact: true }).click();
+        await page.getByTestId("mapping-select-title-trigger").click();
+        await page.getByRole("option", { name: "title", exact: true }).click();
+        await page.getByTestId("mapping-select-type-trigger").click();
+        await page.getByRole("option", { name: "type", exact: true }).click();
+        await page.getByTestId("mapping-select-source-trigger").click();
+        await page.getByRole("option", { name: "source", exact: true }).click();
+        await page.getByTestId("mapping-select-target-trigger").click();
+        await page.getByRole("option", { name: "target", exact: true }).click();
 
         await page.getByRole("button", { name: "Next" }).click();
         await page.getByRole("button", { name: "Done" }).click();
@@ -69,7 +74,7 @@ test.describe("Graph Validation", () => {
 
             // Verify Tooltip
             await node.hover();
-            await expect(page.getByText("Input node must have at least one outgoing connection and no incoming connections")).toBeVisible();
+            await expect(page.getByText(`${label}: Input node must have at least one outgoing connection and no incoming connections`)).toBeVisible();
         }
 
         // 7. Capture Visual Proof
@@ -108,11 +113,16 @@ test.describe("Graph Validation", () => {
         await page.getByRole("button", { name: "Next" }).click();
 
         // Map Columns
-        await page.getByTestId("mapping-select-id").selectOption({ label: "id" });
-        await page.getByTestId("mapping-select-title").selectOption({ label: "title" });
-        await page.getByTestId("mapping-select-type").selectOption({ label: "type" });
-        await page.getByTestId("mapping-select-source").selectOption({ label: "source" });
-        await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
+        await page.getByTestId("mapping-select-id-trigger").click();
+        await page.getByRole("option", { name: "id", exact: true }).click();
+        await page.getByTestId("mapping-select-title-trigger").click();
+        await page.getByRole("option", { name: "title", exact: true }).click();
+        await page.getByTestId("mapping-select-type-trigger").click();
+        await page.getByRole("option", { name: "type", exact: true }).click();
+        await page.getByTestId("mapping-select-source-trigger").click();
+        await page.getByRole("option", { name: "source", exact: true }).click();
+        await page.getByTestId("mapping-select-target-trigger").click();
+        await page.getByRole("option", { name: "target", exact: true }).click();
 
         await page.getByRole("button", { name: "Next" }).click();
         await page.getByRole("button", { name: "Done" }).click();
@@ -136,7 +146,7 @@ test.describe("Graph Validation", () => {
 
             // Verify Tooltip
             await node.hover();
-            await expect(page.getByText("Output node must have at least one incoming connection and no outgoing connections")).toBeVisible();
+            await expect(page.getByText(`${label}: Output node must have at least one incoming connection and no outgoing connections`)).toBeVisible();
         }
 
         // 7. Capture Visual Proof
@@ -175,11 +185,16 @@ test.describe("Graph Validation", () => {
         await page.getByRole("button", { name: "Next" }).click();
 
         // Map Columns
-        await page.getByTestId("mapping-select-id").selectOption({ label: "id" });
-        await page.getByTestId("mapping-select-title").selectOption({ label: "title" });
-        await page.getByTestId("mapping-select-type").selectOption({ label: "type" });
-        await page.getByTestId("mapping-select-source").selectOption({ label: "source" });
-        await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
+        await page.getByTestId("mapping-select-id-trigger").click();
+        await page.getByRole("option", { name: "id", exact: true }).click();
+        await page.getByTestId("mapping-select-title-trigger").click();
+        await page.getByRole("option", { name: "title", exact: true }).click();
+        await page.getByTestId("mapping-select-type-trigger").click();
+        await page.getByRole("option", { name: "type", exact: true }).click();
+        await page.getByTestId("mapping-select-source-trigger").click();
+        await page.getByRole("option", { name: "source", exact: true }).click();
+        await page.getByTestId("mapping-select-target-trigger").click();
+        await page.getByRole("option", { name: "target", exact: true }).click();
 
         await page.getByRole("button", { name: "Next" }).click();
         await page.getByRole("button", { name: "Done" }).click();
@@ -203,7 +218,7 @@ test.describe("Graph Validation", () => {
 
             // Verify Tooltip
             await node.hover();
-            await expect(page.getByText("Step node must have at least one incoming connection and at least one outgoing connection")).toBeVisible();
+            await expect(page.getByText(`${label}: Step node must have at least one incoming connection and at least one outgoing connection`)).toBeVisible();
         }
 
         // 7. Capture Visual Proof
@@ -242,11 +257,16 @@ test.describe("Graph Validation", () => {
         await page.getByRole("button", { name: "Next" }).click();
 
         // Map Columns
-        await page.getByTestId("mapping-select-id").selectOption({ label: "id" });
-        await page.getByTestId("mapping-select-title").selectOption({ label: "title" });
-        await page.getByTestId("mapping-select-type").selectOption({ label: "type" });
-        await page.getByTestId("mapping-select-source").selectOption({ label: "source" });
-        await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
+        await page.getByTestId("mapping-select-id-trigger").click();
+        await page.getByRole("option", { name: "id", exact: true }).click();
+        await page.getByTestId("mapping-select-title-trigger").click();
+        await page.getByRole("option", { name: "title", exact: true }).click();
+        await page.getByTestId("mapping-select-type-trigger").click();
+        await page.getByRole("option", { name: "type", exact: true }).click();
+        await page.getByTestId("mapping-select-source-trigger").click();
+        await page.getByRole("option", { name: "source", exact: true }).click();
+        await page.getByTestId("mapping-select-target-trigger").click();
+        await page.getByRole("option", { name: "target", exact: true }).click();
 
         await page.getByRole("button", { name: "Next" }).click();
         await page.getByRole("button", { name: "Done" }).click();
@@ -294,7 +314,21 @@ test.describe("Graph Validation", () => {
 
         expect(hasRedEdge).toBe(true);
 
-        // 6. Capture Visual Proof
+        // 6. Verify Error Message (Tooltip on Edge)
+        // Note: Edges might not have tooltips easily accessible in ReactFlow without custom implementation.
+        // But our spec says we display errors in the panel OR tooltip.
+        // For this test, let's assume we are checking the error message presence in the DOM if possible, 
+        // OR we skip this check if edge tooltips aren't implemented yet.
+        // Given the task is to "Update assertions", we should try to find the message.
+        // If the message is only in the panel, we should open the panel.
+
+        // Open Error Panel
+        await page.getByTestId("error-toggle").click();
+        const panel = page.getByTestId("error-list-panel");
+        await expect(panel).toBeVisible();
+        await expect(panel).toContainText("Self-cycle: Self Cycle Step connects to itself");
+
+        // 7. Capture Visual Proof
         await page.screenshot({ path: 'self-cycle-verified.png' });
     });
 
@@ -330,11 +364,16 @@ test.describe("Graph Validation", () => {
         await page.getByRole("button", { name: "Next" }).click();
 
         // Map Columns
-        await page.getByTestId("mapping-select-id").selectOption({ label: "id" });
-        await page.getByTestId("mapping-select-title").selectOption({ label: "title" });
-        await page.getByTestId("mapping-select-type").selectOption({ label: "type" });
-        await page.getByTestId("mapping-select-source").selectOption({ label: "source" });
-        await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
+        await page.getByTestId("mapping-select-id-trigger").click();
+        await page.getByRole("option", { name: "id", exact: true }).click();
+        await page.getByTestId("mapping-select-title-trigger").click();
+        await page.getByRole("option", { name: "title", exact: true }).click();
+        await page.getByTestId("mapping-select-type-trigger").click();
+        await page.getByRole("option", { name: "type", exact: true }).click();
+        await page.getByTestId("mapping-select-source-trigger").click();
+        await page.getByRole("option", { name: "source", exact: true }).click();
+        await page.getByTestId("mapping-select-target-trigger").click();
+        await page.getByRole("option", { name: "target", exact: true }).click();
 
         await page.getByRole("button", { name: "Next" }).click();
         await page.getByRole("button", { name: "Done" }).click();
@@ -358,7 +397,23 @@ test.describe("Graph Validation", () => {
 
         expect(hasRedEdges).toBe(true);
 
-        // 6. Capture Visual Proof
+        // 6. Verify Error Message
+        // Open Error Panel
+        await page.getByTestId("error-toggle").click();
+
+        // The cycle is A -> B -> C -> A.
+        // We expect the message "Cycle detected: Node A -> Node B -> Node C -> Node A"
+        // AND we expect it to appear EXACTLY ONCE in the panel (deduplicated).
+        const panel = page.getByTestId("error-list-panel");
+        const expectedMessage = "Cycle detected: Node A -> Node B -> Node C -> Node A";
+
+        // Check that the message is visible
+        await expect(panel.getByText(expectedMessage).first()).toBeVisible();
+
+        // Check that it appears only once
+        await expect(panel.getByText(expectedMessage)).toHaveCount(1);
+
+        // 7. Capture Visual Proof
         await page.screenshot({ path: 'multi-node-cycle-verified.png' });
     });
 });

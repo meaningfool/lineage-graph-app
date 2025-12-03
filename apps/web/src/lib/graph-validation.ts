@@ -29,20 +29,24 @@ export function validateGraph(nodes: GraphNode[], edges: GraphEdge[]): { nodeErr
     const edgeErrors = new Map<string, string[]>();
     const nodeErrors = new Map<string, string[]>();
 
+    // Helper to get node labels for context
+    const nodeLabels = new Map(nodes.map(n => [n.id, n.title || n.id]));
+    console.log("[GraphValidation] Node Labels:", Array.from(nodeLabels.entries()));
+
     // --- 2. Validation Phase ---
     // We run each validator independently. They don't know about each other.
     // This makes it easy to add/remove rules without breaking the pipeline.
 
     // Validator A: Check for edges that connect a node to itself (A -> A)
-    mergeErrors(edgeErrors, detectSelfCycles(edges));
+    mergeErrors(edgeErrors, detectSelfCycles(edges, nodeLabels));
 
     // Validator B: Check business rules for Input/Output/Step nodes
     // (e.g., "Input nodes must have no incoming edges")
     mergeErrors(nodeErrors, validateNodeConnectivity(nodes, inDegree, outDegree));
 
-    // Validator C: Check for complex cycles involving multiple nodes (A -> B -> A)
+    // Validator C: Check for complex cycles involving multiple nodes (A -> B -> C -> A)
     // This uses Depth-First Search (DFS) and is more computationally expensive.
-    mergeErrors(edgeErrors, detectMultiNodeCycles(nodes, edges));
+    mergeErrors(edgeErrors, detectMultiNodeCycles(nodes, edges, nodeLabels));
 
     return { nodeErrors, edgeErrors };
 }
