@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 import path from "path";
 
 test.describe("Error Display Feature", () => {
+    test.describe.configure({ mode: 'serial' });
+
     test.beforeEach(async ({ page }) => {
         await page.goto("/");
         await page.waitForLoadState("networkidle");
@@ -179,11 +181,10 @@ test.describe("Error Display Feature", () => {
         // node1 has incoming edge (from cycle), which is invalid for INPUT
         await expect(panel).toContainText("Node 1");
 
-        // edge3 (node3->node3) has generated ID "e-node3-node3"
-        await expect(panel).toContainText("e-node3-node3");
 
-        // edge5 (node4->node1) has generated ID "e-node4-node1"
-        await expect(panel).toContainText("e-node4-node1");
+
+        // Note: Edge IDs are no longer displayed in the compact UI, so we don't assert them.
+        // We rely on the message content (which is checked in graph-validation.spec.ts).
     });
 
     test("Scenario 6: Multiple Errors [NEW]", async ({ page }) => {

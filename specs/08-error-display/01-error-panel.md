@@ -70,23 +70,26 @@ The following table defines the exact messages to be displayed for each error ty
 | **Multi-Node Cycle** | "Cycle detected" | `Cycle detected: {nodeLabel1} -> {nodeLabel2} -> {nodeLabel1}` |
 
 ### Slice 4: Enhanced Error Messages (Vertical)
-**Goal**: Display the specific, user-friendly error messages defined above in the *existing* UI panel.
+**Goal**: Display the specific, user-friendly error messages defined above in the *existing* UI.
+**Strategy**: Modify the existing validator functions to generate the full, formatted string directly (including the node label).
+*   **No Refactoring**: We will NOT create `GraphValidationError` objects or an `ErrorFormatter` utility.
+*   **No App Changes**: The `LineageGraph`, `Importer`, and `Mapper` will continue to receive and display simple strings, so no crash risk.
+
 **Changes**:
-*   **Fixtures**: Update `nodes_errors_display.csv` and `edges_errors_display.csv` to ensure **ALL** error types are present:
-    *   Self-cycle
-    *   Input Node Invalid (has incoming)
-    *   Output Node Invalid (has outgoing)
-    *   Step Node Invalid (missing incoming/outgoing)
-    *   Multi-node Cycle
-*   **Validation**: Refactor validators to return structured data (including cycle paths).
-*   **Formatting**: Implement `ErrorFormatter` to generate the target strings.
-*   **UI**: Update `LineageGraph`/`ErrorListPanel` to display these formatted strings.
+*   **Validators**: Update `self-cycle-validator.ts`, `node-connectivity-validator.ts`, and `multi-cycle-validator.ts` to construct the target string (e.g., `"{NodeLabel}: Input node..."`) instead of the generic string.
+    *   *Note*: Validators will need access to `Node Labels` (which they mostly have or can easily get).
+*   **Deduplication**: Modify `LineageGraph.tsx` to deduplicate error messages.
+    *   Cycle errors (e.g., "Cycle detected: A->B->C->A") are currently attached to *all* involved edges.
+    *   The panel should only list this message *once*.
+    *   Use a `Set` to filter out duplicate strings before rendering.
 
 **Test Scenarios**:
-*   **Modify Scenario 5: List Accuracy** (`e2e/error-display.spec.ts`):
-    *   **Setup**: Use the updated fixtures.
-    *   **Assertion**: Verify that **EVERY** error template from the table above is displayed correctly in the panel.
-*   **Regression Checks**: All other scenarios must pass.
+*   **Verification**: Update `e2e/graph-validation.spec.ts`.
+    *   **Input Node Rule**: Update assertion to expect `{nodeLabel}: Input node must have...`
+    *   **Output Node Rule**: Update assertion to expect `{nodeLabel}: Output node must have...`
+    *   **Step Node Rule**: Update assertion to expect `{nodeLabel}: Step node must have...`
+    *   **Self Cycle**: Update assertion to expect `Self-cycle: {nodeLabel} connects to itself`.
+    *   **Multi-node Cycle**: Update assertion to expect `Cycle detected: {path}`.
 
 ### Slice 5: Compact Error Panel UI (Vertical)
 **Goal**: Refine the visual presentation of the error list to be more compact and list-like.

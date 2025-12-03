@@ -19,18 +19,16 @@
 ### Slice 3: Error List Content
 - [x] Add "List Accuracy" and "Multiple Errors" scenarios to E2E test <!-- id: 10 -->
 - [x] Update `ErrorListPanel` to render list of errors <!-- id: 11 -->
-### Slice 4: Enhanced Error Messages (Vertical)
-- [ ] Update fixtures (`nodes_errors_display.csv`, `edges_errors_display.csv`) to cover ALL error types <!-- id: 14 -->
-- [ ] Create `GraphValidationError` interface and `ERROR_TEMPLATES` constant <!-- id: 15 -->
-- [ ] Refactor validators to return `GraphValidationError` objects (include cycle path) <!-- id: 16 -->
-- [ ] Create `ErrorFormatter` utility <!-- id: 17 -->
-- [ ] Update `LineageGraph` to use `ErrorFormatter` <!-- id: 18 -->
-- [ ] Update `e2e/error-display.spec.ts` to assert ALL error messages <!-- id: 19 -->
+- [x] Update `self-cycle-validator.ts` to return formatted strings <!-- id: 14 -->
+- [x] Update `node-connectivity-validator.ts` to return formatted strings <!-- id: 15 -->
+- [x] Update `multi-cycle-validator.ts` to return formatted strings <!-- id: 16 -->
+- [x] Update `e2e/graph-validation.spec.ts` assertions to match new messages <!-- id: 17 -->
+- [x] Deduplicate error messages in `LineageGraph.tsx` <!-- id: 19 -->
+- [x] Verify `e2e/graph-validation.spec.ts` passes <!-- id: 18 -->
 
-### Slice 5: Compact Error Panel UI (Vertical)
-- [ ] Update `ErrorListPanel` to remove cards and use list layout <!-- id: 20 -->
-- [ ] Add red exclamation icon to error items <!-- id: 21 -->
-- [ ] Verify UI with E2E tests (Regression) <!-- id: 22 -->
+### Slice 5: Compact Error Panel UI
+- [x] Update `ErrorListPanel` to use compact list layout with icons <!-- id: 20 -->
+- [x] Verify UI with E2E tests (Regression) <!-- id: 22 -->
 
 ## Spec 2: Error Interaction
 

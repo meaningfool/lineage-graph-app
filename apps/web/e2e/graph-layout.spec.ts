@@ -3,6 +3,8 @@ import type { Page } from "@playwright/test";
 import path from "path";
 
 test.describe("Graph Layout", () => {
+    test.describe.configure({ mode: 'serial' });
+
     test.beforeEach(async ({ page }) => {
         // Capture browser console logs
         page.on("console", (msg) => {
@@ -31,11 +33,21 @@ test.describe("Graph Layout", () => {
         await page.getByRole("button", { name: "Next", exact: true }).click();
 
         // Map columns (standard column names)
-        await page.getByTestId("mapping-select-id").selectOption({ label: "id" });
-        await page.getByTestId("mapping-select-title").selectOption({ label: "title" });
-        await page.getByTestId("mapping-select-type").selectOption({ label: "type" });
-        await page.getByTestId("mapping-select-source").selectOption({ label: "source" });
-        await page.getByTestId("mapping-select-target").selectOption({ label: "target" });
+        // Map columns (standard column names)
+        await page.getByTestId("mapping-select-id-trigger").click();
+        await page.getByRole("option", { name: "id", exact: true }).click();
+
+        await page.getByTestId("mapping-select-title-trigger").click();
+        await page.getByRole("option", { name: "title", exact: true }).click();
+
+        await page.getByTestId("mapping-select-type-trigger").click();
+        await page.getByRole("option", { name: "type", exact: true }).click();
+
+        await page.getByTestId("mapping-select-source-trigger").click();
+        await page.getByRole("option", { name: "source", exact: true }).click();
+
+        await page.getByTestId("mapping-select-target-trigger").click();
+        await page.getByRole("option", { name: "target", exact: true }).click();
 
         // Click Next to import
         await page.getByRole("button", { name: "Next", exact: true }).click();

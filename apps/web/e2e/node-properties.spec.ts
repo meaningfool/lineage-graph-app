@@ -105,7 +105,7 @@ test.describe("Node Properties", () => {
         await expect(node).toContainText("user_table");
 
         // Close Panel by clicking canvas (top-left corner to avoid panel)
-        await page.mouse.click(100, 100);
+        await page.locator(".react-flow__pane").click({ position: { x: 10, y: 10 } });
         await expect(panel).not.toBeVisible();
     });
 
