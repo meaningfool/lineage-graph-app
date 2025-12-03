@@ -35,12 +35,25 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 
 	// Calculate error list
 	const errorList = useMemo<GraphError[]>(() => {
-		const errors: GraphError[] = [];
+		const seenMessages = new Set<string>();
+		const uniqueErrors: GraphError[] = [];
+
+		const addError = (error: GraphError) => {
+			// Create a unique key for the error content (ignoring ID/Type for deduplication of message)
+			// Actually, we want to deduplicate based on the MESSAGE itself if it's a global issue like a cycle.
+			// However, for node-specific errors, we might want to keep them.
+			// But the requirement is specifically to deduplicate the "Cycle detected" message which is identical across edges.
+
+			if (!seenMessages.has(error.message)) {
+				seenMessages.add(error.message);
+				uniqueErrors.push(error);
+			}
+		};
 
 		nodes.forEach(n => {
 			if (n.data?.validationErrors) {
 				n.data.validationErrors.forEach((msg: string) => {
-					errors.push({
+					addError({
 						id: n.id,
 						type: "node",
 						message: msg,
@@ -53,17 +66,17 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 		edges.forEach(e => {
 			if (e.data?.validationErrors) {
 				e.data.validationErrors.forEach((msg: string) => {
-					errors.push({
+					addError({
 						id: e.id,
 						type: "edge",
 						message: msg,
-						label: e.data?.label || e.id // Fallback to ID if no label
+						label: e.data?.label || e.id
 					});
 				});
 			}
 		});
 
-		return errors;
+		return uniqueErrors;
 	}, [nodes, edges]);
 
 	const totalErrors = errorList.length;
