@@ -32,29 +32,25 @@ export function ErrorListPanel({ errors, onClose }: ErrorListPanelProps) {
                     <X className="h-4 w-4" />
                 </Button>
             </div>
-            <div className="flex-grow overflow-y-auto space-y-2">
-                {errors.map((error, index) => (
-                    <div
-                        key={`${error.id}-${index}`}
-                        data-testid="error-item"
-                        className="p-3 rounded-md border bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                    >
-                        <div className="flex items-start gap-2">
-                            <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
-                            <div className="space-y-1">
-                                <p className="text-sm font-medium leading-none">
-                                    {error.label || error.id}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
+            <div className="flex-grow overflow-y-auto">
+                <ul className="space-y-1">
+                    {errors.map((error, index) => (
+                        <li
+                            key={`${error.id}-${index}`}
+                            data-testid="error-item"
+                            className="flex items-start gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer text-sm"
+                        >
+                            <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0 fill-white" />
+                            <div className="space-y-0.5">
+                                <span className="text-foreground">
                                     {error.message}
-                                </p>
-                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
-                                    {error.type}
-                                </p>
+                                </span>
+                                {/* Optional: Show ID/Label if needed, but message usually contains it now */}
+                                {/* <p className="text-xs text-muted-foreground">{error.id}</p> */}
                             </div>
-                        </div>
-                    </div>
-                ))}
+                        </li>
+                    ))}
+                </ul>
                 {errors.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-8">
                         No errors found.
