@@ -133,3 +133,36 @@ body {
 		@apply bg-background text-foreground;
 	}
 }
+
+@keyframes flash {
+	0% {
+		opacity: 0;
+		animation-timing-function: ease-out;
+	}
+
+	25% {
+		opacity: 1;
+		animation-timing-function: ease-in-out;
+	}
+
+	100% {
+		opacity: 0;
+	}
+}
+
+.animate-flash-ring::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.25);
+	border-radius: inherit;
+	z-index: -1;
+	animation: flash 2s 3 forwards;
+}
+
+.animate-flash-stroke {
+	animation: flash 2s 3 forwards;
+}

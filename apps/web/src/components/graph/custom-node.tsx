@@ -9,6 +9,7 @@ export interface NodeData {
         [key: string]: any;
     };
     validationErrors?: string[];
+    flashTrigger?: number;
 }
 
 /**
@@ -34,15 +35,29 @@ export function CustomNode({ id, data, selected }: { id: string; data: NodeData;
     // Selection visual cue (stacked with border using ring)
     const selectionClasses = selected ? "ring-4 ring-blue-400/30" : "";
 
+    // Error visual cue
+    // Passive: Static red border (handled by borderColor)
+    // Active: Flashing Outer Ring (only when selected)
+    // We use a separate element with a key to force animation restart
+    const showFlash = hasErrors && selected;
+
     return (
         <div
             data-testid="custom-node-content"
             className={`min-w-[150px] max-w-[200px] rounded-sm border ${borderColor} ${selectionClasses} bg-white px-3 py-2 shadow-sm relative group cursor-pointer transition-all`}
             style={{ borderColor: hasErrors ? "#ef4444" : undefined }}
             data-layer={data.layer}
+            data-validation-status={hasErrors ? "invalid" : "valid"}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
+            {showFlash && (
+                <div
+                    key={data.flashTrigger}
+                    className="animate-flash-ring absolute inset-0 pointer-events-none rounded-sm"
+                    data-flash-trigger={data.flashTrigger}
+                />
+            )}
             {/* Tooltip using NodeToolbar to escape clipping */}
             {hasErrors && (
                 <NodeToolbar

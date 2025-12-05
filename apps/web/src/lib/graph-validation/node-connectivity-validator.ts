@@ -24,23 +24,25 @@ export function validateNodeConnectivity(
         const outDeg = outDegree.get(node.id) || 0;
         const currentErrors = nodeErrors.get(node.id) || [];
 
+        const label = node.title || node.id;
+
         if (node.type === 'INPUT') {
             // Slice 2.1: Input Node Rules
             // Must have 0 incoming AND > 0 outgoing
             if (inDeg > 0 || outDeg === 0) {
-                currentErrors.push("Input node must have at least one outgoing connection and no incoming connections");
+                currentErrors.push(`${label}: Input node must have at least one outgoing connection and no incoming connections`);
             }
         } else if (node.type === 'OUTPUT') {
             // Slice 2.2: Output Node Rules
             // Must have > 0 incoming AND 0 outgoing
             if (inDeg === 0 || outDeg > 0) {
-                currentErrors.push("Output node must have at least one incoming connection and no outgoing connections");
+                currentErrors.push(`${label}: Output node must have at least one incoming connection and no outgoing connections`);
             }
         } else if (node.type === 'STEP') {
             // Slice 2.3: Step Node Rules
             // Must have > 0 incoming AND > 0 outgoing
             if (inDeg === 0 || outDeg === 0) {
-                currentErrors.push("Step node must have at least one incoming connection and at least one outgoing connection");
+                currentErrors.push(`${label}: Step node must have at least one incoming connection and at least one outgoing connection`);
             }
         }
 

@@ -24,8 +24,59 @@ interface LineageGraphProps {
 	edges: Edge[];
 }
 
+import { ErrorToggle } from "./ui/error-toggle";
+import { ErrorListPanel, type GraphError } from "./ui/error-list-panel";
+
+// ... existing imports
+
 export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 	const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(null);
+	const [selectedEdgeId, setSelectedEdgeId] = React.useState<string | null>(null);
+	const [isErrorPanelOpen, setIsErrorPanelOpen] = React.useState(false);
+	const [flashTrigger, setFlashTrigger] = React.useState(0);
+
+	// Calculate error list
+	const errorList = useMemo<GraphError[]>(() => {
+		const seenMessages = new Set<string>();
+		const uniqueErrors: GraphError[] = [];
+
+		const addError = (error: GraphError) => {
+			if (!seenMessages.has(error.message)) {
+				seenMessages.add(error.message);
+				uniqueErrors.push(error);
+			}
+		};
+
+		nodes.forEach(n => {
+			if (n.data?.validationErrors) {
+				n.data.validationErrors.forEach((msg: string) => {
+					addError({
+						id: n.id,
+						type: "node",
+						message: msg,
+						label: n.data.label
+					});
+				});
+			}
+		});
+
+		edges.forEach(e => {
+			if (e.data?.validationErrors) {
+				e.data.validationErrors.forEach((msg: string) => {
+					addError({
+						id: e.id,
+						type: "edge",
+						message: msg,
+						label: e.data?.label || e.id
+					});
+				});
+			}
+		});
+
+		return uniqueErrors;
+	}, [nodes, edges]);
+
+	const totalErrors = errorList.length;
 
 	// Memoize nodes conversion to prevent unnecessary re-renders
 	const customNodes = useMemo(
@@ -33,8 +84,13 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 			nodes.map((node) => ({
 				...node,
 				type: "custom",
+				selected: node.id === selectedNodeId,
+				data: {
+					...node.data,
+					flashTrigger, // Pass flash trigger
+				},
 			})),
-		[nodes],
+		[nodes, selectedNodeId, flashTrigger],
 	);
 
 	// Memoize edges conversion to prevent unnecessary re-renders
@@ -49,9 +105,11 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 					...edge,
 					type: "custom", // Use our custom edge
 					animated: false, // Remove animation
+					selected: edge.id === selectedEdgeId,
 					data: {
 						...edge.data,
 						isSelfLoop, // Pass this flag
+						flashTrigger, // Pass flash trigger
 					},
 					style: {
 						stroke: hasErrors ? "#ef4444" : "#6b7280",
@@ -65,15 +123,18 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 					},
 				};
 			}),
-		[edges],
+		[edges, selectedEdgeId, flashTrigger],
 	);
 
 	const onNodeClick = React.useCallback((event: React.MouseEvent, node: Node) => {
 		setSelectedNodeId(node.id);
+		setSelectedEdgeId(null); // Clear edge selection
+		setFlashTrigger(prev => prev + 1); // Trigger flash on click
 	}, []);
 
 	const onPaneClick = React.useCallback(() => {
 		setSelectedNodeId(null);
+		setSelectedEdgeId(null);
 	}, []);
 
 	const selectedNode = useMemo(() =>
@@ -81,8 +142,16 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 		[customNodes, selectedNodeId]
 	);
 
-	// console.log("LineageGraph nodes:", customNodes);
-	// console.log("LineageGraph edges:", customEdges);
+	const handleErrorClick = React.useCallback((error: GraphError) => {
+		if (error.type === "node") {
+			setSelectedNodeId(error.id);
+			setSelectedEdgeId(null);
+		} else if (error.type === "edge") {
+			setSelectedEdgeId(error.id);
+			setSelectedNodeId(null); // Optional: clear node selection?
+		}
+		setFlashTrigger(prev => prev + 1); // Always trigger flash on error click
+	}, []);
 
 	if (!customNodes.length) {
 		return (
@@ -94,6 +163,17 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 
 	return (
 		<div className="w-full relative" style={{ height: "100vh", minHeight: "600px" }}>
+			<ErrorToggle
+				errorCount={totalErrors}
+				onClick={() => setIsErrorPanelOpen(true)}
+			/>
+			{isErrorPanelOpen && (
+				<ErrorListPanel
+					errors={errorList}
+					onClose={() => setIsErrorPanelOpen(false)}
+					onItemClick={handleErrorClick}
+				/>
+			)}
 			{selectedNode && (
 				<NodeDetailsPanel
 					node={selectedNode}

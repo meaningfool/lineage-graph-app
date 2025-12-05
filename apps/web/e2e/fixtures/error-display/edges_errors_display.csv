@@ -1,0 +1,6 @@
+id,source,target,label
+edge1,node1,node2,Valid edge
+edge2,node2,node3,Valid edge
+edge3,node3,node3,Self cycle error
+edge4,node3,node4,Valid edge
+edge5,node4,node1,Cycle error
