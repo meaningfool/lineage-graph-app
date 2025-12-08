@@ -18,7 +18,6 @@ function EdgeTooltip({ x, y, errors, isHovered }: { x: number; y: number; errors
                     transformOrigin: "bottom center",
                     pointerEvents: "all",
                     opacity: isHovered ? 1 : 0,
-                    transition: "opacity 0.2s",
                     zIndex: 10,
                 }}
                 className="nodrag nopan"
@@ -76,10 +75,19 @@ export function CustomEdge({
         isSelfLoop: data?.isSelfLoop,
     });
 
+    const isDimmed = data?.dimmed;
+    const opacityClass = isDimmed ? "opacity-10" : "opacity-100";
+
     return (
-        <>
+        <g
+            className={`transition-opacity duration-200 ease-in-out ${opacityClass}`}
+        >
             {/* Base Edge (Visible Line) */}
-            <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
+            <BaseEdge
+                path={edgePath}
+                markerEnd={markerEnd}
+                style={style}
+            />
 
             {/* Active Error Flash (Outer Stroke) */}
             {hasErrors && selected && (
@@ -114,6 +122,6 @@ export function CustomEdge({
                     isHovered={isHovered}
                 />
             )}
-        </>
+        </g>
     );
 }

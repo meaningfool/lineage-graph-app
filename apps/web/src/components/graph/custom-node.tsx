@@ -10,23 +10,18 @@ export interface NodeData {
     };
     validationErrors?: string[];
     flashTrigger?: number;
+    dimmed?: boolean;
+    isFlashing?: boolean;
 }
 
 /**
  * Custom Node Component
- * 
- * Role: Presentational Component (Dumb Component)
- * 
- * Responsibilities:
- * 1. Render the node content (Label, Properties).
- * 2. Render validation feedback (Red border, Tooltip).
- * 3. Provide handles for ReactFlow connections.
- * 
- * It does NOT contain any business logic. It simply renders the data passed to it.
+ * ...
  */
 export function CustomNode({ id, data, selected }: { id: string; data: NodeData; selected?: boolean }) {
     const [isHovered, setIsHovered] = useState(false);
     const hasErrors = data.validationErrors && data.validationErrors.length > 0;
+    const isDimmed = data.dimmed;
 
     // Base border color (always present)
     let borderColor = "border-gray-200";
@@ -35,17 +30,22 @@ export function CustomNode({ id, data, selected }: { id: string; data: NodeData;
     // Selection visual cue (stacked with border using ring)
     const selectionClasses = selected ? "ring-4 ring-blue-400/30" : "";
 
+    // Dimming class - using tailwind class for performance and consistency
+    const opacityClass = isDimmed ? "opacity-10" : "opacity-100";
+
     // Error visual cue
     // Passive: Static red border (handled by borderColor)
-    // Active: Flashing Outer Ring (only when selected)
+    // Active: Flashing Outer Ring (controlled explicitely by parent)
     // We use a separate element with a key to force animation restart
-    const showFlash = hasErrors && selected;
+    const showFlash = !!data.isFlashing;
 
     return (
         <div
             data-testid="custom-node-content"
-            className={`min-w-[150px] max-w-[200px] rounded-sm border ${borderColor} ${selectionClasses} bg-white px-3 py-2 shadow-sm relative group cursor-pointer transition-all`}
-            style={{ borderColor: hasErrors ? "#ef4444" : undefined }}
+            className={`min-w-[150px] max-w-[200px] rounded-sm border ${borderColor} ${selectionClasses} ${opacityClass} bg-white px-3 py-2 shadow-sm relative group cursor-pointer`}
+            style={{
+                borderColor: hasErrors ? "#ef4444" : undefined,
+            }}
             data-layer={data.layer}
             data-validation-status={hasErrors ? "invalid" : "valid"}
             onMouseEnter={() => setIsHovered(true)}

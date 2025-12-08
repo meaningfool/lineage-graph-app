@@ -1,5 +1,0 @@
-id,title,type
-user-count,User Count,STEP
-orders,Orders,INPUT
-user-count,User Count Duplicate,OUTPUT
-revenue,Revenue,OUTPUT

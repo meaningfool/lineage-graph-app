@@ -12,9 +12,11 @@ interface NodeDetailsPanelProps {
         };
     };
     onClose: () => void;
+    isFocused: boolean;
+    onToggleFocus: () => void;
 }
 
-export function NodeDetailsPanel({ node, onClose }: NodeDetailsPanelProps) {
+export function NodeDetailsPanel({ node, onClose, isFocused, onToggleFocus }: NodeDetailsPanelProps) {
     const { label, type, properties } = node.data;
 
     return (
@@ -24,9 +26,21 @@ export function NodeDetailsPanel({ node, onClose }: NodeDetailsPanelProps) {
         >
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
                 <h3 className="font-semibold text-lg">{label}</h3>
-                <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
-                    <X className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onToggleFocus}
+                        data-testid="focus-toggle"
+                        data-active={isFocused}
+                        className="mr-2"
+                    >
+                        {isFocused ? "Clear Focus" : "Focus Subtree"}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
             </div>
 
             <div className="space-y-4 overflow-y-auto flex-grow">

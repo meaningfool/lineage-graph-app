@@ -67,6 +67,12 @@ This file is a **Retrospective** of the engineering process, not a technical log
 *   **Plan Files**: `[sequence]-[description].md` (e.g., `01-ui-skeleton.md`, `02-api-integration.md`)
 *   **Post-Spec Reports**: `post-[preceding-spec-number]-[description].md` (e.g., `post-01-critique.md` after `01-plan.md`)
 
+## Implementation Plan Guidelines
+*   **Strict TDD**: Write the *minimum* code required to pass the current slice's test. Do not over-engineer for future slices. It is acceptable for code to break when moving to the next slice (e.g., a traversal algorithm that works for DAGs but hangs on cycles is correct for Slice 2 if Slice 3 adds cycle support).
+*   **Fixture Specificity**: Do not use a single "mega-fixture" for all tests. Create minimal, focused fixtures for each scenario (e.g., `simple_dag.csv` for basic logic, `cycle_3_nodes.csv` for degeneracy).
+*   **Test-First**: Define the *exact* test scenario (inputs, actions, assertions) before defining the implementation details.
+*   **Slice Isolation**: Ensure that each slice can be verified independently. If Slice 2 depends on Logic, verify Logic *with simple data* first. Leave complex edge cases (cycles, limits) for later slices.
+
 ## See Also
 *   **[`../AGENT.md`](../AGENT.md)**: High-level context and principles.
 *   **[`TESTING.md`](./TESTING.md)**: Detailed testing strategy and guidelines.

@@ -1,5 +1,0 @@
-node_identifier,node_name,category
-orders,Orders,INPUT
-customers,Customers,INPUT
-order-analysis,Order Analysis,STEP
-customer-ltv,Customer LTV,OUTPUT

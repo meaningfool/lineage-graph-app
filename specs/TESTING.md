@@ -62,3 +62,11 @@ Do not guess the UI flow. Read `apps/web/e2e/csv-import.spec.ts` to understand t
 *   **Mimic E2E**: If the test waits for a dialog, you must wait for it too.
 *   **Use TestIDs**: Always prefer `data-testid`.
 *   **Wait for Async**: Always wait for visual confirmation (e.g., success message) before asserting.
+
+## Troubleshooting
+
+### Timeouts & Stale Processes
+System slowdowns (e.g., Next.js server consuming 1.5GB+) can cause widespread test timeouts, especially on `page.goto`.
+*   **Symptom**: `Test timeout of 30000ms exceeded`, often during `beforeEach` or initial navigation.
+*   **Check**: Run `ps aux | grep -E "node|playwright"` to see if orphaned processes are hoarding RAM.
+*   **Fix**: Kill stale processes: `pkill -f "playwright|test:e2e|next"`. This is often more effective than increasing test timeouts.

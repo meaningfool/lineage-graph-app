@@ -32,8 +32,20 @@ import { ErrorListPanel, type GraphError } from "./ui/error-list-panel";
 export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 	const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(null);
 	const [selectedEdgeId, setSelectedEdgeId] = React.useState<string | null>(null);
+	const [focusedNodeId, setFocusedNodeId] = React.useState<string | null>(null);
 	const [isErrorPanelOpen, setIsErrorPanelOpen] = React.useState(false);
 	const [flashTrigger, setFlashTrigger] = React.useState(0);
+	const [flashingNodeId, setFlashingNodeId] = React.useState<string | null>(null);
+
+	// Reset state when graph data changes (e.g. new file import)
+	React.useEffect(() => {
+		setSelectedNodeId(null);
+		setSelectedEdgeId(null);
+		setFocusedNodeId(null);
+		setFlashingNodeId(null);
+		setIsErrorPanelOpen(false);
+		setFlashTrigger(0);
+	}, [nodes, edges]);
 
 	// Calculate error list
 	const errorList = useMemo<GraphError[]>(() => {
@@ -78,6 +90,42 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 
 	const totalErrors = errorList.length;
 
+	// Calculate highlighted nodes (Upstream + Downstream)
+	const highlightedNodeIds = useMemo(() => {
+		if (!focusedNodeId) return new Set<string>();
+
+		const relatedIds = new Set<string>();
+		relatedIds.add(focusedNodeId);
+
+		// Helper for upstream (follow incoming edges: target -> source)
+		const visitedUp = new Set<string>();
+		const queueUp = [focusedNodeId];
+		while (queueUp.length > 0) {
+			const currentId = queueUp.shift()!;
+			if (visitedUp.has(currentId)) continue;
+			visitedUp.add(currentId);
+			relatedIds.add(currentId);
+
+			const incomingEdges = edges.filter(e => e.target === currentId);
+			incomingEdges.forEach(e => queueUp.push(e.source));
+		}
+
+		// Helper for downstream (follow outgoing edges: source -> target)
+		const visitedDown = new Set<string>();
+		const queueDown = [focusedNodeId];
+		while (queueDown.length > 0) {
+			const currentId = queueDown.shift()!;
+			if (visitedDown.has(currentId)) continue;
+			visitedDown.add(currentId);
+			relatedIds.add(currentId);
+
+			const outgoingEdges = edges.filter(e => e.source === currentId);
+			outgoingEdges.forEach(e => queueDown.push(e.target));
+		}
+
+		return relatedIds;
+	}, [focusedNodeId, edges]);
+
 	// Memoize nodes conversion to prevent unnecessary re-renders
 	const customNodes = useMemo(
 		() =>
@@ -88,9 +136,11 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 				data: {
 					...node.data,
 					flashTrigger, // Pass flash trigger
+					isFlashing: node.id === flashingNodeId,
+					dimmed: focusedNodeId !== null && !highlightedNodeIds.has(node.id),
 				},
 			})),
-		[nodes, selectedNodeId, flashTrigger],
+		[nodes, selectedNodeId, flashTrigger, flashingNodeId, focusedNodeId, highlightedNodeIds],
 	);
 
 	// Memoize edges conversion to prevent unnecessary re-renders
@@ -110,6 +160,7 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 						...edge.data,
 						isSelfLoop, // Pass this flag
 						flashTrigger, // Pass flash trigger
+						dimmed: focusedNodeId !== null && !(highlightedNodeIds.has(edge.source) && highlightedNodeIds.has(edge.target)),
 					},
 					style: {
 						stroke: hasErrors ? "#ef4444" : "#6b7280",
@@ -123,18 +174,20 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 					},
 				};
 			}),
-		[edges, selectedEdgeId, flashTrigger],
+		[edges, selectedEdgeId, flashTrigger, focusedNodeId, highlightedNodeIds],
 	);
 
 	const onNodeClick = React.useCallback((event: React.MouseEvent, node: Node) => {
 		setSelectedNodeId(node.id);
 		setSelectedEdgeId(null); // Clear edge selection
-		setFlashTrigger(prev => prev + 1); // Trigger flash on click
+		setFlashingNodeId(null); // Clear flash on verify manual click
 	}, []);
 
 	const onPaneClick = React.useCallback(() => {
 		setSelectedNodeId(null);
 		setSelectedEdgeId(null);
+		setFlashingNodeId(null);
+		setFocusedNodeId(null); // Clear focus on background click
 	}, []);
 
 	const selectedNode = useMemo(() =>
@@ -146,9 +199,13 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 		if (error.type === "node") {
 			setSelectedNodeId(error.id);
 			setSelectedEdgeId(null);
+			setFlashingNodeId(error.id); // Trigger flash only here
 		} else if (error.type === "edge") {
 			setSelectedEdgeId(error.id);
 			setSelectedNodeId(null); // Optional: clear node selection?
+			setFlashingNodeId(null); // Stop any node flashing
+			// Edges don't support flashing yet, but if they did:
+			// setFlashingEdgeId(error.id);
 		}
 		setFlashTrigger(prev => prev + 1); // Always trigger flash on error click
 	}, []);
@@ -178,6 +235,8 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 				<NodeDetailsPanel
 					node={selectedNode}
 					onClose={() => setSelectedNodeId(null)}
+					isFocused={focusedNodeId === selectedNode.id}
+					onToggleFocus={() => setFocusedNodeId(prev => prev === selectedNode.id ? null : selectedNode.id)}
 				/>
 			)}
 			<ReactFlowProvider>

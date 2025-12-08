@@ -1,4 +1,0 @@
-from_node,to_node
-orders,order-analysis
-customers,order-analysis
-order-analysis,customer-ltv
