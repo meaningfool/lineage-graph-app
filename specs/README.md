@@ -47,7 +47,7 @@ specs/
 
 7.  **Feature Completion Protocol**:
     *   **Regression Check**: You **MUST** run the full E2E suite (`npm run test:e2e`) and ensure all tests pass before merging.
-    *   **Merge Strategy**: Use "Squash and Merge" (or equivalent) to create a single commit on `main` corresponding to the feature.
+    *   **Merge Strategy**: Use **Standard Merge** (`git merge --no-ff`) to preserve the full commit history. This supports the "Learning in Public" goal by showing the actual development process (wip, fixes, etc.) rather than a sanitized history.
     *   **Branch Lifecycle**: Keep the feature branch alive (do not delete it) after merging. This allows for future reference or hotfixes.
     *   **Commit Message**: The commit message on `main` (or the merge commit) **MUST** include the insights from `learnings.md`. This ensures that high-level lessons are permanently logged in the project history.
         *   **Format**: Add "LEARNINGS:" followed by a line break and the list of insights as bullet points.

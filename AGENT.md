@@ -37,6 +37,11 @@
     *   Command: `kit symbols <path/to/file>` to see definitions in a file without reading the whole content.
     *   Command: `kit file-tree <path/to/dir>` to see the structure of a specific subdirectory.
 
+### 5. Feature Completion Protocol
+*   **Merge Strategy**: Always use **Standard Merge** (`git merge --no-ff`).
+    *   **Goal**: "Learning in Public". Preserve the messy history (WIPs, typos, fixes) to show the reality of development.
+    *   **Do Not Squash**: Never squash merge unless explicitly requested for a specific hotfix.
+
 ## 🌟 Golden Rule: Do Not Guess
 *   **Do not guess the UI flow**. Read **`apps/web/e2e/csv-import.spec.ts`** to understand the canonical "Happy Path".
 *   **Look for**: Exact sequence of actions, stable `data-testid`s, and `await expect(...).toBeVisible()` wait conditions.
