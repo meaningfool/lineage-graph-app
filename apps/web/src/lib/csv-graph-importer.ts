@@ -98,7 +98,9 @@ export const parseFileHeaders = (file: File): Promise<string[]> => {
 };
 
 // Reads the entire CSV file.
-export const parseFileFull = (file: File): Promise<Papa.ParseResult<any>> => {
+export const parseFileFull = (
+	file: File,
+): Promise<Papa.ParseResult<unknown>> => {
 	return new Promise((resolve, reject) => {
 		Papa.parse(file, {
 			header: true,
@@ -113,8 +115,7 @@ export const parseFileFull = (file: File): Promise<Papa.ParseResult<any>> => {
 // It takes raw CSV data and turns it into a clean Graph.
 export const buildGraphFromCsv = (
 	nodesData: unknown[],
-	// biome-ignore lint/suspicious/noExplicitAny: Raw CSV data (Slice 2)
-	edgesData: any[],
+	edgesData: unknown[],
 	mapping: { nodes: ValidatedNodeMapping; edges: ValidatedEdgeMapping },
 ): ImportResult => {
 	const { nodes: nodeMapping, edges: edgeMapping } = mapping;
@@ -191,9 +192,10 @@ export const buildGraphFromCsv = (
 	const seenEdgeKeys = new Map<string, boolean>();
 
 	const edges = edgesData
-		.map((row: any) => {
-			const rawSource = row[edgeMapping.source];
-			const rawTarget = row[edgeMapping.target];
+		.map((row) => {
+			const data = row as RawCsvRow;
+			const rawSource = data[edgeMapping.source] as string | undefined;
+			const rawTarget = data[edgeMapping.target] as string | undefined;
 
 			if (!rawSource || !rawTarget) return null;
 
