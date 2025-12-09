@@ -1,5 +1,5 @@
 import Papa from "papaparse";
-import { GraphNodeSchema } from "./csv-schemas";
+import { GraphEdgeSchema, GraphNodeSchema } from "./csv-schemas";
 
 // --- DOMAIN TYPES ---
 // These types define what our "Graph" looks like in the abstract.
@@ -211,10 +211,30 @@ export const buildGraphFromCsv = (
 			const rawSource = data[edgeMapping.source] as string | undefined;
 			const rawTarget = data[edgeMapping.target] as string | undefined;
 
+			// Skip empty rows silently (matches Node behavior)
 			if (!rawSource || !rawTarget) return null;
 
-			const sourceId = sanitizeId(rawSource);
-			const targetId = sanitizeId(rawTarget);
+			// Prepare object for Zod validation
+			const rawEdge = {
+				source: rawSource,
+				target: rawTarget,
+			};
+
+			// Validate with Zod (Deep Safety)
+			const validation = GraphEdgeSchema.safeParse(rawEdge);
+
+			if (!validation.success) {
+				droppedEdgesCount++;
+				// Should not really happen given the 'rawSource/rawTarget' check above
+				// unless we add more constraints to schema (e.g. min length, format)
+				validationWarnings.push("Edge dropped: Invalid format");
+				return null;
+			}
+
+			const validEdge = validation.data;
+
+			const sourceId = sanitizeId(validEdge.source);
+			const targetId = sanitizeId(validEdge.target);
 
 			// Deduplication based on Source-Target pair (Silent drop)
 			const edgeKey = `${sourceId}-${targetId}`;
