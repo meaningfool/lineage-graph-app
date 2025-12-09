@@ -22,9 +22,7 @@ export function NodeDetailsPanel({
 	isFocused,
 	onToggleFocus,
 }: NodeDetailsPanelProps) {
-	// properties is effectively unused in this slice of the file but likely needed later or refactoring artifact
-	// Removing usage to fix lint
-	const { label, type } = node.data;
+	const { label, type, properties } = node.data;
 
 	return (
 		<div
