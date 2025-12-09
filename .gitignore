@@ -103,6 +103,8 @@ Thumbs.db
 *.sqlite3
 
 # Local development
-.turbo apps/web/playwright-report/
+.turbo
+apps/web/playwright-report/
+apps/web/test-results/
 
 
