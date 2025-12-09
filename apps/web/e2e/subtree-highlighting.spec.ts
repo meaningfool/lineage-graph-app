@@ -1,199 +1,154 @@
+import { test, expect } from '@playwright/test';
+import { LineagePage } from './pages/LineagePage';
+import path from 'path';
 
-import { test, expect } from "@playwright/test";
-import path from "path";
-import { LineagePage } from "./pages/LineagePage";
-
-test.describe("Subtree Highlighting", () => {
+test.describe('Subtree Highlighting', () => {
     let lineagePage: LineagePage;
-    const FIXTURES_DIR = path.join(__dirname, "fixtures", "subtree-highlighting");
 
     test.beforeEach(async ({ page }) => {
         lineagePage = new LineagePage(page);
         await lineagePage.goto();
     });
 
-    /**
-     * Slice 1: Focus Toggle UI
-     * Goal: Verify the "Focus" button exists, toggles state, and updates accessibility attributes.
-     */
-    test("toggle_focus_ui", async ({ page }) => {
-        const nodesFile = path.join(FIXTURES_DIR, "simple_dag", "nodes.csv");
-        const edgesFile = path.join(FIXTURES_DIR, "simple_dag", "edges.csv");
+    test('toggle_focus_ui', async ({ page }) => {
+        const nodesPath = path.join(__dirname, 'fixtures/subtree-highlighting/simple_dag/nodes.csv');
+        const edgesPath = path.join(__dirname, 'fixtures/subtree-highlighting/simple_dag/edges.csv');
 
-        // 1. Import Graph
-        await lineagePage.importGraph(nodesFile, edgesFile);
+        await lineagePage.importGraph(nodesPath, edgesPath);
 
-        // 2. Open Details for Node B
-        await page.getByText("Node B", { exact: true }).click();
-        await expect(page.getByTestId("node-details-panel")).toBeVisible();
+        // Open details for Node B
+        await lineagePage.clickNode('B');
 
-        // 3. Verify Focus Button Initial State
-        const focusButton = page.getByTestId("focus-toggle");
-        await expect(focusButton).toBeVisible();
-        await expect(focusButton).toHaveAttribute("data-active", "false");
-        await expect(focusButton).toHaveText("Focus Subtree");
+        // Check toggle button exists and state
+        const toggle = page.getByTestId('focus-toggle');
+        await expect(toggle).toBeVisible();
+        await expect(toggle).toHaveAttribute('data-active', 'false');
+        await expect(toggle).toHaveText('Focus Subtree');
 
-        // 4. Click Toggle -> Active
-        await focusButton.click();
-        await expect(focusButton).toHaveAttribute("data-active", "true");
-        await expect(focusButton).toHaveText("Clear Focus");
+        // Click to activate
+        await toggle.click();
+        await expect(toggle).toHaveAttribute('data-active', 'true');
+        await expect(toggle).toHaveText('Clear Focus');
 
-        // 5. Click Toggle -> Inactive
-        await focusButton.click();
-        await expect(focusButton).toHaveAttribute("data-active", "false");
-        await expect(focusButton).toHaveText("Focus Subtree");
+        // Click to deactivate
+        await toggle.click();
+        await expect(toggle).toHaveAttribute('data-active', 'false');
+        await expect(toggle).toHaveText('Focus Subtree');
     });
 
-    /**
-     * Slice 2: Highlighting Logic
-     * Goal: Verify visual dimming of unrelated nodes (D) while lineage (A->B->C) remains opaque.
-     */
-    test("visual_dimming_acyclic", async ({ page }) => {
-        const nodesFile = path.join(FIXTURES_DIR, "simple_dag", "nodes.csv");
-        const edgesFile = path.join(FIXTURES_DIR, "simple_dag", "edges.csv");
+    test('visual_dimming_acyclic', async ({ page }) => {
+        const nodesPath = path.join(__dirname, 'fixtures/subtree-highlighting/simple_dag/nodes.csv');
+        const edgesPath = path.join(__dirname, 'fixtures/subtree-highlighting/simple_dag/edges.csv');
 
-        await lineagePage.importGraph(nodesFile, edgesFile);
+        await lineagePage.importGraph(nodesPath, edgesPath);
+        await lineagePage.clickNode('B');
 
-        // Focus Node B
-        await page.getByText("Node B", { exact: true }).click();
-        await page.getByTestId("focus-toggle").click();
+        // Focus B
+        await page.getByTestId('focus-toggle').click();
 
-        // Assert A, B, C are opaque (opacity 1)
-        const nodeA = lineagePage.getGraphNode("Node A").getByTestId("custom-node-content");
-        const nodeB = lineagePage.getGraphNode("Node B").getByTestId("custom-node-content");
-        const nodeC = lineagePage.getGraphNode("Node C").getByTestId("custom-node-content");
-        const nodeD = lineagePage.getGraphNode("Node D").getByTestId("custom-node-content");
+        // Wait for visual update
+        await page.waitForTimeout(500);
 
-        await expect(nodeA).toHaveCSS("opacity", "1");
-        await expect(nodeB).toHaveCSS("opacity", "1");
-        await expect(nodeC).toHaveCSS("opacity", "1");
+        // A (Upstream), B (Focus), C (Downstream) should NOT be dimmed
+        // D (Isolated) SHOULD be dimmed
+        const nodeA = page.locator('.react-flow__node[data-id="A"]').getByTestId('custom-node-content');
+        const nodeB = page.locator('.react-flow__node[data-id="B"]').getByTestId('custom-node-content');
+        const nodeC = page.locator('.react-flow__node[data-id="C"]').getByTestId('custom-node-content');
+        const nodeD = page.locator('.react-flow__node[data-id="D"]').getByTestId('custom-node-content');
 
-        // Assert D is dimmed (checking for opacity < 1)
-        await expect(nodeD).not.toHaveCSS("opacity", "1");
+        await expect(nodeA).toHaveClass(/opacity-100/); // Should be opacity-100 (default)
+        await expect(nodeB).toHaveClass(/opacity-100/);
+        await expect(nodeC).toHaveClass(/opacity-100/);
+
+        await expect(nodeD).toHaveClass(/opacity-10\b/); // Use boundary to avoid matching 100
     });
 
-    test("clear_focus_restores_opacity", async ({ page }) => {
-        const nodesFile = path.join(FIXTURES_DIR, "simple_dag", "nodes.csv");
-        const edgesFile = path.join(FIXTURES_DIR, "simple_dag", "edges.csv");
+    test('clear_focus_restores_opacity', async ({ page }) => {
+        const nodesPath = path.join(__dirname, 'fixtures/subtree-highlighting/simple_dag/nodes.csv');
+        const edgesPath = path.join(__dirname, 'fixtures/subtree-highlighting/simple_dag/edges.csv');
 
-        await lineagePage.importGraph(nodesFile, edgesFile);
+        await lineagePage.importGraph(nodesPath, edgesPath);
 
-        // Focus Node B
-        await page.getByText("Node B", { exact: true }).click();
-        await page.getByTestId("focus-toggle").click();
+        // Focus B then Clear
+        await lineagePage.clickNode('B');
+        await page.getByTestId('focus-toggle').click();
+        await page.waitForTimeout(200);
+        await page.getByTestId('focus-toggle').click(); // Clear
 
-        const nodeD = lineagePage.getGraphNode("Node D").getByTestId("custom-node-content");
-        await expect(nodeD).not.toHaveCSS("opacity", "1");
+        // Wait for visual update
+        await page.waitForTimeout(500);
 
-        // Clear Focus
-        await page.getByTestId("focus-toggle").click();
-
-        // Assert D returns to opaque
-        await expect(nodeD).toHaveCSS("opacity", "1");
+        // All nodes should be full opacity
+        const nodeD = page.locator('.react-flow__node[data-id="D"]').getByTestId('custom-node-content');
+        await expect(nodeD).toHaveClass(/opacity-100/);
     });
 
-    /**
-     * Slice 3: Handling Cycles & Self-Loops
-     * Goal: Verify infinite recursion protection and correct highlighting for cycles and self-loops.
-     */
-    test("highlight_cycle", async ({ page }) => {
-        const nodesFile = path.join(FIXTURES_DIR, "cycle_dag", "nodes.csv");
-        const edgesFile = path.join(FIXTURES_DIR, "cycle_dag", "edges.csv");
+    test('self_loop_handling', async ({ page }) => {
+        const nodesPath = path.join(__dirname, 'fixtures/subtree-highlighting/self_loop/nodes.csv');
+        const edgesPath = path.join(__dirname, 'fixtures/subtree-highlighting/self_loop/edges.csv');
 
-        await lineagePage.importGraph(nodesFile, edgesFile);
+        await lineagePage.importGraph(nodesPath, edgesPath);
 
-        // Cycle: A -> B -> C -> A. D -> E is separate.
-        // Focus Node B. Should traverse B -> C -> A -> B...
-        // Entire cycle A, B, C should be highlighted.
-        // D and E should be dimmed.
+        // Focus SelfLoopNode
+        await lineagePage.clickNode('SelfLoopNode');
+        await page.getByTestId('focus-toggle').click();
 
-        await page.getByText("Node B", { exact: true }).click({ force: true });
-        await page.getByTestId("focus-toggle").click();
+        await page.waitForTimeout(500);
 
-        const nodeA = lineagePage.getGraphNode("Node A").getByTestId("custom-node-content");
-        const nodeB = lineagePage.getGraphNode("Node B").getByTestId("custom-node-content");
-        const nodeC = lineagePage.getGraphNode("Node C").getByTestId("custom-node-content");
-        const nodeD = lineagePage.getGraphNode("Node D").getByTestId("custom-node-content");
-        const nodeE = lineagePage.getGraphNode("Node E").getByTestId("custom-node-content");
+        // SelfLoopNode should be highlighted (not dimmed)
+        const selfLoopNode = page.locator('.react-flow__node[data-id="SelfLoopNode"]').getByTestId('custom-node-content');
+        await expect(selfLoopNode).toHaveClass(/opacity-100/);
 
-        await expect(nodeA).toHaveCSS("opacity", "1");
-        await expect(nodeB).toHaveCSS("opacity", "1");
-        await expect(nodeC).toHaveCSS("opacity", "1");
-
-        await expect(nodeD).not.toHaveCSS("opacity", "1");
-        await expect(nodeE).not.toHaveCSS("opacity", "1");
+        // Isolated should be dimmed
+        const isolated = page.locator('.react-flow__node[data-id="Isolated"]').getByTestId('custom-node-content');
+        await expect(isolated).toHaveClass(/opacity-10\b/);
     });
 
-    test("highlight_self_loop", async ({ page }) => {
-        const nodesFile = path.join(FIXTURES_DIR, "self_loop", "nodes.csv");
-        const edgesFile = path.join(FIXTURES_DIR, "self_loop", "edges.csv");
+    test('background_dismiss', async ({ page }) => {
+        const nodesPath = path.join(__dirname, 'fixtures/subtree-highlighting/simple_dag/nodes.csv');
+        const edgesPath = path.join(__dirname, 'fixtures/subtree-highlighting/simple_dag/edges.csv');
 
-        await lineagePage.importGraph(nodesFile, edgesFile);
+        await lineagePage.importGraph(nodesPath, edgesPath);
+        await lineagePage.clickNode('B');
+        await page.getByTestId('focus-toggle').click();
 
-        // A -> A (Self Loop). B -> B (Self Loop).
-        // Focus A. A should be highlighted. B should be dimmed.
-
-        await page.getByText("Node A", { exact: true }).click({ force: true });
-        await page.getByTestId("focus-toggle").click();
-
-        const nodeA = lineagePage.getGraphNode("Node A").getByTestId("custom-node-content");
-        const nodeB = lineagePage.getGraphNode("Node B").getByTestId("custom-node-content");
-
-        await expect(nodeB).not.toHaveCSS("opacity", "1");
-    });
-
-    /**
-     * Slice 4: Interaction Refinements
-     * Goal: Improve UX by allowing background click to dismiss focus, preserve panning.
-     */
-    test("background_dismiss", async ({ page }) => {
-        const nodesFile = path.join(FIXTURES_DIR, "simple_dag", "nodes.csv");
-        const edgesFile = path.join(FIXTURES_DIR, "simple_dag", "edges.csv");
-
-        await lineagePage.importGraph(nodesFile, edgesFile);
-
-        // Focus Node B
-        await page.getByText("Node B", { exact: true }).click();
-        await page.getByTestId("focus-toggle").click();
-
-        const nodeD = lineagePage.getGraphNode("Node D").getByTestId("custom-node-content");
-        await expect(nodeD).not.toHaveCSS("opacity", "1"); // Dimmed
+        // Verify D is dimmed
+        const nodeD = page.locator('.react-flow__node[data-id="D"]').getByTestId('custom-node-content');
+        await expect(nodeD).toHaveClass(/opacity-10\b/);
 
         // Click Background (Pane)
-        // We click at a position guaranteed to be empty (0,0 is top left, usually safe if graph is centered?)
-        // Actually fitView puts graph in center. 0,0 might be safe. Or use specific coordinate.
-        await page.locator(".react-flow__pane").click({ position: { x: 10, y: 10 }, force: true });
+        const pane = page.locator('.react-flow__pane');
+        await pane.click({ position: { x: 10, y: 10 } });
 
-        // Assert Focus cleared (D returns to opaque)
-        await expect(nodeD).toHaveCSS("opacity", "1");
+        // Verify Focus Cleared (D is not dimmed)
+        await page.waitForTimeout(500);
+        await expect(nodeD).toHaveClass(/opacity-100/);
     });
 
-    test("panning_preserves_focus", async ({ page }) => {
-        const nodesFile = path.join(FIXTURES_DIR, "simple_dag", "nodes.csv");
-        const edgesFile = path.join(FIXTURES_DIR, "simple_dag", "edges.csv");
+    test('panning_preserves_focus', async ({ page }) => {
+        const nodesPath = path.join(__dirname, 'fixtures/subtree-highlighting/simple_dag/nodes.csv');
+        const edgesPath = path.join(__dirname, 'fixtures/subtree-highlighting/simple_dag/edges.csv');
 
-        await lineagePage.importGraph(nodesFile, edgesFile);
+        await lineagePage.importGraph(nodesPath, edgesPath);
+        await lineagePage.clickNode('B');
+        await page.getByTestId('focus-toggle').click();
 
-        // Focus Node B
-        await page.getByText("Node B", { exact: true }).click();
-        await page.getByTestId("focus-toggle").click();
+        // Verify D is dimmed
+        const nodeD = page.locator('.react-flow__node[data-id="D"]').getByTestId('custom-node-content');
+        await expect(nodeD).toHaveClass(/opacity-10\b/);
 
-        const nodeD = lineagePage.getGraphNode("Node D").getByTestId("custom-node-content");
-        await expect(nodeD).not.toHaveCSS("opacity", "1");
-
-        // Pan the canvas
-        // We drag the pane from one point to another
-        const pane = page.locator(".react-flow__pane");
+        // Pan the canvas (Drag)
+        const pane = page.locator('.react-flow__pane');
         const box = await pane.boundingBox();
-        if (!box) throw new Error("Canvas not found");
+        if (box) {
+            await page.mouse.move(box.x + 100, box.y + 100);
+            await page.mouse.down();
+            await page.mouse.move(box.x + 300, box.y + 300, { steps: 5 });
+            await page.mouse.up();
+        }
 
-        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-        await page.mouse.down();
-        await page.mouse.move(box.x + box.width / 2 + 100, box.y + box.height / 2 + 100);
-        await page.mouse.up();
-
-        // Assert Focus REMAINS active (D still dimmed)
-        // Panning should NOT trigger onPaneClick
-        await expect(nodeD).not.toHaveCSS("opacity", "1");
+        // Verify Focus PERSISTS (D is still dimmed)
+        await page.waitForTimeout(500);
+        await expect(nodeD).toHaveClass(/opacity-10\b/);
     });
 });

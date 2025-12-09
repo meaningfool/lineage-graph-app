@@ -223,7 +223,7 @@ export class LineagePage {
         await expect(this.page.locator(".react-flow__node").filter({ hasText: text })).not.toBeVisible();
     }
 
-    async clickGraphNode(text: string) {
+    async clickNode(text: string) {
         await this.getGraphNode(text).click();
     }
 

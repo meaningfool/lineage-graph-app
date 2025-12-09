@@ -222,6 +222,12 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 		[customNodes, selectedNodeId]
 	);
 
+	const handleToggleFocus = React.useCallback(() => {
+		if (selectedNodeId) {
+			setFocusedNodeId(prev => prev === selectedNodeId ? null : selectedNodeId);
+		}
+	}, [selectedNodeId]);
+
 	const handleErrorClick = React.useCallback((error: GraphError) => {
 		if (error.type === "node") {
 			setSelectedNodeId(error.id);
@@ -299,6 +305,14 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 				errorCount={totalErrors}
 				onClick={() => setIsErrorPanelOpen(true)}
 			/>
+			{selectedNode && (
+				<NodeDetailsPanel
+					node={selectedNode}
+					onClose={() => setSelectedNodeId(null)}
+					isFocused={focusedNodeId === selectedNodeId}
+					onToggleFocus={handleToggleFocus}
+				/>
+			)}
 			{isErrorPanelOpen && (
 				<ErrorListPanel
 					errors={errorList}

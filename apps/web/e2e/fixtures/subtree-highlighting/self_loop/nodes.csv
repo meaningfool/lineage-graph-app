@@ -1,3 +1,5 @@
 id,title,type
-A,Node A,INPUT
-B,Node B,OUTPUT
+Upstream,Upstream Node,INPUT
+SelfLoopNode,Self Loop Node,STEP
+Downstream,Downstream Node,OUTPUT
+Isolated,Isolated Node,INPUT

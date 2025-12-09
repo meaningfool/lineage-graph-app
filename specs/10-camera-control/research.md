@@ -26,3 +26,36 @@ The **Hybrid Approach** is required for robustness:
 3.  **`setTimeout` (50ms)**: Essential buffer to allow one full browser paint frame before calculating bounds.
 
 This pattern is not "bad practice" but a necessary bridge when coordinating React State with an imperative Layout Engine (ELK/ReactFlow) and the DOM.
+
+## Architecture: Coupling vs View Models
+
+### The "Rich Error" Crash (2025-12-09)
+
+#### Issue
+Verified a bug where upgrading the validation logic to return rich objects (`{ message, relatedIds }`) instead of strings caused a frontend crash (`Objects are not valid as React child`).
+
+#### Root Cause: Hidden Coupling
+We had a dependency chain that looked decoupled but was actually tight:
+*   **Domain**: Produces Data (Owner of structure).
+*   **Adapter (`reactflow-mapper`)**: Forwards Data (Dumb pipe).
+*   **UI (`CustomEdge`)**: Consumes Data (Implicitly expecting specific structure).
+
+Because the Adapter didn't transform the data into a strict "View Shape", the UI was directly coupled to the Domain's internal error structure.
+
+#### Insight: The Case for View Models
+At valid scale, the **Adapter** should act as a **View Model Factory**:
+*   **Input**: Domain Entities (GraphNode, ValidationError Object).
+*   **Output**: UI Props (string `tooltipText`, boolean `isFlashing`).
+
+```typescript
+// Strict UI Contract
+interface EdgeProps {
+    tooltipText: string;
+    isFlashing: boolean;
+}
+```
+
+This ensures that changes in the Domain (e.g., adding `relatedIds`) break the **Adapter** (compile time error), not the **UI** (runtime crash).
+
+#### Decision
+For now, we patched the UI to handle the new structure to move fast. But for future refactoring, `reactflow-mapper` should verify/transform validation errors into strings/booleans rather than passing raw objects.
