@@ -12,6 +12,7 @@ import { CustomEdge } from "./graph/custom-edge";
 import { NodeDetailsPanel } from "./ui/node-details-panel";
 import { ErrorToggle } from "./ui/error-toggle";
 import { ErrorListPanel, type GraphError } from "./ui/error-list-panel";
+import type { ValidationError } from "../lib/graph-validation";
 
 // Define nodeTypes outside component to prevent recreation on every render
 const nodeTypes = {
@@ -43,6 +44,7 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 	const [isErrorPanelOpen, setIsErrorPanelOpen] = React.useState(false);
 	const [flashTrigger, setFlashTrigger] = React.useState(0);
 	const [flashingNodeId, setFlashingNodeId] = React.useState<string | null>(null);
+	const [flashingEdgeIds, setFlashingEdgeIds] = React.useState<Set<string>>(new Set());
 
 	// Slice 1: Auto-Fit on Load
 	// We use an imperative effect because the 'fitView' prop on ReactFlow
@@ -61,6 +63,7 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 		setSelectedEdgeId(null);
 		setFocusedNodeId(null);
 		setFlashingNodeId(null);
+		setFlashingEdgeIds(new Set());
 		setIsErrorPanelOpen(false);
 		setFlashTrigger(0);
 	}, [nodes, edges]);
@@ -79,12 +82,13 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 
 		nodes.forEach(n => {
 			if (n.data?.validationErrors) {
-				n.data.validationErrors.forEach((msg: string) => {
+				(n.data.validationErrors as ValidationError[]).forEach((err) => {
 					addError({
 						id: n.id,
 						type: "node",
-						message: msg,
-						label: n.data.label
+						message: err.message,
+						label: n.data.label,
+						relatedIds: err.relatedIds
 					});
 				});
 			}
@@ -92,12 +96,13 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 
 		edges.forEach(e => {
 			if (e.data?.validationErrors) {
-				e.data.validationErrors.forEach((msg: string) => {
+				(e.data.validationErrors as ValidationError[]).forEach((err) => {
 					addError({
 						id: e.id,
 						type: "edge",
-						message: msg,
-						label: e.data?.label || e.id
+						message: err.message,
+						label: e.data?.label || e.id,
+						relatedIds: err.relatedIds
 					});
 				});
 			}
@@ -168,6 +173,7 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 				const hasErrors =
 					edge.data?.validationErrors && edge.data.validationErrors.length > 0;
 				const isSelfLoop = edge.source === edge.target;
+				const isFlashing = flashingEdgeIds.has(edge.id);
 
 				return {
 					...edge,
@@ -178,6 +184,7 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 						...edge.data,
 						isSelfLoop, // Pass this flag
 						flashTrigger, // Pass flash trigger
+						isFlashing, // NEW: Pass flashing state to edge
 						dimmed: focusedNodeId !== null && !(highlightedNodeIds.has(edge.source) && highlightedNodeIds.has(edge.target)),
 					},
 					style: {
@@ -192,19 +199,21 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 					},
 				};
 			}),
-		[edges, selectedEdgeId, flashTrigger, focusedNodeId, highlightedNodeIds],
+		[edges, selectedEdgeId, flashTrigger, focusedNodeId, highlightedNodeIds, flashingEdgeIds],
 	);
 
 	const onNodeClick = React.useCallback((event: React.MouseEvent, node: Node) => {
 		setSelectedNodeId(node.id);
 		setSelectedEdgeId(null); // Clear edge selection
 		setFlashingNodeId(null); // Clear flash on verify manual click
+		setFlashingEdgeIds(new Set());
 	}, []);
 
 	const onPaneClick = React.useCallback(() => {
 		setSelectedNodeId(null);
 		setSelectedEdgeId(null);
 		setFlashingNodeId(null);
+		setFlashingEdgeIds(new Set());
 		setFocusedNodeId(null); // Clear focus on background click
 	}, []);
 
@@ -218,46 +227,58 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 			setSelectedNodeId(error.id);
 			setSelectedEdgeId(null);
 			setFlashingNodeId(error.id); // Trigger flash only here
+			setFlashingEdgeIds(new Set());
 
 			// Camera Logic: Center on Node
 			const node = nodes.find(n => n.id === error.id);
-			if (node && node.width && node.height) {
-				const x = node.position.x + node.width / 2;
-				const y = node.position.y + node.height / 2;
-				fitView({ nodes: [{ id: error.id }], duration: 800, minZoom: 1.0, maxZoom: 1.2 });
-				// Actually setCenter is easier for specific zoom, but fitView with target is safer for dimensions
-				// Let's use setCenter explicitly as requested for "Center/Zoom" control
-				// But setCenter requires converting flow coords to viewport? No, it takes flow coords.
-				// Wait, setCenter takes x, y, zoom.
-				// useReactFlow().setCenter(x, y, { zoom: 1.2, duration: 800 });
-
-				// However, node.position is top-left.
-				// Let's try setCenter.
-			}
-			// Better: use fitView on the specific node to ensure it fits?
-			// "Recenter and zoom... maximize zoom for readability".
-			// fitView({ nodes: [{id: error.id}], duration: 800, padding: 0.5 }) might be good.
-			// Let's stick to setCenter if we want specific zoom 1.2.
-			// Actually, fitView is robust.
 			if (node) {
 				fitView({ nodes: [node], duration: 800, padding: 0.2, minZoom: 1, maxZoom: 1.2 });
 			}
 
 		} else if (error.type === "edge") {
-			setSelectedEdgeId(error.id);
-			setSelectedNodeId(null); // Optional: clear node selection?
-			setFlashingNodeId(null); // Stop any node flashing
-			// Edges don't support flashing yet, but if they did:
-			// setFlashingEdgeId(error.id);
+			if (error.relatedIds && error.relatedIds.length > 0) {
+				// Handle Cycle / Multi-Node Error
+				const edgesToFlash = new Set<string>();
+				const nodesToFit: Node[] = [];
 
-			// Camera Logic: Fit Edge?
-			const edge = edges.find(e => e.id === error.id);
-			if (edge) {
-				// We can fit the source and target nodes of the edge
-				const source = nodes.find(n => n.id === edge.source);
-				const target = nodes.find(n => n.id === edge.target);
-				if (source && target) {
-					fitView({ nodes: [source, target], duration: 800, padding: 0.2 });
+				// Identify Nodes for fitting
+				error.relatedIds.forEach(id => {
+					const n = nodes.find(node => node.id === id);
+					if (n) nodesToFit.push(n);
+				});
+
+				// Identify Edges for flashing
+				for (let i = 0; i < error.relatedIds.length - 1; i++) {
+					const source = error.relatedIds[i];
+					const target = error.relatedIds[i + 1];
+					// Find edge by source/target match
+					const matchingEdges = edges.filter(e => e.source === source && e.target === target);
+					matchingEdges.forEach(e => edgesToFlash.add(e.id));
+				}
+
+				setFlashingEdgeIds(edgesToFlash);
+				setSelectedEdgeId(null);
+				setSelectedNodeId(null);
+				setFlashingNodeId(null);
+
+				if (nodesToFit.length > 0) {
+					fitView({ nodes: nodesToFit, duration: 800, padding: 0.2 });
+				}
+
+			} else {
+				// Single Edge Error
+				setSelectedEdgeId(error.id);
+				setSelectedNodeId(null);
+				setFlashingNodeId(null);
+				setFlashingEdgeIds(new Set());
+
+				const edge = edges.find(e => e.id === error.id);
+				if (edge) {
+					const source = nodes.find(n => n.id === edge.source);
+					const target = nodes.find(n => n.id === edge.target);
+					if (source && target) {
+						fitView({ nodes: [source, target], duration: 800, padding: 0.2 });
+					}
 				}
 			}
 		}

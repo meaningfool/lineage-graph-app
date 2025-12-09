@@ -184,7 +184,7 @@ export function useCSVImportWizard({ onImport, onClose }: UseCSVImportWizardProp
             }
         } catch (err) {
             console.error("CSV Parse Error:", err);
-            setFeedback((prev) => ({ ...prev, error: "Failed to parse CSV file" }));
+            setFeedback((prev) => ({ ...prev, error: "Failed to parse CSV file: " + String(err) }));
             setCurrentStep("results");
         }
     };

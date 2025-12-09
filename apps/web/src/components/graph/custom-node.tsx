@@ -8,7 +8,7 @@ export interface NodeData {
     properties?: {
         [key: string]: any;
     };
-    validationErrors?: string[];
+    validationErrors?: any[]; // string[] | ValidationError[]
     flashTrigger?: number;
     dimmed?: boolean;
     isFlashing?: boolean;
@@ -66,8 +66,8 @@ export function CustomNode({ id, data, selected }: { id: string; data: NodeData;
                     offset={10}
                 >
                     <div className="px-2 py-1 text-xs font-sans font-normal text-white bg-gray-900 rounded shadow-md whitespace-nowrap">
-                        {data.validationErrors?.map((err, i) => (
-                            <div key={i}>{err}</div>
+                        {data.validationErrors?.map((err: any, i) => (
+                            <div key={i}>{err.message || err}</div>
                         ))}
                         {/* Arrow */}
                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />

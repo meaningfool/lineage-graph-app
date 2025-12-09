@@ -23,47 +23,59 @@
         - generic [ref=e16]: Errors
         - generic [ref=e17]: "2"
       - generic [ref=e18]:
-        - generic [ref=e20]:
+        - generic [ref=e19]:
+          - heading "Validation Errors" [level=3] [ref=e20]
+          - button [ref=e21] [cursor=pointer]:
+            - img
+        - list [ref=e23]:
+          - listitem [ref=e24] [cursor=pointer]:
+            - img [ref=e25]
+            - generic [ref=e27]: "Outlier: Step node must have at least one incoming connection and at least one outgoing connection"
+          - listitem [ref=e28] [cursor=pointer]:
+            - img [ref=e29]
+            - generic [ref=e31]: "Cycle detected: NodeA -> NodeB -> NodeC -> NodeD -> NodeA"
+      - generic [ref=e32]:
+        - generic [ref=e34]:
           - generic:
             - img:
               - generic:
-                - button "Edge from A to B" [ref=e21] [cursor=pointer]
+                - button "Edge from A to B" [ref=e35] [cursor=pointer]
                 - button "Edge from B to C"
                 - button "Edge from C to D"
                 - button "Edge from D to A"
             - generic:
-              - generic [ref=e28]: "Cycle detected: NodeA -> NodeB -> NodeC -> NodeD -> NodeA"
-              - generic [ref=e32]: "Cycle detected: NodeA -> NodeB -> NodeC -> NodeD -> NodeA"
-              - generic [ref=e36]: "Cycle detected: NodeA -> NodeB -> NodeC -> NodeD -> NodeA"
-              - generic [ref=e40]: "Cycle detected: NodeA -> NodeB -> NodeC -> NodeD -> NodeA"
+              - generic [ref=e43]: "Cycle detected: NodeA -> NodeB -> NodeC -> NodeD -> NodeA"
+              - generic [ref=e47]: "Cycle detected: NodeA -> NodeB -> NodeC -> NodeD -> NodeA"
+              - generic [ref=e51]: "Cycle detected: NodeA -> NodeB -> NodeC -> NodeD -> NodeA"
+              - generic [ref=e55]: "Cycle detected: NodeA -> NodeB -> NodeC -> NodeD -> NodeA"
             - generic:
-              - 'button "NodeA # A" [ref=e42]':
-                - generic [ref=e45] [cursor=pointer]:
-                  - generic [ref=e46]: NodeA
-                  - generic [ref=e47]: "# A"
-              - 'button "NodeB # B" [ref=e49]':
-                - generic [ref=e52] [cursor=pointer]:
-                  - generic [ref=e53]: NodeB
-                  - generic [ref=e54]: "# B"
-              - 'button "NodeC # C" [ref=e56]':
-                - generic [ref=e59] [cursor=pointer]:
-                  - generic [ref=e60]: NodeC
-                  - generic [ref=e61]: "# C"
-              - 'button "NodeD # D" [ref=e63]':
-                - generic [ref=e66] [cursor=pointer]:
-                  - generic [ref=e67]: NodeD
-                  - generic [ref=e68]: "# D"
-              - 'button "Outlier # E" [ref=e70]':
-                - generic [ref=e73] [cursor=pointer]:
-                  - generic [ref=e74]: Outlier
-                  - generic [ref=e75]: "# E"
-        - img [ref=e77]
-  - generic [ref=e80]:
-    - img [ref=e82]
-    - button "Open Tanstack query devtools" [ref=e130] [cursor=pointer]:
-      - img [ref=e131]
+              - 'button "NodeA # A" [ref=e57]':
+                - generic [ref=e60] [cursor=pointer]:
+                  - generic [ref=e61]: NodeA
+                  - generic [ref=e62]: "# A"
+              - 'button "NodeB # B" [ref=e64]':
+                - generic [ref=e67] [cursor=pointer]:
+                  - generic [ref=e68]: NodeB
+                  - generic [ref=e69]: "# B"
+              - 'button "NodeC # C" [ref=e71]':
+                - generic [ref=e74] [cursor=pointer]:
+                  - generic [ref=e75]: NodeC
+                  - generic [ref=e76]: "# C"
+              - 'button "NodeD # D" [ref=e78]':
+                - generic [ref=e81] [cursor=pointer]:
+                  - generic [ref=e82]: NodeD
+                  - generic [ref=e83]: "# D"
+              - 'button "Outlier # E" [ref=e85]':
+                - generic [ref=e88] [cursor=pointer]:
+                  - generic [ref=e89]: Outlier
+                  - generic [ref=e90]: "# E"
+        - img [ref=e92]
+  - generic [ref=e95]:
+    - img [ref=e97]
+    - button "Open Tanstack query devtools" [ref=e145] [cursor=pointer]:
+      - img [ref=e146]
   - region "Notifications alt+T"
-  - alert [ref=e179]
-  - button "Open Next.js Dev Tools" [ref=e185] [cursor=pointer]:
-    - img [ref=e186]
+  - alert [ref=e194]
+  - button "Open Next.js Dev Tools" [ref=e200] [cursor=pointer]:
+    - img [ref=e201]
 ```

@@ -23,8 +23,8 @@ function EdgeTooltip({ x, y, errors, isHovered }: { x: number; y: number; errors
                 className="nodrag nopan"
             >
                 <div className="px-2 py-1 text-xs font-sans font-normal text-white bg-gray-900 rounded shadow-md whitespace-nowrap">
-                    {errors.map((err, i) => (
-                        <div key={i}>{err}</div>
+                    {errors.map((err: any, i) => (
+                        <div key={i}>{err.message || err}</div>
                     ))}
                     {/* Arrow */}
                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
@@ -90,7 +90,7 @@ export function CustomEdge({
             />
 
             {/* Active Error Flash (Outer Stroke) */}
-            {hasErrors && selected && (
+            {hasErrors && (selected || data?.isFlashing) && (
                 <path
                     key={data?.flashTrigger}
                     d={edgePath}

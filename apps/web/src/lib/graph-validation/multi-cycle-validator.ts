@@ -13,8 +13,8 @@ import type { GraphNode, GraphEdge } from "../csv-graph-importer";
  * Note: We explicitly exclude self-loops here because they are handled by the 
  * cheaper `detectSelfCycles` validator.
  */
-export function detectMultiNodeCycles(nodes: GraphNode[], edges: GraphEdge[], nodeLabels: Map<string, string>): Map<string, string[]> {
-    const edgeErrors = new Map<string, string[]>();
+export function detectMultiNodeCycles(nodes: GraphNode[], edges: GraphEdge[], nodeLabels: Map<string, string>): Map<string, { message: string, relatedIds?: string[] }[]> {
+    const edgeErrors = new Map<string, { message: string, relatedIds?: string[] }[]>();
     const visited = new Set<string>();
     const recursionStack = new Set<string>();
 
@@ -39,19 +39,21 @@ export function detectMultiNodeCycles(nodes: GraphNode[], edges: GraphEdge[], no
                 const cycleStartIndex = path.indexOf(neighbor);
                 if (cycleStartIndex !== -1) {
                     const cycleNodes = path.slice(cycleStartIndex);
+                    const fullCycleIds = [...cycleNodes, neighbor];
 
                     // Construct the cycle path string for the error message
                     // e.g., "Node A -> Node B -> Node C -> Node A"
-                    const cyclePathLabels = [...cycleNodes, neighbor].map(id => nodeLabels.get(id) || id);
+                    const cyclePathLabels = fullCycleIds.map(id => nodeLabels.get(id) || id);
                     const pathString = cyclePathLabels.join(" -> ");
                     const errorMessage = `Cycle detected: ${pathString}`;
+                    const errorObj = { message: errorMessage, relatedIds: fullCycleIds };
 
                     // Mark edges connecting these nodes
                     // 1. Mark the back-edge (nodeId -> neighbor)
                     const backEdgeKey = `${nodeId}-${neighbor}`;
                     const backErrors = edgeErrors.get(backEdgeKey) || [];
-                    if (!backErrors.some(e => e.startsWith("Cycle detected"))) {
-                        backErrors.push(errorMessage);
+                    if (!backErrors.some(e => e.message === errorMessage)) {
+                        backErrors.push(errorObj);
                         edgeErrors.set(backEdgeKey, backErrors);
                     }
 
@@ -61,8 +63,8 @@ export function detectMultiNodeCycles(nodes: GraphNode[], edges: GraphEdge[], no
                         const t = cycleNodes[i + 1];
                         const key = `${s}-${t}`;
                         const errs = edgeErrors.get(key) || [];
-                        if (!errs.some(e => e.startsWith("Cycle detected"))) {
-                            errs.push(errorMessage);
+                        if (!errs.some(e => e.message === errorMessage)) {
+                            errs.push(errorObj);
                             edgeErrors.set(key, errs);
                         }
                     }

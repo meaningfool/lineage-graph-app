@@ -9,8 +9,8 @@ import type { GraphEdge } from "../csv-graph-importer";
  * 
  * @returns Map where key is "source-target" and value is list of error messages.
  */
-export function detectSelfCycles(edges: GraphEdge[], nodeLabels: Map<string, string>): Map<string, string[]> {
-    const edgeErrors = new Map<string, string[]>();
+export function detectSelfCycles(edges: GraphEdge[], nodeLabels: Map<string, string>): Map<string, { message: string, relatedIds?: string[] }[]> {
+    const edgeErrors = new Map<string, { message: string, relatedIds?: string[] }[]>();
 
     edges.forEach(edge => {
         if (edge.source === edge.target) {
@@ -19,7 +19,7 @@ export function detectSelfCycles(edges: GraphEdge[], nodeLabels: Map<string, str
             const label = nodeLabels.get(edge.source) || edge.source;
             const msg = `Self-cycle: ${label} connects to itself`;
             console.log(`[SelfCycleValidator] Error: ${msg}`);
-            currentErrors.push(msg);
+            currentErrors.push({ message: msg });
             edgeErrors.set(edgeKey, currentErrors);
         }
     });
