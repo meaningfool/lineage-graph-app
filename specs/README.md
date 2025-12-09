@@ -46,11 +46,9 @@ specs/
     *   Always commit the `specs/` files along with the code changes. This preserves the "Why" and "How" alongside the "What".
 
 7.  **Feature Completion Protocol**:
-    *   **Regression Check**: You **MUST** run the full E2E suite (`npm run test:e2e`) and ensure all tests pass before merging.
-    *   **Merge Strategy**: Use **Standard Merge** (`git merge --no-ff`) to preserve the full commit history. This supports the "Learning in Public" goal by showing the actual development process (wip, fixes, etc.) rather than a sanitized history.
-    *   **Branch Lifecycle**: Keep the feature branch alive (do not delete it) after merging. This allows for future reference or hotfixes.
-    *   **Commit Message**: The commit message on `main` (or the merge commit) **MUST** include the insights from `learnings.md`. This ensures that high-level lessons are permanently logged in the project history.
-        *   **Format**: Add "LEARNINGS:" followed by a line break and the list of insights as bullet points.
+    *   **Workflow**: Run the automated workflow to verify and merge.
+    *   **Command**: `/close-branch` (or follow steps in `.agent/workflows/close-branch.md`).
+    *   This workflow handles regression testing, "Learning in Public" (merging `learnings.md`), and Standard Merge (`--no-ff`) policy.
 
 ## How to Write `learnings.md`
 

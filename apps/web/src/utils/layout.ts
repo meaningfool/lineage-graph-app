@@ -1,15 +1,11 @@
 import type { Edge, Node } from "reactflow";
-import {
-	computeMaxLayers,
-	assignLayers,
-	assignCoordinates,
-} from "@/lib/graph-layout-utils";
+import { assignCoordinates, assignLayers } from "@/lib/graph-layout-utils";
 
 // Layout utility function using custom algorithm
 export const getLayoutedElements = (
 	nodes: Node[],
 	edges: Edge[],
-	direction = "LR",
+	_direction = "LR",
 ) => {
 	if (nodes.length === 0) {
 		return { nodes: [], edges };

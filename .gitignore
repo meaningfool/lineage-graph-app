@@ -105,5 +105,4 @@ Thumbs.db
 # Local development
 .turbo apps/web/playwright-report/
 
-# Husky
-.husky
+
