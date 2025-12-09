@@ -4,11 +4,14 @@ import ReactFlow, {
 	Background,
 	ReactFlowProvider,
 	MarkerType,
+	useReactFlow,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { CustomNode } from "./graph/custom-node";
 import { CustomEdge } from "./graph/custom-edge";
 import { NodeDetailsPanel } from "./ui/node-details-panel";
+import { ErrorToggle } from "./ui/error-toggle";
+import { ErrorListPanel, type GraphError } from "./ui/error-list-panel";
 
 // Define nodeTypes outside component to prevent recreation on every render
 const nodeTypes = {
@@ -24,18 +27,33 @@ interface LineageGraphProps {
 	edges: Edge[];
 }
 
-import { ErrorToggle } from "./ui/error-toggle";
-import { ErrorListPanel, type GraphError } from "./ui/error-list-panel";
+export function LineageGraph(props: LineageGraphProps) {
+	return (
+		<ReactFlowProvider>
+			<LineageGraphContent {...props} />
+		</ReactFlowProvider>
+	);
+}
 
-// ... existing imports
-
-export function LineageGraph({ nodes, edges }: LineageGraphProps) {
+function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
+	const { fitView } = useReactFlow();
 	const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(null);
 	const [selectedEdgeId, setSelectedEdgeId] = React.useState<string | null>(null);
 	const [focusedNodeId, setFocusedNodeId] = React.useState<string | null>(null);
 	const [isErrorPanelOpen, setIsErrorPanelOpen] = React.useState(false);
 	const [flashTrigger, setFlashTrigger] = React.useState(0);
 	const [flashingNodeId, setFlashingNodeId] = React.useState<string | null>(null);
+
+	// Slice 1: Auto-Fit on Load
+	// We use an imperative effect because the 'fitView' prop on ReactFlow
+	// can sometimes run before custom nodes have calculated their dimensions.
+	React.useEffect(() => {
+		if (nodes.length === 0) return;
+		const timer = setTimeout(() => {
+			fitView({ padding: 0.2, duration: 800 });
+		}, 50); // Small delay to ensure DOM dimensions are ready
+		return () => clearTimeout(timer);
+	}, [nodes, fitView]);
 
 	// Reset state when graph data changes (e.g. new file import)
 	React.useEffect(() => {
@@ -231,37 +249,25 @@ export function LineageGraph({ nodes, edges }: LineageGraphProps) {
 					onItemClick={handleErrorClick}
 				/>
 			)}
-			{selectedNode && (
-				<NodeDetailsPanel
-					node={selectedNode}
-					onClose={() => setSelectedNodeId(null)}
-					isFocused={focusedNodeId === selectedNode.id}
-					onToggleFocus={() => setFocusedNodeId(prev => prev === selectedNode.id ? null : selectedNode.id)}
+			<ReactFlow
+				nodes={customNodes}
+				edges={customEdges}
+				nodeTypes={nodeTypes}
+				edgeTypes={edgeTypes}
+				onNodeClick={onNodeClick}
+				onPaneClick={onPaneClick}
+				minZoom={0.1}
+				maxZoom={2}
+				defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+				proOptions={{ hideAttribution: true }}
+			>
+				<Background
+					variant={"dots" as any}
+					gap={20}
+					size={1.5}
+					color="#9ca3af"
 				/>
-			)}
-			<ReactFlowProvider>
-				<ReactFlow
-					nodes={customNodes}
-					edges={customEdges}
-					nodeTypes={nodeTypes}
-					edgeTypes={edgeTypes}
-					onNodeClick={onNodeClick}
-					onPaneClick={onPaneClick}
-					fitView
-					fitViewOptions={{ padding: 0.2 }}
-					minZoom={0.1}
-					maxZoom={2}
-					defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-					proOptions={{ hideAttribution: true }}
-				>
-					<Background
-						variant={"dots" as any}
-						gap={20}
-						size={1.5}
-						color="#9ca3af"
-					/>
-				</ReactFlow>
-			</ReactFlowProvider>
-		</div>
+			</ReactFlow>
+		</div >
 	);
 }

@@ -29,6 +29,7 @@ export default function Home() {
 	// Initialize state with empty data
 	const [nodes, setNodes] = useState<Node[]>([]);
 	const [edges, setEdges] = useState<Edge[]>([]);
+	const [graphId, setGraphId] = useState<string>("initial");
 
 	// Apply layout whenever nodes/edges change (or initially)
 	// For now, we'll just layout the current state
@@ -39,6 +40,7 @@ export default function Home() {
 		const layoutedNew = getLayoutedElements(newNodes, newEdges, "LR");
 		setNodes(layoutedNew.nodes);
 		setEdges(layoutedNew.edges);
+		setGraphId(Date.now().toString()); // Force remount on new import
 	}, []);
 
 	return (
@@ -47,7 +49,7 @@ export default function Home() {
 			<div className="p-2">
 
 			</div>
-			<LineageGraph nodes={layouted.nodes} edges={layouted.edges} />
+			<LineageGraph key={graphId} nodes={layouted.nodes} edges={layouted.edges} />
 		</div>
 	);
 }

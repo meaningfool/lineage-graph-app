@@ -1,0 +1,10 @@
+id,title,type
+X,ErrorSource,STEP
+A,InputNode,INPUT
+B,StepNode,STEP
+C,StepNode,STEP
+D,StepNode,STEP
+E,StepNode,STEP
+F,StepNode,STEP
+G,StepNode,STEP
+H,OutputNode,OUTPUT
