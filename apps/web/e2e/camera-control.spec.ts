@@ -171,6 +171,7 @@ test.describe('Camera Control', () => {
 test('click_cycle_error_flashes_all_edges', async ({ page }) => {
     const lineagePage = new LineagePage(page);
     await lineagePage.goto();
+
     // Setup: Import cycle_distanced
     // A->B (e1), B->C (e2), C->D (e3), D->A (e4)
     await lineagePage.importGraph('e2e/fixtures/camera-control/cycle_distanced/nodes.csv', 'e2e/fixtures/camera-control/cycle_distanced/edges.csv');
@@ -180,20 +181,31 @@ test('click_cycle_error_flashes_all_edges', async ({ page }) => {
 
     // Wait for animation/reaction (flash starts immediately on click)
     // Check ALL 4 edges have the flash class
-    const edgeIds = ['e1', 'e2', 'e3', 'e4'];
 
-    for (const id of edgeIds) {
+    // Check ALL 4 edges have the flash class
+    // Note: The app generates IDs as `e-${source}-${target}`
+    const edgesToCheck = [
+        { source: 'A', target: 'B' },
+        { source: 'B', target: 'C' },
+        { source: 'C', target: 'D' },
+        { source: 'D', target: 'A' }
+    ];
+
+    for (const { source, target } of edgesToCheck) {
+        const id = `e-${source}-${target}`;
         // We need to find the specific edge path.
         // Usually .react-flow__edge[data-id="e1"] path.animate-flash-stroke
 
         // Check if the edge element exists
-        const edge = page.locator(`.react-flow__edge[data-id="${id}"]`);
+        // Note: we added data-id to the inner <g>
+        const edge = page.locator(`.react-flow__edge [data-id="${id}"]`);
         await expect(edge).toBeAttached();
 
         // Check if it has the flash class (usually on the path, or the g?)
         // Based on LineagePage.ts: .react-flow__edge path.animate-flash-stroke
         // Ideally: edge.locator('path.animate-flash-stroke')
         const flashPath = edge.locator('path.animate-flash-stroke');
-        await expect(flashPath).toBeVisible();
+        await expect(flashPath).toBeAttached();
+        await expect(flashPath).toHaveClass(/animate-flash-stroke/);
     }
 });

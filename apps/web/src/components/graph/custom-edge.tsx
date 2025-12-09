@@ -80,6 +80,7 @@ export function CustomEdge({
 
     return (
         <g
+            data-id={id}
             className={`transition-opacity duration-200 ease-in-out ${opacityClass}`}
         >
             {/* Base Edge (Visible Line) */}
