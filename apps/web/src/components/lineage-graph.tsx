@@ -2,17 +2,17 @@ import React, { useMemo } from "react";
 import type { Edge, Node } from "reactflow";
 import ReactFlow, {
 	Background,
-	ReactFlowProvider,
 	MarkerType,
+	ReactFlowProvider,
 	useReactFlow,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { CustomNode } from "./graph/custom-node";
-import { CustomEdge } from "./graph/custom-edge";
-import { NodeDetailsPanel } from "./ui/node-details-panel";
-import { ErrorToggle } from "./ui/error-toggle";
-import { ErrorListPanel, type GraphError } from "./ui/error-list-panel";
 import type { ValidationError } from "../lib/graph-validation";
+import { CustomEdge } from "./graph/custom-edge";
+import { CustomNode } from "./graph/custom-node";
+import { ErrorListPanel, type GraphError } from "./ui/error-list-panel";
+import { ErrorToggle } from "./ui/error-toggle";
+import { NodeDetailsPanel } from "./ui/node-details-panel";
 
 // Define nodeTypes outside component to prevent recreation on every render
 const nodeTypes = {
@@ -38,13 +38,21 @@ export function LineageGraph(props: LineageGraphProps) {
 
 function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 	const { fitView } = useReactFlow();
-	const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(null);
-	const [selectedEdgeId, setSelectedEdgeId] = React.useState<string | null>(null);
+	const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(
+		null,
+	);
+	const [selectedEdgeId, setSelectedEdgeId] = React.useState<string | null>(
+		null,
+	);
 	const [focusedNodeId, setFocusedNodeId] = React.useState<string | null>(null);
 	const [isErrorPanelOpen, setIsErrorPanelOpen] = React.useState(false);
 	const [flashTrigger, setFlashTrigger] = React.useState(0);
-	const [flashingNodeId, setFlashingNodeId] = React.useState<string | null>(null);
-	const [flashingEdgeIds, setFlashingEdgeIds] = React.useState<Set<string>>(new Set());
+	const [flashingNodeId, setFlashingNodeId] = React.useState<string | null>(
+		null,
+	);
+	const [flashingEdgeIds, setFlashingEdgeIds] = React.useState<Set<string>>(
+		new Set(),
+	);
 
 	// Slice 1: Auto-Fit on Load
 	// We use an imperative effect because the 'fitView' prop on ReactFlow
@@ -66,7 +74,7 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 		setFlashingEdgeIds(new Set());
 		setIsErrorPanelOpen(false);
 		setFlashTrigger(0);
-	}, [nodes, edges]);
+	}, []);
 
 	// Calculate error list
 	const errorList = useMemo<GraphError[]>(() => {
@@ -80,7 +88,7 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 			}
 		};
 
-		nodes.forEach(n => {
+		nodes.forEach((n) => {
 			if (n.data?.validationErrors) {
 				(n.data.validationErrors as ValidationError[]).forEach((err) => {
 					addError({
@@ -88,13 +96,13 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 						type: "node",
 						message: err.message,
 						label: n.data.label,
-						relatedIds: err.relatedIds
+						relatedIds: err.relatedIds,
 					});
 				});
 			}
 		});
 
-		edges.forEach(e => {
+		edges.forEach((e) => {
 			if (e.data?.validationErrors) {
 				(e.data.validationErrors as ValidationError[]).forEach((err) => {
 					addError({
@@ -102,7 +110,7 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 						type: "edge",
 						message: err.message,
 						label: e.data?.label || e.id,
-						relatedIds: err.relatedIds
+						relatedIds: err.relatedIds,
 					});
 				});
 			}
@@ -129,21 +137,22 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 			visitedUp.add(currentId);
 			relatedIds.add(currentId);
 
-			const incomingEdges = edges.filter(e => e.target === currentId);
-			incomingEdges.forEach(e => queueUp.push(e.source));
+			const incomingEdges = edges.filter((e) => e.target === currentId);
+			incomingEdges.forEach((e) => queueUp.push(e.source));
 		}
 
 		// Helper for downstream (follow outgoing edges: source -> target)
 		const visitedDown = new Set<string>();
 		const queueDown = [focusedNodeId];
 		while (queueDown.length > 0) {
+			// biome-ignore lint/style/noNonNullAssertion: Guaranteed by queue logic
 			const currentId = queueDown.shift()!;
 			if (visitedDown.has(currentId)) continue;
 			visitedDown.add(currentId);
 			relatedIds.add(currentId);
 
-			const outgoingEdges = edges.filter(e => e.source === currentId);
-			outgoingEdges.forEach(e => queueDown.push(e.target));
+			const outgoingEdges = edges.filter((e) => e.source === currentId);
+			outgoingEdges.forEach((e) => queueDown.push(e.target));
 		}
 
 		return relatedIds;
@@ -163,7 +172,14 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 					dimmed: focusedNodeId !== null && !highlightedNodeIds.has(node.id),
 				},
 			})),
-		[nodes, selectedNodeId, flashTrigger, flashingNodeId, focusedNodeId, highlightedNodeIds],
+		[
+			nodes,
+			selectedNodeId,
+			flashTrigger,
+			flashingNodeId,
+			focusedNodeId,
+			highlightedNodeIds,
+		],
 	);
 
 	// Memoize edges conversion to prevent unnecessary re-renders
@@ -185,7 +201,12 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 						isSelfLoop, // Pass this flag
 						flashTrigger, // Pass flash trigger
 						isFlashing, // NEW: Pass flashing state to edge
-						dimmed: focusedNodeId !== null && !(highlightedNodeIds.has(edge.source) && highlightedNodeIds.has(edge.target)),
+						dimmed:
+							focusedNodeId !== null &&
+							!(
+								highlightedNodeIds.has(edge.source) &&
+								highlightedNodeIds.has(edge.target)
+							),
 					},
 					style: {
 						stroke: hasErrors ? "#ef4444" : "#6b7280",
@@ -199,15 +220,25 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 					},
 				};
 			}),
-		[edges, selectedEdgeId, flashTrigger, focusedNodeId, highlightedNodeIds, flashingEdgeIds],
+		[
+			edges,
+			selectedEdgeId,
+			flashTrigger,
+			focusedNodeId,
+			highlightedNodeIds,
+			flashingEdgeIds,
+		],
 	);
 
-	const onNodeClick = React.useCallback((event: React.MouseEvent, node: Node) => {
-		setSelectedNodeId(node.id);
-		setSelectedEdgeId(null); // Clear edge selection
-		setFlashingNodeId(null); // Clear flash on verify manual click
-		setFlashingEdgeIds(new Set());
-	}, []);
+	const onNodeClick = React.useCallback(
+		(_event: React.MouseEvent, node: Node) => {
+			setSelectedNodeId(node.id);
+			setSelectedEdgeId(null); // Clear edge selection
+			setFlashingNodeId(null); // Clear flash on verify manual click
+			setFlashingEdgeIds(new Set());
+		},
+		[],
+	);
 
 	const onPaneClick = React.useCallback(() => {
 		setSelectedNodeId(null);
@@ -217,79 +248,90 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 		setFocusedNodeId(null); // Clear focus on background click
 	}, []);
 
-	const selectedNode = useMemo(() =>
-		customNodes.find(n => n.id === selectedNodeId),
-		[customNodes, selectedNodeId]
+	const selectedNode = useMemo(
+		() => customNodes.find((n) => n.id === selectedNodeId),
+		[customNodes, selectedNodeId],
 	);
 
 	const handleToggleFocus = React.useCallback(() => {
 		if (selectedNodeId) {
-			setFocusedNodeId(prev => prev === selectedNodeId ? null : selectedNodeId);
+			setFocusedNodeId((prev) =>
+				prev === selectedNodeId ? null : selectedNodeId,
+			);
 		}
 	}, [selectedNodeId]);
 
-	const handleErrorClick = React.useCallback((error: GraphError) => {
-		if (error.type === "node") {
-			setSelectedNodeId(error.id);
-			setSelectedEdgeId(null);
-			setFlashingNodeId(error.id); // Trigger flash only here
-			setFlashingEdgeIds(new Set());
-
-			// Camera Logic: Center on Node
-			const node = nodes.find(n => n.id === error.id);
-			if (node) {
-				fitView({ nodes: [node], duration: 800, padding: 0.2, minZoom: 1, maxZoom: 1.2 });
-			}
-
-		} else if (error.type === "edge") {
-			if (error.relatedIds && error.relatedIds.length > 0) {
-				// Handle Cycle / Multi-Node Error
-				const edgesToFlash = new Set<string>();
-				const nodesToFit: Node[] = [];
-
-				// Identify Nodes for fitting
-				error.relatedIds.forEach(id => {
-					const n = nodes.find(node => node.id === id);
-					if (n) nodesToFit.push(n);
-				});
-
-				// Identify Edges for flashing
-				for (let i = 0; i < error.relatedIds.length - 1; i++) {
-					const source = error.relatedIds[i];
-					const target = error.relatedIds[i + 1];
-					// Find edge by source/target match
-					const matchingEdges = edges.filter(e => e.source === source && e.target === target);
-					matchingEdges.forEach(e => edgesToFlash.add(e.id));
-				}
-
-				setFlashingEdgeIds(edgesToFlash);
+	const handleErrorClick = React.useCallback(
+		(error: GraphError) => {
+			if (error.type === "node") {
+				setSelectedNodeId(error.id);
 				setSelectedEdgeId(null);
-				setSelectedNodeId(null);
-				setFlashingNodeId(null);
-
-				if (nodesToFit.length > 0) {
-					fitView({ nodes: nodesToFit, duration: 800, padding: 0.2 });
-				}
-
-			} else {
-				// Single Edge Error
-				setSelectedEdgeId(error.id);
-				setSelectedNodeId(null);
-				setFlashingNodeId(null);
+				setFlashingNodeId(error.id); // Trigger flash only here
 				setFlashingEdgeIds(new Set());
 
-				const edge = edges.find(e => e.id === error.id);
-				if (edge) {
-					const source = nodes.find(n => n.id === edge.source);
-					const target = nodes.find(n => n.id === edge.target);
-					if (source && target) {
-						fitView({ nodes: [source, target], duration: 800, padding: 0.2 });
+				// Camera Logic: Center on Node
+				const node = nodes.find((n) => n.id === error.id);
+				if (node) {
+					fitView({
+						nodes: [node],
+						duration: 800,
+						padding: 0.2,
+						minZoom: 1,
+						maxZoom: 1.2,
+					});
+				}
+			} else if (error.type === "edge") {
+				if (error.relatedIds && error.relatedIds.length > 0) {
+					// Handle Cycle / Multi-Node Error
+					const edgesToFlash = new Set<string>();
+					const nodesToFit: Node[] = [];
+
+					// Identify Nodes for fitting
+					error.relatedIds.forEach((id) => {
+						const n = nodes.find((node) => node.id === id);
+						if (n) nodesToFit.push(n);
+					});
+
+					// Identify Edges for flashing
+					for (let i = 0; i < error.relatedIds.length - 1; i++) {
+						const source = error.relatedIds[i];
+						const target = error.relatedIds[i + 1];
+						// Find edge by source/target match
+						const matchingEdges = edges.filter(
+							(e) => e.source === source && e.target === target,
+						);
+						matchingEdges.forEach((e) => edgesToFlash.add(e.id));
+					}
+
+					setFlashingEdgeIds(edgesToFlash);
+					setSelectedEdgeId(null);
+					setSelectedNodeId(null);
+					setFlashingNodeId(null);
+
+					if (nodesToFit.length > 0) {
+						fitView({ nodes: nodesToFit, duration: 800, padding: 0.2 });
+					}
+				} else {
+					// Single Edge Error
+					setSelectedEdgeId(error.id);
+					setSelectedNodeId(null);
+					setFlashingNodeId(null);
+					setFlashingEdgeIds(new Set());
+
+					const edge = edges.find((e) => e.id === error.id);
+					if (edge) {
+						const source = nodes.find((n) => n.id === edge.source);
+						const target = nodes.find((n) => n.id === edge.target);
+						if (source && target) {
+							fitView({ nodes: [source, target], duration: 800, padding: 0.2 });
+						}
 					}
 				}
 			}
-		}
-		setFlashTrigger(prev => prev + 1); // Always trigger flash on error click
-	}, [nodes, edges, fitView]);
+			setFlashTrigger((prev) => prev + 1); // Always trigger flash on error click
+		},
+		[nodes, edges, fitView],
+	);
 
 	if (!customNodes.length) {
 		return (
@@ -300,7 +342,10 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 	}
 
 	return (
-		<div className="w-full relative" style={{ height: "100vh", minHeight: "600px" }}>
+		<div
+			className="relative w-full"
+			style={{ height: "100vh", minHeight: "600px" }}
+		>
 			<ErrorToggle
 				errorCount={totalErrors}
 				onClick={() => setIsErrorPanelOpen(true)}
@@ -339,6 +384,6 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 					color="#9ca3af"
 				/>
 			</ReactFlow>
-		</div >
+		</div>
 	);
 }

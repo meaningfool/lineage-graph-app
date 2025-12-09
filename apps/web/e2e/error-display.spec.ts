@@ -1,10 +1,9 @@
-
+import path from "node:path";
 import { expect, test } from "@playwright/test";
-import path from "path";
 import { LineagePage } from "./pages/LineagePage";
 
 test.describe("Error Display Feature", () => {
-    test.describe.configure({ mode: 'serial' });
+    test.describe.configure({ mode: "serial" });
     // Removed serial mode
 
     test.beforeEach(async ({ page }) => {
@@ -16,8 +15,18 @@ test.describe("Error Display Feature", () => {
         const lineagePage = new LineagePage(page);
         await lineagePage.openImportModal();
 
-        const nodesPath = path.join(__dirname, "fixtures", "shared", "nodes_valid_basic.csv");
-        const edgesPath = path.join(__dirname, "fixtures", "shared", "edges_valid_basic.csv");
+        const nodesPath = path.join(
+            __dirname,
+            "fixtures",
+            "shared",
+            "nodes_valid_basic.csv",
+        );
+        const edgesPath = path.join(
+            __dirname,
+            "fixtures",
+            "shared",
+            "edges_valid_basic.csv",
+        );
         await lineagePage.uploadFiles(nodesPath, edgesPath);
         await lineagePage.clickNext();
 
@@ -26,7 +35,7 @@ test.describe("Error Display Feature", () => {
             title: "title",
             type: "type",
             source: "source",
-            target: "target"
+            target: "target",
         });
         await lineagePage.submitMapping();
         await lineagePage.closeImportModal();
@@ -39,8 +48,18 @@ test.describe("Error Display Feature", () => {
         const lineagePage = new LineagePage(page);
         await lineagePage.openImportModal();
 
-        const nodesPath = path.join(__dirname, "fixtures", "error-display", "nodes_errors_display.csv");
-        const edgesPath = path.join(__dirname, "fixtures", "error-display", "edges_errors_display.csv");
+        const nodesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "nodes_errors_display.csv",
+        );
+        const edgesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "edges_errors_display.csv",
+        );
         await lineagePage.uploadFiles(nodesPath, edgesPath);
         await lineagePage.clickNext();
 
@@ -50,7 +69,7 @@ test.describe("Error Display Feature", () => {
             title: "label",
             type: "type",
             source: "source",
-            target: "target"
+            target: "target",
         });
         await lineagePage.submitMapping();
         await lineagePage.closeImportModal();
@@ -63,13 +82,17 @@ test.describe("Error Display Feature", () => {
 
         // 4. Assertion: Verify Passive Error State (Static Red Border) [NEW]
         // Node 1 has an error but is NOT selected, so it should have red border but NO ripple
-        const node1 = lineagePage.getGraphNode("Node 1").getByTestId("custom-node-content");
+        const node1 = lineagePage
+            .getGraphNode("Node 1")
+            .getByTestId("custom-node-content");
         await expect(node1).toHaveClass(/border-red-500/);
         await expect(node1).not.toHaveClass(/animate-flash-ring/);
 
         // Edges with errors should have red stroke (Passive state)
         // We check that at least one edge path has the red stroke color
-        const edgePath = page.locator(".react-flow__edge path.react-flow__edge-path").first();
+        const edgePath = page
+            .locator(".react-flow__edge path.react-flow__edge-path")
+            .first();
         // Note: The stroke color is applied via style prop, so we check the style attribute or computed style
         await expect(edgePath).toHaveCSS("stroke", "rgb(239, 68, 68)"); // #ef4444
         await expect(edgePath).not.toHaveClass(/animate-pulse/);
@@ -79,8 +102,18 @@ test.describe("Error Display Feature", () => {
         const lineagePage = new LineagePage(page);
         await lineagePage.openImportModal();
 
-        const nodesPath = path.join(__dirname, "fixtures", "error-display", "nodes_errors_display.csv");
-        const edgesPath = path.join(__dirname, "fixtures", "error-display", "edges_errors_display.csv");
+        const nodesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "nodes_errors_display.csv",
+        );
+        const edgesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "edges_errors_display.csv",
+        );
         await lineagePage.uploadFiles(nodesPath, edgesPath);
         await lineagePage.clickNext();
 
@@ -89,7 +122,7 @@ test.describe("Error Display Feature", () => {
             title: "label",
             type: "type",
             source: "source",
-            target: "target"
+            target: "target",
         });
         await lineagePage.submitMapping();
         await lineagePage.closeImportModal();
@@ -105,8 +138,18 @@ test.describe("Error Display Feature", () => {
         const lineagePage = new LineagePage(page);
         await lineagePage.openImportModal();
 
-        const nodesPath = path.join(__dirname, "fixtures", "error-display", "nodes_errors_display.csv");
-        const edgesPath = path.join(__dirname, "fixtures", "error-display", "edges_errors_display.csv");
+        const nodesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "nodes_errors_display.csv",
+        );
+        const edgesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "edges_errors_display.csv",
+        );
         await lineagePage.uploadFiles(nodesPath, edgesPath);
         await lineagePage.clickNext();
 
@@ -115,7 +158,7 @@ test.describe("Error Display Feature", () => {
             title: "label",
             type: "type",
             source: "source",
-            target: "target"
+            target: "target",
         });
         await lineagePage.submitMapping();
         await lineagePage.closeImportModal();
@@ -134,8 +177,18 @@ test.describe("Error Display Feature", () => {
         const lineagePage = new LineagePage(page);
         await lineagePage.openImportModal();
 
-        const nodesPath = path.join(__dirname, "fixtures", "error-display", "nodes_errors_display.csv");
-        const edgesPath = path.join(__dirname, "fixtures", "error-display", "edges_errors_display.csv");
+        const nodesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "nodes_errors_display.csv",
+        );
+        const edgesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "edges_errors_display.csv",
+        );
         await lineagePage.uploadFiles(nodesPath, edgesPath);
         await lineagePage.clickNext();
 
@@ -144,7 +197,7 @@ test.describe("Error Display Feature", () => {
             title: "label",
             type: "type",
             source: "source",
-            target: "target"
+            target: "target",
         });
         await lineagePage.submitMapping();
         await lineagePage.closeImportModal();
@@ -159,8 +212,18 @@ test.describe("Error Display Feature", () => {
         const lineagePage = new LineagePage(page);
         await lineagePage.openImportModal();
 
-        const nodesPath = path.join(__dirname, "fixtures", "error-display", "nodes_errors_display.csv");
-        const edgesPath = path.join(__dirname, "fixtures", "error-display", "edges_errors_display.csv");
+        const nodesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "nodes_errors_display.csv",
+        );
+        const edgesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "edges_errors_display.csv",
+        );
         await lineagePage.uploadFiles(nodesPath, edgesPath);
         await lineagePage.clickNext();
 
@@ -169,7 +232,7 @@ test.describe("Error Display Feature", () => {
             title: "label",
             type: "type",
             source: "source",
-            target: "target"
+            target: "target",
         });
         await lineagePage.submitMapping();
         await lineagePage.closeImportModal();
@@ -184,9 +247,19 @@ test.describe("Error Display Feature", () => {
         const lineagePage = new LineagePage(page);
         await lineagePage.openImportModal();
 
-        const nodesPath = path.join(__dirname, "fixtures", "error-display", "nodes_errors_display.csv");
+        const nodesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "nodes_errors_display.csv",
+        );
         // We use a file with no edge errors to keep it simple, or just ignore them
-        const edgesPath = path.join(__dirname, "fixtures", "error-display", "edges_errors_display.csv");
+        const edgesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "edges_errors_display.csv",
+        );
         await lineagePage.uploadFiles(nodesPath, edgesPath);
         await lineagePage.clickNext();
 
@@ -195,7 +268,7 @@ test.describe("Error Display Feature", () => {
             title: "label",
             type: "type",
             source: "source",
-            target: "target"
+            target: "target",
         });
         await lineagePage.submitMapping();
         await lineagePage.closeImportModal();
@@ -219,8 +292,18 @@ test.describe("Error Display Feature", () => {
         const lineagePage = new LineagePage(page);
         await lineagePage.openImportModal();
 
-        const nodesPath = path.join(__dirname, "fixtures", "error-display", "nodes_errors_display.csv");
-        const edgesPath = path.join(__dirname, "fixtures", "error-display", "edges_errors_display.csv");
+        const nodesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "nodes_errors_display.csv",
+        );
+        const edgesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "edges_errors_display.csv",
+        );
         await lineagePage.uploadFiles(nodesPath, edgesPath);
         await lineagePage.clickNext();
 
@@ -229,7 +312,7 @@ test.describe("Error Display Feature", () => {
             title: "label",
             type: "type",
             source: "source",
-            target: "target"
+            target: "target",
         });
         await lineagePage.submitMapping();
         await lineagePage.closeImportModal();
@@ -252,8 +335,18 @@ test.describe("Error Display Feature", () => {
         const lineagePage = new LineagePage(page);
         await lineagePage.openImportModal();
 
-        const nodesPath = path.join(__dirname, "fixtures", "error-display", "nodes_errors_display.csv");
-        const edgesPath = path.join(__dirname, "fixtures", "error-display", "edges_errors_display.csv");
+        const nodesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "nodes_errors_display.csv",
+        );
+        const edgesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "edges_errors_display.csv",
+        );
         await lineagePage.uploadFiles(nodesPath, edgesPath);
         await lineagePage.clickNext();
 
@@ -262,7 +355,7 @@ test.describe("Error Display Feature", () => {
             title: "label",
             type: "type",
             source: "source",
-            target: "target"
+            target: "target",
         });
 
         await lineagePage.submitMapping();
@@ -291,8 +384,18 @@ test.describe("Error Display Feature", () => {
         const lineagePage = new LineagePage(page);
         await lineagePage.openImportModal();
 
-        const nodesPath = path.join(__dirname, "fixtures", "error-display", "nodes_errors_display.csv");
-        const edgesPath = path.join(__dirname, "fixtures", "error-display", "edges_errors_display.csv");
+        const nodesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "nodes_errors_display.csv",
+        );
+        const edgesPath = path.join(
+            __dirname,
+            "fixtures",
+            "error-display",
+            "edges_errors_display.csv",
+        );
         await lineagePage.uploadFiles(nodesPath, edgesPath);
         await lineagePage.clickNext();
 
@@ -301,7 +404,7 @@ test.describe("Error Display Feature", () => {
             title: "label",
             type: "type",
             source: "source",
-            target: "target"
+            target: "target",
         });
 
         await lineagePage.submitMapping();
@@ -312,7 +415,9 @@ test.describe("Error Display Feature", () => {
         await lineagePage.clickErrorItem("Node 1");
 
         // 2. Verify it has the flash ring
-        const node1Content = lineagePage.getGraphNode("Node 1").getByTestId("custom-node-content");
+        const node1Content = lineagePage
+            .getGraphNode("Node 1")
+            .getByTestId("custom-node-content");
         // Note: We need to target the actual flash ring element which we will add in implementation
         // For now, let's assume it's a child with class .animate-flash-ring
         const flashRing = node1Content.locator(".animate-flash-ring");
@@ -325,6 +430,7 @@ test.describe("Error Display Feature", () => {
         await lineagePage.clickErrorItem("Node 1");
 
         // 5. Verify the flash trigger ID has changed (indicating a re-render/restart)
-        await expect(flashRing).not.toHaveAttribute("data-flash-trigger", initialTriggerId!);
+        expect(initialTriggerId).toBeTruthy();
+        await expect(flashRing).not.toHaveAttribute("data-flash-trigger", initialTriggerId as string);
     });
 });

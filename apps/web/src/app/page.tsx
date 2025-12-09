@@ -1,11 +1,9 @@
 "use client";
-import React, { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import type { Edge, Node } from "reactflow";
-import { LineageGraph } from "@/components/lineage-graph";
-import nodeData from "@/data/target-lineage.json";
-import { getLayoutedElements } from "@/utils/layout";
 import Header from "@/components/header"; // We might need to move Header here or use a Context
-
+import { LineageGraph } from "@/components/lineage-graph";
+import { getLayoutedElements } from "@/utils/layout";
 
 export default function Home() {
 	// Load node data from file
@@ -35,7 +33,7 @@ export default function Home() {
 	// For now, we'll just layout the current state
 	const layouted = getLayoutedElements(nodes, edges, "LR");
 
-	const handleImport = useCallback((newNodes: any[], newEdges: any[]) => {
+	const handleImport = useCallback((newNodes: Node[], newEdges: Edge[]) => {
 		// For Phase 1, we just replace nodes and clear edges
 		const layoutedNew = getLayoutedElements(newNodes, newEdges, "LR");
 		setNodes(layoutedNew.nodes);
@@ -44,12 +42,14 @@ export default function Home() {
 	}, []);
 
 	return (
-		<div className="flex flex-col h-full w-full">
+		<div className="flex h-full w-full flex-col">
 			<Header onImport={handleImport} />
-			<div className="p-2">
-
-			</div>
-			<LineageGraph key={graphId} nodes={layouted.nodes} edges={layouted.edges} />
+			<div className="p-2" />
+			<LineageGraph
+				key={graphId}
+				nodes={layouted.nodes}
+				edges={layouted.edges}
+			/>
 		</div>
 	);
 }
