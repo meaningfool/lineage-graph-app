@@ -70,7 +70,7 @@ export function CustomNode({
 			{/* Tooltip using NodeToolbar to escape clipping */}
 			{hasErrors && (
 				<NodeToolbar isVisible={isHovered} position={Position.Top} offset={10}>
-					<div className="whitespace-nowrap rounded bg-gray-900 px-2 py-1 font-normal font-sans text-white text-xs shadow-md">
+					<div className="pointer-events-none whitespace-nowrap rounded bg-gray-900 px-2 py-1 font-normal font-sans text-white text-xs shadow-md">
 						{data.validationErrors?.map((err: any, i) => (
 							// biome-ignore lint/suspicious/noArrayIndexKey: Static error list
 							<div key={i}>{err.message || err}</div>

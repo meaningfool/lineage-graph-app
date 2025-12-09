@@ -1,4 +1,5 @@
 import Papa from "papaparse";
+import { GraphEdgeSchema, GraphNodeSchema } from "./csv-schemas";
 
 // --- DOMAIN TYPES ---
 // These types define what our "Graph" looks like in the abstract.
@@ -9,9 +10,11 @@ export interface GraphNode {
 	id: string;
 	title: string;
 	type: "INPUT" | "STEP" | "OUTPUT";
-	// biome-ignore lint/suspicious/noExplicitAny: Generic property bag
+	// biome-ignore lint/suspicious/noExplicitAny: Generic property bag - kept for flexibility
 	properties?: Record<string, any>;
 }
+
+export type RawCsvRow = Record<string, unknown>;
 
 // Represents an Edge (connection) between two nodes.
 export interface GraphEdge {
@@ -96,7 +99,9 @@ export const parseFileHeaders = (file: File): Promise<string[]> => {
 };
 
 // Reads the entire CSV file.
-export const parseFileFull = (file: File): Promise<Papa.ParseResult<any>> => {
+export const parseFileFull = (
+	file: File,
+): Promise<Papa.ParseResult<unknown>> => {
 	return new Promise((resolve, reject) => {
 		Papa.parse(file, {
 			header: true,
@@ -110,8 +115,8 @@ export const parseFileFull = (file: File): Promise<Papa.ParseResult<any>> => {
 // This is the "Brain" of the importer.
 // It takes raw CSV data and turns it into a clean Graph.
 export const buildGraphFromCsv = (
-	nodesData: any[],
-	edgesData: any[],
+	nodesData: unknown[],
+	edgesData: unknown[],
 	mapping: { nodes: ValidatedNodeMapping; edges: ValidatedEdgeMapping },
 ): ImportResult => {
 	const { nodes: nodeMapping, edges: edgeMapping } = mapping;
@@ -120,52 +125,67 @@ export const buildGraphFromCsv = (
 	// --- NODES PROCESSING ---
 	let droppedNodesCount = 0;
 	const seenNodeIds = new Map<string, boolean>(); // To track duplicates
-	const validTypes = ["INPUT", "STEP", "OUTPUT"];
 
 	const nodes = nodesData
-		.map((row: any) => {
+		.map((row) => {
+			const data = row as RawCsvRow;
 			// Get values using the user's mapping
-			const rawId = row[nodeMapping.id];
-			const titleValue = row[nodeMapping.title];
-			const typeValue = row[nodeMapping.type];
+			const rawId = data[nodeMapping.id] as string | undefined;
+			const titleValue = data[nodeMapping.title] as string | undefined;
+			const typeValue = data[nodeMapping.type] as string | undefined;
 
-			if (!rawId) return null; // Skip empty rows
+			if (!rawId) return null; // Skip empty rows silently
 
-			const idValue = sanitizeId(rawId);
+			// Prepare object for Zod validation
+			const rawNode = {
+				id: rawId,
+				title: titleValue,
+				type: typeValue?.toUpperCase(), // Normalize type case before validation
+				properties: {}, // Will be populated below if valid
+			};
+
+			// Validate with Zod (Deep Safety)
+			const validation = GraphNodeSchema.safeParse(rawNode);
+
+			if (!validation.success) {
+				// If ID is missing, we might not even be able to report it well, but
+				// if ID exists and just failed validation (e.g. empty), we report it.
+				// For now, if Zod fails, we treat it as a dropped node.
+				droppedNodesCount++;
+				const errorMsg = validation.error.issues[0].message;
+				// Try to get a meaningful identifier for the warning
+				const identifier = rawId || `Row ${nodesData.indexOf(row) + 1}`;
+				validationWarnings.push(`${identifier}: ${errorMsg}`);
+				return null;
+			}
+
+			const validNode = validation.data;
 
 			// Deduplication: If we've seen this ID before, skip it.
-			if (seenNodeIds.has(idValue)) {
+			if (seenNodeIds.has(validNode.id)) {
 				droppedNodesCount++;
-				validationWarnings.push(`${idValue}: Duplicate Node ID`);
+				validationWarnings.push(`${validNode.id}: Duplicate Node ID`);
 				return null;
 			}
-			seenNodeIds.set(idValue, true);
-
-			// Type Validation: Must be INPUT, STEP, or OUTPUT
-			const normalizedType = typeValue?.toUpperCase();
-			if (!normalizedType || !validTypes.includes(normalizedType)) {
-				droppedNodesCount++;
-				validationWarnings.push(
-					`${idValue}: Invalid type '${typeValue || ""}'. Valid types: INPUT, STEP, OUTPUT`,
-				);
-				return null;
-			}
+			seenNodeIds.set(validNode.id, true);
 
 			// Extract Properties (Explicit Import)
 			// Only import properties that are explicitly selected in the mapping
-			const properties: Record<string, any> = {};
+			const properties: Record<string, unknown> = {};
 			const selectedProperties = nodeMapping.properties || [];
 
 			selectedProperties.forEach((key) => {
-				if (row[key] !== undefined && row[key] !== "") {
-					properties[key] = row[key];
+				const val = data[key];
+				if (val !== undefined && val !== "") {
+					properties[key] = val;
 				}
 			});
 
 			return {
-				id: idValue,
-				title: titleValue,
-				type: normalizedType as "INPUT" | "STEP" | "OUTPUT",
+				id: validNode.id,
+				title: validNode.title,
+				// Cast is safe because Zod validated it as "INPUT" | "STEP" | "OUTPUT"
+				type: validNode.type as "INPUT" | "STEP" | "OUTPUT",
 				properties: Object.keys(properties).length > 0 ? properties : undefined,
 			} as GraphNode;
 		})
@@ -186,14 +206,35 @@ export const buildGraphFromCsv = (
 	const seenEdgeKeys = new Map<string, boolean>();
 
 	const edges = edgesData
-		.map((row: any) => {
-			const rawSource = row[edgeMapping.source];
-			const rawTarget = row[edgeMapping.target];
+		.map((row) => {
+			const data = row as RawCsvRow;
+			const rawSource = data[edgeMapping.source] as string | undefined;
+			const rawTarget = data[edgeMapping.target] as string | undefined;
 
+			// Skip empty rows silently (matches Node behavior)
 			if (!rawSource || !rawTarget) return null;
 
-			const sourceId = sanitizeId(rawSource);
-			const targetId = sanitizeId(rawTarget);
+			// Prepare object for Zod validation
+			const rawEdge = {
+				source: rawSource,
+				target: rawTarget,
+			};
+
+			// Validate with Zod (Deep Safety)
+			const validation = GraphEdgeSchema.safeParse(rawEdge);
+
+			if (!validation.success) {
+				droppedEdgesCount++;
+				// Should not really happen given the 'rawSource/rawTarget' check above
+				// unless we add more constraints to schema (e.g. min length, format)
+				validationWarnings.push("Edge dropped: Invalid format");
+				return null;
+			}
+
+			const validEdge = validation.data;
+
+			const sourceId = sanitizeId(validEdge.source);
+			const targetId = sanitizeId(validEdge.target);
 
 			// Deduplication based on Source-Target pair (Silent drop)
 			const edgeKey = `${sourceId}-${targetId}`;
