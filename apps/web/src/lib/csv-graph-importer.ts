@@ -1,4 +1,5 @@
 import Papa from "papaparse";
+import { GraphNodeSchema } from "./csv-schemas";
 
 // --- DOMAIN TYPES ---
 // These types define what our "Graph" looks like in the abstract.
@@ -124,7 +125,6 @@ export const buildGraphFromCsv = (
 	// --- NODES PROCESSING ---
 	let droppedNodesCount = 0;
 	const seenNodeIds = new Map<string, boolean>(); // To track duplicates
-	const validTypes = ["INPUT", "STEP", "OUTPUT"];
 
 	const nodes = nodesData
 		.map((row) => {
@@ -134,27 +134,40 @@ export const buildGraphFromCsv = (
 			const titleValue = data[nodeMapping.title] as string | undefined;
 			const typeValue = data[nodeMapping.type] as string | undefined;
 
-			if (!rawId) return null; // Skip empty rows
+			if (!rawId) return null; // Skip empty rows silently
 
-			const idValue = sanitizeId(rawId);
+			// Prepare object for Zod validation
+			const rawNode = {
+				id: rawId,
+				title: titleValue,
+				type: typeValue?.toUpperCase(), // Normalize type case before validation
+				properties: {}, // Will be populated below if valid
+			};
+
+			// Validate with Zod (Deep Safety)
+			const validation = GraphNodeSchema.safeParse(rawNode);
+
+			if (!validation.success) {
+				// If ID is missing, we might not even be able to report it well, but
+				// if ID exists and just failed validation (e.g. empty), we report it.
+				// For now, if Zod fails, we treat it as a dropped node.
+				droppedNodesCount++;
+				const errorMsg = validation.error.issues[0].message;
+				// Try to get a meaningful identifier for the warning
+				const identifier = rawId || `Row ${nodesData.indexOf(row) + 1}`;
+				validationWarnings.push(`${identifier}: ${errorMsg}`);
+				return null;
+			}
+
+			const validNode = validation.data;
 
 			// Deduplication: If we've seen this ID before, skip it.
-			if (seenNodeIds.has(idValue)) {
+			if (seenNodeIds.has(validNode.id)) {
 				droppedNodesCount++;
-				validationWarnings.push(`${idValue}: Duplicate Node ID`);
+				validationWarnings.push(`${validNode.id}: Duplicate Node ID`);
 				return null;
 			}
-			seenNodeIds.set(idValue, true);
-
-			// Type Validation: Must be INPUT, STEP, or OUTPUT
-			const normalizedType = typeValue?.toUpperCase();
-			if (!normalizedType || !validTypes.includes(normalizedType)) {
-				droppedNodesCount++;
-				validationWarnings.push(
-					`${idValue}: Invalid type '${typeValue || ""}'. Valid types: INPUT, STEP, OUTPUT`,
-				);
-				return null;
-			}
+			seenNodeIds.set(validNode.id, true);
 
 			// Extract Properties (Explicit Import)
 			// Only import properties that are explicitly selected in the mapping
@@ -169,9 +182,10 @@ export const buildGraphFromCsv = (
 			});
 
 			return {
-				id: idValue,
-				title: titleValue,
-				type: normalizedType as "INPUT" | "STEP" | "OUTPUT",
+				id: validNode.id,
+				title: validNode.title,
+				// Cast is safe because Zod validated it as "INPUT" | "STEP" | "OUTPUT"
+				type: validNode.type as "INPUT" | "STEP" | "OUTPUT",
 				properties: Object.keys(properties).length > 0 ? properties : undefined,
 			} as GraphNode;
 		})
