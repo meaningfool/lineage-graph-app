@@ -1007,7 +1007,6 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 					</PopoverTrigger>
 					<PopoverContent
 						id={listboxId}
-						role="listbox"
 						aria-multiselectable="true"
 						aria-label="Available options"
 						className={cn(
@@ -1059,7 +1058,6 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 										<CommandItem
 											key="all"
 											onSelect={toggleAll}
-											role="option"
 											aria-selected={
 												selectedValues.length ===
 												getAllOptions().filter((opt) => !opt.disabled).length
@@ -1107,7 +1105,6 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 													<CommandItem
 														key={option.value}
 														onSelect={() => toggleOption(option.value)}
-														role="option"
 														aria-selected={isSelected}
 														aria-disabled={option.disabled}
 														aria-label={`${option.label}${
@@ -1151,7 +1148,6 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 												<CommandItem
 													key={option.value}
 													onSelect={() => toggleOption(option.value)}
-													role="option"
 													aria-selected={isSelected}
 													aria-disabled={option.disabled}
 													aria-label={`${option.label}${
