@@ -9,9 +9,11 @@ export interface GraphNode {
 	id: string;
 	title: string;
 	type: "INPUT" | "STEP" | "OUTPUT";
-	// biome-ignore lint/suspicious/noExplicitAny: Generic property bag
+	// biome-ignore lint/suspicious/noExplicitAny: Generic property bag - kept for flexibility
 	properties?: Record<string, any>;
 }
+
+export type RawCsvRow = Record<string, unknown>;
 
 // Represents an Edge (connection) between two nodes.
 export interface GraphEdge {
@@ -110,7 +112,8 @@ export const parseFileFull = (file: File): Promise<Papa.ParseResult<any>> => {
 // This is the "Brain" of the importer.
 // It takes raw CSV data and turns it into a clean Graph.
 export const buildGraphFromCsv = (
-	nodesData: any[],
+	nodesData: unknown[],
+	// biome-ignore lint/suspicious/noExplicitAny: Raw CSV data (Slice 2)
 	edgesData: any[],
 	mapping: { nodes: ValidatedNodeMapping; edges: ValidatedEdgeMapping },
 ): ImportResult => {
@@ -123,11 +126,12 @@ export const buildGraphFromCsv = (
 	const validTypes = ["INPUT", "STEP", "OUTPUT"];
 
 	const nodes = nodesData
-		.map((row: any) => {
+		.map((row) => {
+			const data = row as RawCsvRow;
 			// Get values using the user's mapping
-			const rawId = row[nodeMapping.id];
-			const titleValue = row[nodeMapping.title];
-			const typeValue = row[nodeMapping.type];
+			const rawId = data[nodeMapping.id] as string | undefined;
+			const titleValue = data[nodeMapping.title] as string | undefined;
+			const typeValue = data[nodeMapping.type] as string | undefined;
 
 			if (!rawId) return null; // Skip empty rows
 
@@ -153,12 +157,13 @@ export const buildGraphFromCsv = (
 
 			// Extract Properties (Explicit Import)
 			// Only import properties that are explicitly selected in the mapping
-			const properties: Record<string, any> = {};
+			const properties: Record<string, unknown> = {};
 			const selectedProperties = nodeMapping.properties || [];
 
 			selectedProperties.forEach((key) => {
-				if (row[key] !== undefined && row[key] !== "") {
-					properties[key] = row[key];
+				const val = data[key];
+				if (val !== undefined && val !== "") {
+					properties[key] = val;
 				}
 			});
 

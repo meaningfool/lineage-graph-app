@@ -11,9 +11,12 @@ Eliminate technical debt enabling strict type checking and linting to run in the
 
 ### Slice 1: CSV Nodes (Type Safety)
 #### [MODIFY] [csv-graph-importer.ts](file:///Users/josselinperrus/Projects/data-lineage-app/apps/web/src/lib/csv-graph-importer.ts)
-- Define `RawNodeRow` interface.
-- Update `nodesData` parameter from `any[]` to `unknown[]` (or specific row type).
-- Implement safe parsing/validation for Nodes loop.
+1.  **Expose**: Remove `// biome-ignore` for `nodesData`.
+2.  **Refactor**:
+    *   Define `RawCsvRow` (Record<string, unknown>).
+    *   Change `nodesData` to `unknown[]`.
+    *   Cast `row as RawCsvRow` and validate fields safely.
+3.  **Verify**: Run `pnpm check` and `pnpm check-types`.
 
 ### Slice 2: CSV Edges (Type Safety)
 #### [MODIFY] [csv-graph-importer.ts](file:///Users/josselinperrus/Projects/data-lineage-app/apps/web/src/lib/csv-graph-importer.ts)

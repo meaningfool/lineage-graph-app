@@ -6,6 +6,11 @@ Blocked commit in previous session due to:
 2. `useSemanticElements` in `multi-select.tsx`.
 3. `properties` regression in `node-details-panel.tsx` (Fixed).
 
-## Strategy
-- Use `zod` for boundary validation (CSV import) to replace `any` safely?
-- Revisit `multi-select` generic implementation.
+## Strategy: "Un-suppress and Fix"
+We are addressing technical debt hidden by `// biome-ignore` comments.
+1.  **Target**: Identify a specific scope (e.g., "Node Parsing loop").
+2.  **Expose (Red)**: Delete the `// biome-ignore` comment. This causes `biome check` to fail.
+3.  **Refactor (Green)**: Update the code to use real types (e.g., `unknown` + safe casting) instead of `any`.
+4.  **Verify**: Ensure both `biome check` (Policy) and `tsc` (Correctness) pass.
+
+This surgical approach prevents "Big Bang" refactors that break the build globally.
