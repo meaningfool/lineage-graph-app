@@ -6,4 +6,4 @@
 - [x] **Slice 2**: CSV Import - Edge Types (Fix `any` in Edge parsing) <!-- id: 2 -->
 - [x] **Slice 3**: UI Access - Trigger & Role (Fix `useSemanticElements` in Trigger) <!-- id: 3 -->
 - [x] **Slice 4**: UI Access - Listbox & Options (Fix `useSemanticElements` in List) <!-- id: 4 -->
-- [/] **Slice 5**: Enable Strict Linting (Pre-commit hook) <!-- id: 5 -->
+- [x] **Slice 5**: Enable Strict Linting (Pre-commit hook) <!-- id: 5 -->
