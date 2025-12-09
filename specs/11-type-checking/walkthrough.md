@@ -28,9 +28,9 @@ Refactored the component to use semantic HTML and leverage `cmdk`'s built-in rol
 | :--- | :--- | :--- |
 | **Linting** | `pnpm biome check` | ✅ Passed (0 errors) |
 | **Types** | `pnpm check-types` | ✅ Passed (0 errors) |
-| **E2E** | `npm run test:e2e` | ⚠️ Passed (1 known flake) |
+| **E2E** | `npm run test:e2e` | ✅ Passed (All tests) |
 
 > [!NOTE]
-> The test `clicking_error_node_does_not_trigger_flash` failed. This is a previously identified flaky test unrelated to type checking changes. All Importer and MultiSelect tests passed.
+> Fixed the `clicking_error_node_does_not_trigger_flash` flake by ensuring validation tooltips don't intercept clicks (`pointer-events-none`) and improving test selectors.
 - Run `npm run test:e2e` to ensure no regression in CSV Import functionality.
 - Merge `feat/type-checking` using the Close Branch workflow.

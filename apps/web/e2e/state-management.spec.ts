@@ -71,7 +71,11 @@ test.describe("State Management", () => {
 		await lineagePage.verifyNodeValidationStatus("Node A", "invalid");
 
 		// Click a node (Node A in cycle)
-		await page.getByText("Node A", { exact: true }).click({ force: true });
+		// We target the content div directly to ensure we hit the interactive part
+		await lineagePage
+			.getGraphNode("Node A")
+			.getByTestId("custom-node-content")
+			.click();
 
 		// Verify it is selected but NOT displaying the flash ring
 		await lineagePage.verifyNodeSelected("Node A");
