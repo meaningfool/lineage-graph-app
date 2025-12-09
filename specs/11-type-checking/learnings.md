@@ -11,10 +11,10 @@ Instead of a "Big Bang" refactor, we systematically removed `// biome-ignore` co
 This prevented regression and kept the codebase buildable (mostly) between slices.
 
 ### Shallow Safety (Compiler) vs. Deep Safety (Runtime)
-We distinguished two goals:
-1.  **Compiler Safety (Achieved)**: Eliminating `any`. We used `unknown` + Type Assertions (e.g., `as string`) to force the developer to make explicit assumptions. This is "safe" for the compiler but assumes the data matches the schema.
-2.  **Runtime Safety (Future)**: Validating the data matches the schema at runtime (e.g., Zod).
-*Action*: We deferred Zod to a separate spec (`11-type-checking/02-runtime-validation.md`) to keep the scope manageable.
+We distinguished two goals (and achieved both):
+1.  **Compiler Safety (Phase 1)**: Eliminated `any`. Used `unknown` + Type Assertions (`as string`) to stop type contagion.
+2.  **Runtime Safety (Phase 2)**: Implemented **Zod** schema validation (`csv-schemas.ts`). This proves data correctness at the IO boundary.
+    *   *Insight*: Zod allowed us to implement "Soft Validation" (logging warnings for invalid rows without crashing the import), replacing complex manual `if` checks with robust `schema.safeParse()`.
 
 ## Pitfalls & Solutions
 
