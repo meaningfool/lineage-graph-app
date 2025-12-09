@@ -34,3 +34,14 @@ Refactored the component to use semantic HTML and leverage `cmdk`'s built-in rol
 > Fixed the `clicking_error_node_does_not_trigger_flash` flake by ensuring validation tooltips don't intercept clicks (`pointer-events-none`) and improving test selectors.
 - Run `npm run test:e2e` to ensure no regression in CSV Import functionality.
 - Merge `feat/type-checking` using the Close Branch workflow.
+
+## Phase 2: Runtime Validation (Deep Safety)
+
+### Changes
+- Implemented **Zod** schema validation for Nodes and Edges (`csv-schemas.ts`).
+- Refactored `csv-graph-importer.ts` to use `safeParse` instead of manual checks.
+- Preserved silent skipping of empty rows to maintain E2E compatibility.
+
+### Verification
+- **Unit/Integration**: `pnpm check-types` validates schema usage.
+- **E2E**: All 43 tests passed, confirming Zod logic matches expected importer behavior.
