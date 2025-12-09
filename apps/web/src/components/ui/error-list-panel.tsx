@@ -7,6 +7,7 @@ export interface GraphError {
     type: "node" | "edge";
     message: string;
     label?: string;
+    relatedIds?: string[]; // IDs of other elements involved (e.g., nodes in a cycle)
 }
 
 interface ErrorListPanelProps {

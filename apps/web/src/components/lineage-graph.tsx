@@ -218,15 +218,51 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 			setSelectedNodeId(error.id);
 			setSelectedEdgeId(null);
 			setFlashingNodeId(error.id); // Trigger flash only here
+
+			// Camera Logic: Center on Node
+			const node = nodes.find(n => n.id === error.id);
+			if (node && node.width && node.height) {
+				const x = node.position.x + node.width / 2;
+				const y = node.position.y + node.height / 2;
+				fitView({ nodes: [{ id: error.id }], duration: 800, minZoom: 1.0, maxZoom: 1.2 });
+				// Actually setCenter is easier for specific zoom, but fitView with target is safer for dimensions
+				// Let's use setCenter explicitly as requested for "Center/Zoom" control
+				// But setCenter requires converting flow coords to viewport? No, it takes flow coords.
+				// Wait, setCenter takes x, y, zoom.
+				// useReactFlow().setCenter(x, y, { zoom: 1.2, duration: 800 });
+
+				// However, node.position is top-left.
+				// Let's try setCenter.
+			}
+			// Better: use fitView on the specific node to ensure it fits?
+			// "Recenter and zoom... maximize zoom for readability".
+			// fitView({ nodes: [{id: error.id}], duration: 800, padding: 0.5 }) might be good.
+			// Let's stick to setCenter if we want specific zoom 1.2.
+			// Actually, fitView is robust.
+			if (node) {
+				fitView({ nodes: [node], duration: 800, padding: 0.2, minZoom: 1, maxZoom: 1.2 });
+			}
+
 		} else if (error.type === "edge") {
 			setSelectedEdgeId(error.id);
 			setSelectedNodeId(null); // Optional: clear node selection?
 			setFlashingNodeId(null); // Stop any node flashing
 			// Edges don't support flashing yet, but if they did:
 			// setFlashingEdgeId(error.id);
+
+			// Camera Logic: Fit Edge?
+			const edge = edges.find(e => e.id === error.id);
+			if (edge) {
+				// We can fit the source and target nodes of the edge
+				const source = nodes.find(n => n.id === edge.source);
+				const target = nodes.find(n => n.id === edge.target);
+				if (source && target) {
+					fitView({ nodes: [source, target], duration: 800, padding: 0.2 });
+				}
+			}
 		}
 		setFlashTrigger(prev => prev + 1); // Always trigger flash on error click
-	}, []);
+	}, [nodes, edges, fitView]);
 
 	if (!customNodes.length) {
 		return (

@@ -1,0 +1,6 @@
+id,title,type
+A,NodeA,STEP
+B,NodeB,STEP
+C,NodeC,STEP
+D,NodeD,STEP
+E,Outlier,STEP
