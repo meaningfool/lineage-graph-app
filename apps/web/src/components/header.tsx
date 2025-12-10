@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CSVImportModal } from "./csv-import-modal";
 import { ModeToggle } from "./mode-toggle";
+import { ImportWizardDialog } from "./wizard/import-wizard-dialog";
 
 interface HeaderProps {
 	onImport: (nodes: any[], edges: any[]) => void;
@@ -13,6 +14,7 @@ interface HeaderProps {
 
 export default function Header({ onImport }: HeaderProps) {
 	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+	const [isWizardOpen, setIsWizardOpen] = useState(false);
 	const links = [{ to: "/", label: "Home" }];
 
 	return (
@@ -36,6 +38,20 @@ export default function Header({ onImport }: HeaderProps) {
 						<CSVImportModal
 							onImport={onImport}
 							onClose={() => setIsImportModalOpen(false)}
+						/>
+					)}
+					<Button
+						variant="default"
+						size="sm"
+						className="bg-indigo-600 text-white hover:bg-indigo-700"
+						onClick={() => setIsWizardOpen(true)}
+					>
+						✨ New Import
+					</Button>
+					{isWizardOpen && (
+						<ImportWizardDialog
+							isOpen={isWizardOpen}
+							onClose={() => setIsWizardOpen(false)}
 						/>
 					)}
 					<ModeToggle />
