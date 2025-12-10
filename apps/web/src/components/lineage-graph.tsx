@@ -128,7 +128,16 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 		const relatedIds = new Set<string>();
 		relatedIds.add(focusedNodeId);
 
+		// Optimize layer lookup
+		const nodeLayers = new Map<string, number>();
+		nodes.forEach((n) => {
+			if (typeof n.data?.layer === "number") {
+				nodeLayers.set(n.id, n.data.layer);
+			}
+		});
+
 		// Helper for upstream (follow incoming edges: target -> source)
+		// STRICT RULE: Only follow if SourceLayer > TargetLayer (Sink-Anchored: High -> Low Flow)
 		const visitedUp = new Set<string>();
 		const queueUp = [focusedNodeId];
 		while (queueUp.length > 0) {
@@ -137,11 +146,24 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 			visitedUp.add(currentId);
 			relatedIds.add(currentId);
 
+			const currentLayer = nodeLayers.get(currentId);
 			const incomingEdges = edges.filter((e) => e.target === currentId);
-			incomingEdges.forEach((e) => queueUp.push(e.source));
+
+			incomingEdges.forEach((e) => {
+				const sourceLayer = nodeLayers.get(e.source);
+				// Enforce Strict Inequality: Source > Target (Upstream goes to HIGHER layer)
+				if (
+					sourceLayer !== undefined &&
+					currentLayer !== undefined &&
+					sourceLayer > currentLayer
+				) {
+					queueUp.push(e.source);
+				}
+			});
 		}
 
 		// Helper for downstream (follow outgoing edges: source -> target)
+		// STRICT RULE: Only follow if TargetLayer < SourceLayer (Downstream goes to LOWER layer)
 		const visitedDown = new Set<string>();
 		const queueDown = [focusedNodeId];
 		while (queueDown.length > 0) {
@@ -151,12 +173,24 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 			visitedDown.add(currentId);
 			relatedIds.add(currentId);
 
+			const currentLayer = nodeLayers.get(currentId);
 			const outgoingEdges = edges.filter((e) => e.source === currentId);
-			outgoingEdges.forEach((e) => queueDown.push(e.target));
+
+			outgoingEdges.forEach((e) => {
+				const targetLayer = nodeLayers.get(e.target);
+				// Enforce Strict Inequality: Target < Source (Downstream goes to LOWER layer)
+				if (
+					targetLayer !== undefined &&
+					currentLayer !== undefined &&
+					targetLayer < currentLayer
+				) {
+					queueDown.push(e.target);
+				}
+			});
 		}
 
 		return relatedIds;
-	}, [focusedNodeId, edges]);
+	}, [focusedNodeId, edges, nodes]);
 
 	// Memoize nodes conversion to prevent unnecessary re-renders
 	const customNodes = useMemo(
