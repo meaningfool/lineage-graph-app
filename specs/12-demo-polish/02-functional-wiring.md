@@ -11,6 +11,48 @@ This document outlines the strict TDD plan to wire the new `ImportWizardDialog`.
 
 ---
 
+## Test Architecture & Migration Strategy
+
+To ensure consistency and a smooth migration, we will structure the new tests to mirror the existing suite.
+
+### 1. Test File Location
+*   **New Suite**: `apps/web/e2e/import-wizard-new.spec.ts`
+*   **Target**: This file will eventually replace `csv-import.spec.ts`.
+
+### 2. Fixture Management
+*   **Reuse**: We will strictly reuse the existing fixtures in `apps/web/e2e/fixtures/`. Do **not** create duplicate CSV files.
+*   **Consistency**: Tests must rely on the same data contracts (e.g., `nodes_valid_basic.csv`, `edges_valid_basic.csv`).
+
+### 3. Test Structure
+Organize `import-wizard-new.spec.ts` using the same top-level `describe` blocks as the original suite to facilitate 1:1 comparison:
+```typescript
+test.describe("New Import Wizard", () => {
+    // Slice 1 & 4
+    test.describe("Happy Path", () => { ... });
+
+    // Slice 2 & 4
+    test.describe("Workflow & State", () => { ... });
+
+    // Slice 2 & 3
+    test.describe("Column Mapping Logic", () => { ... });
+
+    // Slice 5
+    test.describe("Node Validation", () => { ... });
+    test.describe("Edge Validation", () => { ... });
+});
+```
+
+### 4. Page Object Model (Isolation)
+*   **Duplicate**: Create `apps/web/e2e/pages/NewWizardPage.ts` by strictly copying `LineagePage.ts`.
+*   **Adapt**: Modify *only* `NewWizardPage.ts` to implement the new 4-step wizard interactions.
+*   **Preserve**: Do **not** modify `LineagePage.ts`. This ensures existing tests (`error-display`, `graph-validation`) remain completely unaffected during the transition.
+
+### 5. Downstream Test Duplication
+*   **Strategy**: "Slice 6" verification requires property testing.
+*   **Action**: Copy the relevant property tests from `node-properties.spec.ts` into `import-wizard-new.spec.ts` and adapt them to use `NewWizardPage`. Do not modify `node-properties.spec.ts`.
+
+---
+
 ## Slice 1: Upload & File Validation
 **Goal**: Wire Step 1 (Upload). Validates file selection and basic correctness.
 
