@@ -20,9 +20,9 @@
         - [ ] **Slice 1:** Upload & File Validation (Test: Malformed, Dropzone) <!-- id: 17 -->
         - [ ] **Slice 2:** Node Mapping & Reset (Happy Path) (Required Fields, Basic Reset) <!-- id: 18 -->
         - [ ] **Slice 3:** Edge Mapping (Happy Path) (Exclusion Logic, Required Fields) <!-- id: 19 -->
-        - [ ] **Slice 4:** Happy Path Integration & Lifecycle (E2E, Replace Graph) <!-- id: 20 -->
-        - [ ] **Slice 5:** Validation & Error Handling (Invalid Data, Orphans) <!-- id: 21 -->
-        - [ ] **Slice 6:** Advanced (Properties) (Pills UI) <!-- id: 22 -->
+        - [ ] **Slice 4:** Happy Path Integration & Lifecycle (E2E, Replace Graph, **Graph-Validation Regression**) <!-- id: 20 -->
+        - [ ] **Slice 5:** Validation & Error Handling (Invalid Data, Orphans, **Error-Display Regression**) <!-- id: 21 -->
+        - [ ] **Slice 6:** Advanced (Properties) (Pills UI, **Node-Properties Regression**) <!-- id: 22 -->
 
 - [ ] **Spec 3: Final Polish**
     - [ ] Check Tooltips & Micro-interactions <!-- id: 12 -->
