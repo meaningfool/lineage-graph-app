@@ -45,7 +45,7 @@ For each slice:
 *   **Target File**: `apps/web/e2e/new-wizard/import-wizard.spec.ts` (Create new file)
 *   **Actions**:
     1.  **Copy** `should show error for malformed CSV` from `csv-import.spec.ts`.
-    2.  **Copy** `should allow uploading an edges file along with nodes` from `csv-import.spec.ts`. (Rename to `should allow uploading files...`).
+    2.  **Copy** `should allow uploading an edges file along with nodes` from `csv-import.spec.ts`.
     3.  **Write New** `should disable next button if only nodes uploaded`.
 
 ### 2. Implementation
@@ -62,7 +62,7 @@ For each slice:
 *   **Actions**:
     1.  **Copy** `should reset wizard state when modal is closed...` from `csv-import.spec.ts`.
     2.  **Copy** `should show mapping step with ID, Title, and Type dropdowns` from `csv-import.spec.ts`.
-    3.  **Copy** `should validate mapping requirements` from `csv-import.spec.ts`. (Refactor: Split into `should validate node mapping requirements` and `should validate edge mapping requirements` - keep *only* Node part here).
+    3.  **Copy** `should validate mapping requirements` from `csv-import.spec.ts` (Adapt: Assert Node validation only).
 
 ### 2. Implementation
 *   **Hook**: Implement `mapping` state (Properties partial) and `reset`.
@@ -76,8 +76,8 @@ For each slice:
 ### 1. Tests to Create
 *   **Target File**: `apps/web/e2e/new-wizard/import-wizard.spec.ts` (Append)
 *   **Actions**:
-    1.  **Write New** (or Adapt remaining part of split test) `should validate edge mapping requirements`.
-    2.  **Write New** `should disable selected source column in target dropdown` (Verify `disabled={col === mapping.source}`).
+    1.  **Copy** `should validate mapping requirements` from `csv-import.spec.ts` (Adapt: Assert Edge validation only).
+    2.  **Write New** `should disable selected source column in target dropdown`.
 
 ### 2. Implementation
 *   **Hook**: Implement Edge mapping logic.
@@ -94,9 +94,6 @@ For each slice:
     *   **Copy** `should reset wizard after successful import` from `csv-import.spec.ts`.
     *   **Copy** `should replace graph on second import` from `csv-import.spec.ts`.
     *   **Copy** `should import edges with only source and target columns` from `csv-import.spec.ts`.
-
-*   **Target File**: `apps/web/e2e/new-wizard/graph-validation.spec.ts` (Create)
-    *   **Action**: Duplicate entire `e2e/graph-validation.spec.ts`. Update to use `NewWizardPage`.
 
 *   **Target File**: `apps/web/e2e/new-wizard/graph-layout.spec.ts` (Create)
     *   **Action**: Duplicate entire `e2e/graph-layout.spec.ts`. Update to use `NewWizardPage`.
@@ -116,7 +113,7 @@ For each slice:
 
 ---
 
-## Slice 5: Error Handling & Regression
+## Slice 5: Domain Validation & Error Handling
 **Goal**: Invalid data distributions.
 
 ### 1. Tests to Create
@@ -128,6 +125,9 @@ For each slice:
     *   **Copy** `should reject edges pointing to missing target node` from `csv-import.spec.ts`.
     *   **Copy** `should reject edges pointing to nodes dropped...` from `csv-import.spec.ts`.
     *   **Copy** `should silently deduplicate parallel edges` from `csv-import.spec.ts`.
+
+*   **Target File**: `apps/web/e2e/new-wizard/graph-validation.spec.ts` (Create)
+    *   **Action**: Duplicate entire `e2e/graph-validation.spec.ts`. Update to use `NewWizardPage`.
 
 *   **Target File**: `apps/web/e2e/new-wizard/error-display.spec.ts` (Create)
     *   **Action**: Duplicate entire `e2e/error-display.spec.ts`. Update to use `NewWizardPage`.
@@ -146,7 +146,7 @@ For each slice:
     *   **Write New** `should map node properties using pills`.
 
 *   **Target File**: `apps/web/e2e/new-wizard/node-properties.spec.ts` (Create)
-    *   **Action**: Duplicate entire `e2e/node-properties.spec.ts`. Update to use `NewWizardPage` (adapt `selectProperty` to use Pills).
+    *   **Action**: Duplicate entire `e2e/node-properties.spec.ts`. Update to use `NewWizardPage`.
 
 ### 2. Implementation
 *   **Hook**: Support properties mapping.
