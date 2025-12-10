@@ -41,106 +41,113 @@ For each slice:
 ## Slice 1: Upload & File Validation
 **Goal**: Wire Step 1 (Upload). Validates file selection.
 
-### 1. Tests (Copy to `e2e/new-wizard/import-wizard.spec.ts`)
-| Source `csv-import.spec.ts` | Test Name | Adaptation |
-| :--- | :--- | :--- |
-| `171` | `should show error for malformed CSV` | Verify error UI. |
-| `64` | `should allow uploading an edges file...` | Test upload only. |
-| *New* | `should disable next button if only nodes uploaded` | Ensure blocking. |
+### 1. Tests to Create (Incremental Population)
+*   **Target File**: `apps/web/e2e/new-wizard/import-wizard.spec.ts` (Create new file)
+*   **Actions**:
+    1.  **Copy** `should show error for malformed CSV` from `csv-import.spec.ts`.
+    2.  **Copy** `should allow uploading an edges file along with nodes` from `csv-import.spec.ts`. (Rename to `should allow uploading files...`).
+    3.  **Write New** `should disable next button if only nodes uploaded`.
 
-### 2. Implementation Details
-*   **Hook**: Create `useNewImportWizard` with `step`, `files`, `errors` state.
-*   **UI**: Wire `UploadStep` to Hook's `setFile`.
+### 2. Implementation
+*   **Hook**: Create `useNewImportWizard`. Implement `files` state and `setFile`.
+*   **UI**: Wire `UploadStep` to hook.
 
 ---
 
 ## Slice 2: Node Mapping & Reset
 **Goal**: Wire Step 2 (Nodes). Map required fields.
 
-### 1. Tests (Copy/Write in `e2e/new-wizard/import-wizard.spec.ts`)
-| Source `csv-import.spec.ts` | Test Name | Adaptation |
-| :--- | :--- | :--- |
-| `126` | `should reset wizard state when modal is closed...` | Verify reset Step 2->1. |
-| `318` | `should show mapping step with ID...` | Verify dropdowns. |
-| `357` | `should validate mapping requirements` (Nodes) | Verify "Next" disabled. |
+### 1. Tests to Create
+*   **Target File**: `apps/web/e2e/new-wizard/import-wizard.spec.ts` (Append)
+*   **Actions**:
+    1.  **Copy** `should reset wizard state when modal is closed...` from `csv-import.spec.ts`.
+    2.  **Copy** `should show mapping step with ID, Title, and Type dropdowns` from `csv-import.spec.ts`.
+    3.  **Copy** `should validate mapping requirements` from `csv-import.spec.ts`. (Refactor: Split into `should validate node mapping requirements` and `should validate edge mapping requirements` - keep *only* Node part here).
 
-### 2. Implementation Details
-*   **Hook**: Add `mapping` state. Add `reset()` function.
-*   **UI**: Wire `MappingNodesStep` to Hook.
+### 2. Implementation
+*   **Hook**: Implement `mapping` state (Properties partial) and `reset`.
+*   **UI**: Wire `MappingNodesStep`.
 
 ---
 
 ## Slice 3: Edge Mapping
-**Goal**: Wire Step 3 (Edges). Unique exclusion logic.
+**Goal**: Wire Step 3 (Edges). Exclusion logic.
 
-### 1. Tests (Copy/Write in `e2e/new-wizard/import-wizard.spec.ts`)
-| Source `csv-import.spec.ts` | Test Name | Adaptation |
-| :--- | :--- | :--- |
-| `391` | `should validate mapping requirements` (Edges) | Verify "Next" disabled. |
-| *New* | `should disable selected source column in target` | Verify exclusion logic. |
+### 1. Tests to Create
+*   **Target File**: `apps/web/e2e/new-wizard/import-wizard.spec.ts` (Append)
+*   **Actions**:
+    1.  **Write New** (or Adapt remaining part of split test) `should validate edge mapping requirements`.
+    2.  **Write New** `should disable selected source column in target dropdown` (Verify `disabled={col === mapping.source}`).
 
-### 2. Implementation Details
-*   **Hook**: Add Edge mapping set logic.
-*   **UI**: Wire `MappingEdgesStep`. Ensure `Select` respects exclusion.
+### 2. Implementation
+*   **Hook**: Implement Edge mapping logic.
+*   **UI**: Wire `MappingEdgesStep`.
 
 ---
 
 ## Slice 4: Happy Path Integration & Regression
 **Goal**: Full E2E flow. Verify Valid Graphs.
 
-### 1. Tests
-**A. Copy to `e2e/new-wizard/import-wizard.spec.ts`**
-| Source | Test Name | Adaptation |
-| :--- | :--- | :--- |
-| `13` | `should import nodes and edges...` | Full flow. |
-| `202` | `should reset wizard after success` | Verify clean state. |
-| `246` | `should replace graph on second import` | Verify replacement. |
+### 1. Tests to Create
+*   **Target File**: `apps/web/e2e/new-wizard/import-wizard.spec.ts` (Append)
+    *   **Copy** `should import nodes and edges with mapped fields` from `csv-import.spec.ts`.
+    *   **Copy** `should reset wizard after successful import` from `csv-import.spec.ts`.
+    *   **Copy** `should replace graph on second import` from `csv-import.spec.ts`.
+    *   **Copy** `should import edges with only source and target columns` from `csv-import.spec.ts`.
 
-**B. Duplicate Suites (to `e2e/new-wizard/`)**
-*   `graph-validation.spec.ts`
-*   `graph-layout.spec.ts`
-*   `subtree-highlighting.spec.ts`
-*   `camera-control.spec.ts`
-*   `state-management.spec.ts`
+*   **Target File**: `apps/web/e2e/new-wizard/graph-validation.spec.ts` (Create)
+    *   **Action**: Duplicate entire `e2e/graph-validation.spec.ts`. Update to use `NewWizardPage`.
 
-### 2. Implementation Details
-*   **Hook**: Implement `handleImport()`. Call `buildGraphFromCsv`.
-*   **Page Object**: Ensure `importGraph` helper in `NewWizardPage` navigates the 4 steps correctly.
+*   **Target File**: `apps/web/e2e/new-wizard/graph-layout.spec.ts` (Create)
+    *   **Action**: Duplicate entire `e2e/graph-layout.spec.ts`. Update to use `NewWizardPage`.
+
+*   **Target File**: `apps/web/e2e/new-wizard/subtree-highlighting.spec.ts` (Create)
+    *   **Action**: Duplicate entire `e2e/subtree-highlighting.spec.ts`. Update to use `NewWizardPage`.
+
+*   **Target File**: `apps/web/e2e/new-wizard/camera-control.spec.ts` (Create)
+    *   **Action**: Duplicate entire `e2e/camera-control.spec.ts`. Update to use `NewWizardPage`.
+
+*   **Target File**: `apps/web/e2e/new-wizard/state-management.spec.ts` (Create)
+    *   **Action**: Duplicate entire `e2e/state-management.spec.ts`. Update to use `NewWizardPage`.
+
+### 2. Implementation
+*   **Hook**: Implement `handleImport` -> calls `buildGraphFromCsv`.
+*   **UI**: Wire `SuccessStep` to show results.
 
 ---
 
 ## Slice 5: Error Handling & Regression
 **Goal**: Invalid data distributions.
 
-### 1. Tests
-**A. Copy to `e2e/new-wizard/import-wizard.spec.ts`**
-| Source | Test Name | Adaptation |
-| :--- | :--- | :--- |
-| `402` | `should drop nodes with invalid types` | Verify Success/Warning. |
-| `440` | `should deduplicate nodes` | Verify Warning. |
-| `513` | `should reject edges pointing to missing nodes` | Verify Warning. |
+### 1. Tests to Create
+*   **Target File**: `apps/web/e2e/new-wizard/import-wizard.spec.ts` (Append)
+    *   **Copy** `should drop nodes with invalid types...` from `csv-import.spec.ts`.
+    *   **Copy** `should deduplicate nodes with duplicate IDs...` from `csv-import.spec.ts`.
+    *   **Copy** `should limit warning messages to 10` from `csv-import.spec.ts`.
+    *   **Copy** `should reject edges pointing to missing nodes` from `csv-import.spec.ts`.
+    *   **Copy** `should reject edges pointing to missing target node` from `csv-import.spec.ts`.
+    *   **Copy** `should reject edges pointing to nodes dropped...` from `csv-import.spec.ts`.
+    *   **Copy** `should silently deduplicate parallel edges` from `csv-import.spec.ts`.
 
-**B. Duplicate Suites (to `e2e/new-wizard/`)**
-*   `error-display.spec.ts`
+*   **Target File**: `apps/web/e2e/new-wizard/error-display.spec.ts` (Create)
+    *   **Action**: Duplicate entire `e2e/error-display.spec.ts`. Update to use `NewWizardPage`.
 
-### 2. Implementation Details
-*   **Hook**: Ensure `onImport` returns warnings to UI.
-*   **UI**: Pass warnings to `SuccessStep`.
+### 2. Implementation
+*   **Hook**: Ensure `buildGraphFromCsv` errors are set in state.
+*   **UI**: `SuccessStep` renders warnings.
 
 ---
 
 ## Slice 6: Advanced (Properties)
 **Goal**: Wired Properties (Pills).
 
-### 1. Tests
-**A. Copy to `e2e/new-wizard/import-wizard.spec.ts`**
-| Source | Test Name | Adaptation |
-| :--- | :--- | :--- |
-| *New* | `should map node properties using pills` | Verify property import. |
+### 1. Tests to Create
+*   **Target File**: `apps/web/e2e/new-wizard/import-wizard.spec.ts` (Append)
+    *   **Write New** `should map node properties using pills`.
 
-**B. Duplicate Suites (to `e2e/new-wizard/`)**
-*   `node-properties.spec.ts` (Adapt to use Pills in `NewWizardPage.mapColumns`).
+*   **Target File**: `apps/web/e2e/new-wizard/node-properties.spec.ts` (Create)
+    *   **Action**: Duplicate entire `e2e/node-properties.spec.ts`. Update to use `NewWizardPage` (adapt `selectProperty` to use Pills).
 
-### 2. Implementation Details
-*   **Hook**: Support `properties` array in mapping.
-*   **UI**: Wire `PillSelector` in `MappingNodesStep`.
+### 2. Implementation
+*   **Hook**: Support properties mapping.
+*   **UI**: Wire `PillSelector` in Step 2.
