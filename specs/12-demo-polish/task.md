@@ -2,7 +2,10 @@
 
 ## Status
 - [ ] **Spec 1: Demo Content**
-    - [ ] Create specialized `demo-marketing` fixtures <!-- id: 0 -->
+    - [x] **Domain Selection**: Chemical Processing (Jagged Algorithm selected). <!-- id: 5 -->
+    - [ ] **Implementation**:
+        - [ ] Create `scripts/generate_demo_fixture.py` <!-- id: 6 -->
+        - [ ] Generate `demo-polish` fixtures <!-- id: 7 -->
     - [ ] Dry-run the video script <!-- id: 1 -->
     - [ ] Draft Blog Post <!-- id: 2 -->
     - [ ] Draft Social Media Posts <!-- id: 3 -->

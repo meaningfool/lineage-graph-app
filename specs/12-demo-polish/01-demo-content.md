@@ -6,8 +6,9 @@ Prepare the assets required for a high-quality video demo and launch.
 ## To-Do List
 - [ ] **Create Demo Fixture (`demo_showcase.csv`)**
     - [ ] **Domain**: Real-world logic. No "Lorem Ipsum" or generic names (Node 1, Node 2).
-        - **Option A (Financial)**: Trade Data -> Risk Models -> Regulatory Reports.
-        - **Option B (Chemical)**: Raw Ingredients -> Compounding -> Quality Tests -> Final Product.
+    - [ ] **Domain Selection**: Decide between the two options below (See `domain-*.md` for details).
+        - **[Chemical Processing](file:///Users/josselinperrus/Projects/data-lineage-app/specs/12-demo-polish/domain-chemical.md)**: Pharma traceability (Tablets -> Batch -> Rework).
+        - **[Financial Risk](file:///Users/josselinperrus/Projects/data-lineage-app/specs/12-demo-polish/domain-financial.md)**: Value at Risk calculation (Trades -> Risk Engine -> Reports).
     - [ ] **Scale**: ~20-30 nodes. 3+ layers of depth.
     - [ ] **Features to Trigger**:
         - **Cycle**: A 3-node loop hidden in the middle layers.
