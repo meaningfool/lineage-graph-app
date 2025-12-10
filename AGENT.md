@@ -1,50 +1,63 @@
-# Antigravity Project Context
+# Lineage App Project Context
+
+## Spec-driven development workflow
+* Developments start with a spec
+* Specs are stored in the `specs` folder structured as follows:
+
+```
+specs/
+├── [NN-feature-name]/            # One folder per feature (numbered by implementation order)
+│   ├── 01-[spec-name].md        # Spec for Phase 1
+│   ├── 02-[spec-name].md        # Spec for Phase 2
+│   ├── post-01-code-review.md    # Post-Phase 1 code-review
+│   ├── research.md               # Raw research notes, analysis, and context
+│   ├── learnings.md              # Curated insights and "Aha!" moments (for sharing)
+│   ├── [spec-name ]/           # Planned features (not yet started, no number)
+│   └── ...
+```
+
+**Naming Conventions**
+*   **Spec Folders (In Progress)**: `NN-[feature-slug]` where `NN` is the next available number (e.g., `01-cleanup-codebase`, `02-csv-import`)
+*   **Spec Folders (Planned)**: `[feature-slug]` (no number prefix until work begins)
+*   **Spec Files**: `[spec-number]-[spec-name].md` (e.g., `01-ui-skeleton.md`, `02-api-integration.md`)
+*   **Post-Spec Reports**: `post-[preceding-spec-number]-[description].md` (e.g., `post-01-code-review.md` after `01-plan.md`)
+
 
 ## How to Create a New Feature
 **When**: when I'm asking you to create a new feature, or to move a spec to the backlog
-*   **Create Branch**: `git checkout -b feat/my-feature-name`
 *   **Create Folder**: `mkdir specs/my-feature-name` (Do **NOT** add a number prefix yet).
 *   **Initialize Docs**:
     *   Create `research.md` (Raw notes/Context).
     *   Create `learnings.md` (Retrospective).
     *   Create `01-initial-plan.md` using the template (see "How to Write Specs").
 
-## Directory Structure
-```
-specs/
-├── [NN-feature-name]/            # One folder per feature (numbered by implementation order)
-│   ├── task.md                   # The Feature Manifest (Master Checklist)
-│   ├── research.md               # Raw research notes, analysis, and context
-│   ├── learnings.md              # Curated insights and "Aha!" moments (for sharing)
-│   ├── 01-[phase-name].md        # Implementation plan for Phase 1
-│   ├── 02-[phase-name].md        # Implementation plan for Phase 2
-│   └── ...
-├── [feature-name]/               # Planned features (not yet started, no number)
-```
 
 ## How to Start a Feature
-1.  **Start a Feature**:
-    *   Create a new git branch: `git checkout -b feat/my-feature`
-    *   Create a matching folder: `mkdir specs/my-feature` (no number prefix yet)
+**When**: when asking you to start a feature
+*   **Create a new git branch**: `git checkout -b feat/my-feature`
+*   **Rename the folder to include the next available number**: `git mv specs/my-feature specs/07-my-feature`
 
-2.  **When Work Begins (Branch Created)**:
-    *   Rename the folder to include the next available number: `git mv specs/my-feature specs/07-my-feature`
-    *   This number reflects the **implementation order**, making it easy to understand the project's history.
 
 ## How to Write Specs
-*   **Vertical Slices**: Each slice must have a testable change in behaviour from the user perspective, unless it's a refactoring slice / spec. (See `specs/SPEC-TEMPLATE.md`).
-*   **Test-First**: Define the *exact* test scenario (inputs, actions, assertions) before defining the implementation details.
-*   **Slice Isolation**: Ensure that each slice can be verified independently. If Slice 2 depends on Logic, verify Logic *with simple data* first. Leave complex edge cases (cycles, limits) for later slices.
-*   **Impact Analysis**: Explicitly list **Shared Components** (e.g., `LineageGraph`, `CSVImporter`) that will be modified. Identify which **Existing Tests** rely on these components and plan for their verification/update.
+**When**: when I'm asking you to write a spec or iterate on a spec
+*   **Principles**
+    *   **Slices**: a spec is split into multiple slices, each slice is a vertical slice (See `specs/SPEC-TEMPLATE.md`).
+    *   **Vertical Slices**: Each slice must have a testable change in behaviour from the user perspective, unless it's a refactoring slice / spec.
+    *   **Refactoring**: If a slice is not testable from the user perspective, it is a refactoring slice.
+* **How to**
+    *   **Slice** the work into as many slices as possible. Each slice must be testable change in behaviour from the user perspective.
+    *   **Test-First**: Define the test scenarios for each slice (inputs, actions, assertions). DELAY any implementation details until the implementation phase. Tests should be implementation-independent.
+    *   **Prevent false-positives**: the combination of a slice's tests should unambiguously verify the slice's change in behaviour from the user perspective. 
+    *   **Start Simple**: start with the core logic and verify it *with simple data* first. Leave complex edge cases (cycles, limits) for later slices.
+    *   **Test-suite-wide impacts**: the planned change in behaviour might break assertions from pre-existing tests. List them in the spec and flag them for review.
 
-**Naming Conventions**
-*   **Spec Folders (In Progress)**: `NN-[feature-slug]` where `NN` is the next available number (e.g., `01-cleanup-codebase`, `02-csv-import`)
-*   **Spec Folders (Planned)**: `[feature-slug]` (no number prefix until work begins)
-*   **Plan Files**: `[sequence]-[description].md` (e.g., `01-ui-skeleton.md`, `02-api-integration.md`)
-*   **Post-Spec Reports**: `post-[preceding-spec-number]-[description].md` (e.g., `post-01-critique.md` after `01-plan.md`)
 
 ## How to Implement a Slice
-*   **Strict TDD**: Write the *minimum* code required to pass the current slice's test. Do not over-engineer for future slices. It is acceptable for code to break when moving to the next slice (e.g., a traversal algorithm that works for DAGs but hangs on cycles is correct for Slice 2 if Slice 3 adds cycle support).
+*   **Implementation plan**: the implementation plan lists all the work planned for the slice, including the tests and the fixtures.
+*   **Tests details**: explicitly write the test details, and the fixtures that will be created first.
+*   **Implementation details using strict TDD**: plan for the *minimum* code required to pass the current slice's test. Do not over-engineer for future slices. It is acceptable for code to break when moving to the next slice (e.g., a traversal algorithm that works for DAGs but hangs on cycles is correct for Slice 2 if Slice 3 adds cycle support).
+*   **Impact Analysis**: Explicitly list **Shared Components** (e.g., `LineageGraph`, `CSVImporter`) that will be modified. Identify which **Existing Tests** rely on these components and plan for their verification/update.
+
 
 ## How to Write Tests
 **Philosophy**
