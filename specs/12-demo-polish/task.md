@@ -17,7 +17,7 @@
         - [x] Build `MappingTable` with MultiSelect <!-- id: 15 -->
         - [x] Build `UploadStep` (Side-by-side dropzones) <!-- id: 16 -->
     - [ ] **Phase 2: Functional Wiring (TDD Slices)**
-        - [ ] **Slice 1:** Upload & File Validation (Test: Malformed, Dropzone) <!-- id: 17 -->
+        - [x] **Slice 1:** Upload & File Validation (Test: Malformed, Dropzone) <!-- id: 17 -->
         - [ ] **Slice 2:** Node Mapping & Reset (Happy Path) (Required Fields, Basic Reset) <!-- id: 18 -->
         - [ ] **Slice 3:** Edge Mapping (Happy Path) (Exclusion Logic, Required Fields) <!-- id: 19 -->
         - [ ] **Slice 4:** Happy Path Integration & Lifecycle (E2E, Replace Graph, **Graph-Validation Regression**) <!-- id: 20 -->

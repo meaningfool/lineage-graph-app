@@ -1,4 +1,4 @@
-import { ArrowRight, Check, FileText, Upload, X } from "lucide-react";
+import { ArrowRight, Check, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,8 +7,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { useNewImportWizard } from "@/hooks/use-new-import-wizard";
 import { cn } from "@/lib/utils";
 import { MappingTable } from "./mapping-table";
+import { UploadStep } from "./upload-step";
 
 interface ImportWizardDialogProps {
 	isOpen: boolean;
@@ -28,12 +30,21 @@ export function ImportWizardDialog({
 	isOpen,
 	onClose,
 }: ImportWizardDialogProps) {
-	const [currentStep, setCurrentStep] = useState<Step>("UPLOAD");
+	const {
+		currentStep,
+		setCurrentStep,
+		files,
+		setNodesFile,
+		setEdgesFile,
+		error,
+		handleUploadNext,
+	} = useNewImportWizard();
 
 	// --- Navigation Helpers ---
 	const goToNext = () => {
-		if (currentStep === "UPLOAD") setCurrentStep("MAP_NODES");
-		else if (currentStep === "MAP_NODES") setCurrentStep("MAP_EDGES");
+		if (currentStep === "UPLOAD") {
+			handleUploadNext();
+		} else if (currentStep === "MAP_NODES") setCurrentStep("MAP_EDGES");
 		else if (currentStep === "MAP_EDGES") setCurrentStep("SUCCESS");
 		else onClose();
 	};
@@ -44,33 +55,16 @@ export function ImportWizardDialog({
 		else if (currentStep === "SUCCESS") setCurrentStep("MAP_EDGES");
 	};
 
-	// --- Step Components (Placeholders) ---
-	// --- Step Components (Static Implementation) ---
-	const renderUpload = () => (
-		<div className="flex w-full gap-6">
-			{/* Nodes Dropzone */}
-			<div className="group flex h-64 flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-emerald-500/50 border-dashed bg-emerald-50/30 transition-all hover:bg-emerald-50 hover:shadow-sm">
-				<div className="mb-4 rounded-full bg-emerald-100 p-4 transition-transform group-hover:scale-110">
-					<FileText className="h-8 w-8 text-emerald-600" />
-				</div>
-				<h3 className="font-semibold text-emerald-900 text-lg">
-					nodes.csv ready
-				</h3>
-				<p className="font-medium text-emerald-600 text-sm">5 rows</p>
-			</div>
+	const isNextDisabled = () => {
+		if (currentStep === "UPLOAD") {
+			// Require both files to proceed (as per slice 1 tests/requirements, particularly test 2 and 3)
+			// Test 3: "should disable next button if only nodes uploaded"
+			return !files.nodes || !files.edges;
+		}
+		return false;
+	};
 
-			{/* Edges Dropzone */}
-			<div className="group flex h-64 flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-gray-300 border-dashed bg-gray-50 transition-all hover:border-blue-400 hover:bg-blue-50 hover:shadow-sm">
-				<div className="mb-4 rounded-full bg-gray-100 p-4 transition-transform group-hover:scale-110 group-hover:bg-blue-100">
-					<Upload className="h-8 w-8 text-gray-400 group-hover:text-blue-500" />
-				</div>
-				<h3 className="font-semibold text-gray-900 text-lg">Edges CSV</h3>
-				<p className="max-w-[200px] text-center text-gray-500 text-sm">
-					Drag & drop or click to upload
-				</p>
-			</div>
-		</div>
-	);
+	// --- Step Components (Placeholders) ---
 	const renderMapping = (type: "NODES" | "EDGES") => (
 		<div className="flex h-full w-full flex-col">
 			<MappingTable type={type} />
@@ -158,9 +152,22 @@ export function ImportWizardDialog({
 						})}
 					</div>
 
+					{/* Error Display */}
+					{error && (
+						<div className="mb-4 rounded-md bg-destructive/15 p-3 text-center font-medium text-destructive text-sm">
+							{error}
+						</div>
+					)}
+
 					{/* Step Content */}
 					<div className="h-[400px] overflow-y-auto px-2 pt-4">
-						{currentStep === "UPLOAD" && renderUpload()}
+						{currentStep === "UPLOAD" && (
+							<UploadStep
+								files={files}
+								onUploadNodes={setNodesFile}
+								onUploadEdges={setEdgesFile}
+							/>
+						)}
 						{currentStep === "MAP_NODES" && renderMapping("NODES")}
 						{currentStep === "MAP_EDGES" && renderMapping("EDGES")}
 						{currentStep === "SUCCESS" && renderSuccess()}
@@ -179,6 +186,7 @@ export function ImportWizardDialog({
 
 					<Button
 						onClick={goToNext}
+						disabled={isNextDisabled()}
 						className="bg-neutral-900 hover:bg-neutral-800"
 					>
 						{currentStep === "SUCCESS"
