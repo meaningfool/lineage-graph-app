@@ -207,11 +207,13 @@ export function ImportWizardDialog({
 					{/* Step Content */}
 					<div className="flex-1 overflow-y-auto px-2 pt-4">
 						{currentStep === "UPLOAD" && (
-							<UploadStep
-								files={files}
-								onUploadNodes={setNodesFile}
-								onUploadEdges={setEdgesFile}
-							/>
+							<div className="h-full w-full" data-testid="wizard-step-upload">
+								<UploadStep
+									files={files}
+									onUploadNodes={setNodesFile}
+									onUploadEdges={setEdgesFile}
+								/>
+							</div>
 						)}
 						{currentStep === "MAP_NODES" && renderMapping("NODES")}
 						{currentStep === "MAP_EDGES" && renderMapping("EDGES")}

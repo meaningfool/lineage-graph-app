@@ -102,8 +102,11 @@ export class NewWizardPage {
 		await expect(this.page.getByTestId(testId)).toContainText(text);
 	}
 
-	async verifyDropzoneEmpty(testId: string, text: string) {
-		await expect(this.page.getByTestId(testId)).not.toContainText(text);
+	async verifyDropzoneEmpty(testId: string) {
+		const text = testId.includes("nodes")
+			? "Upload Nodes CSV"
+			: "Upload Edges CSV";
+		await expect(this.page.getByTestId(testId)).toContainText(text);
 	}
 
 	async mapColumns(mapping: {
@@ -213,6 +216,15 @@ export class NewWizardPage {
 		}
 	}
 
+	async verifyDialogFullyOpen() {
+		// Radix UI sets data-state="open" when the dialog is fully open
+		// Waiting for this attribute helps avoid race conditions with animations
+		await expect(this.page.getByRole("dialog")).toHaveAttribute(
+			"data-state",
+			"open",
+		);
+	}
+
 	async verifyDialogText(text: string) {
 		await expect(this.page.getByRole("dialog")).toContainText(text);
 	}
@@ -222,7 +234,7 @@ export class NewWizardPage {
 	}
 
 	async verifyUploadStepVisible() {
-		await expect(this.page.getByText("Nodes CSV (Required)")).toBeVisible();
+		await expect(this.page.getByTestId("wizard-step-upload")).toBeVisible();
 	}
 
 	async verifyGraphNode(text: string) {

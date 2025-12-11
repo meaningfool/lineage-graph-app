@@ -398,10 +398,11 @@ test.describe("New Import Wizard - Slice 3: Edge Mapping", () => {
 
 			// 2. Re-open Modal
 			await wizardPage.openImportModal();
+			await wizardPage.verifyDialogFullyOpen();
 
 			// 3. Verify Reset
 			// Should be back at Upload step
-			await expect(page.getByTestId("wizard-step-upload")).toBeVisible();
+			await wizardPage.verifyUploadStepVisible();
 			// Dropzones should be empty
 			await wizardPage.verifyDropzoneEmpty(
 				"dropzone-nodes",

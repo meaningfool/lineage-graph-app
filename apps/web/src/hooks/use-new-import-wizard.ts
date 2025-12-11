@@ -94,7 +94,18 @@ export const useNewImportWizard = ({
 		}
 
 		if (failedFiles.length > 0) {
-			setError(`Failed to read file(s): ${failedFiles.join(", ")}`);
+			let errorMessage = "";
+			if (
+				failedFiles.includes(files.nodes?.name || "nodes.csv") &&
+				failedFiles.includes(files.edges?.name || "edges.csv")
+			) {
+				errorMessage = `Failed to read Nodes file (${files.nodes?.name}) and Edges file (${files.edges?.name})`;
+			} else if (failedFiles.includes(files.nodes?.name || "nodes.csv")) {
+				errorMessage = `Failed to read Nodes file (${files.nodes?.name})`;
+			} else {
+				errorMessage = `Failed to read Edges file (${files.edges?.name})`;
+			}
+			setError(errorMessage);
 			setFiles(newFiles);
 			return;
 		}
