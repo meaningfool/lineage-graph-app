@@ -46,7 +46,7 @@ test.describe("Camera Control", () => {
 		expect(scale).toBeLessThan(0.6);
 	});
 
-	test("reload_resets_view", async ({ page }) => {
+	test("reimport_resets_view", async ({ page }) => {
 		const nodesPath = path.join(
 			__dirname,
 			"fixtures/camera-control/wide_cluster/nodes.csv",
@@ -78,8 +78,7 @@ test.describe("Camera Control", () => {
 		// Verify at least one node is OUT of viewport (optional, but good for robust test)
 		// Actually, simply reloading and verifying they are BACK is enough.
 
-		// 3. Reload (Re-import the same file to trigger 'new graph' logic)
-		await page.reload();
+		// 3. Re-import (Import the same file to trigger 'new graph' logic)
 		await lineagePage.importGraph(nodesPath, edgesPath);
 
 		// 4. Assert Reset

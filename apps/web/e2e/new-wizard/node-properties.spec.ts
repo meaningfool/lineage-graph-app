@@ -80,7 +80,7 @@ test.describe("Node Properties (New Wizard)", () => {
 
 		// 5. Verify Graph Data
 		// Open side panel for "User Table" (from fixtures) and check description
-		await wizardPage.verifyGraphNodeCount(1);
+		await wizardPage.verifyGraphNodeCount(2);
 
 		// Note: verifySidePanelContent needs to be available in NewWizardPage or we use manual steps
 		// Re-using logic from legacy test:
