@@ -1,9 +1,25 @@
 import { useCallback, useState } from "react";
-import { parseFileHeaders } from "../lib/csv-graph-importer";
+import type { Edge, Node } from "reactflow";
+import {
+	buildGraphFromCsv,
+	parseFileFull,
+	parseFileHeaders,
+	parseMapping,
+} from "../lib/csv-graph-importer";
+import { validateGraph } from "../lib/graph-validation";
+import { mapToReactFlow } from "../lib/reactflow-mapper";
+
+interface UseNewImportWizardProps {
+	onImport?: (nodes: Node[], edges: Edge[]) => void;
+	onClose?: () => void;
+}
 
 type Step = "UPLOAD" | "MAP_NODES" | "MAP_EDGES" | "SUCCESS";
 
-export const useNewImportWizard = () => {
+export const useNewImportWizard = ({
+	onImport,
+	onClose,
+}: UseNewImportWizardProps = {}) => {
 	const [currentStep, setCurrentStep] = useState<Step>("UPLOAD");
 	const [files, setFiles] = useState<{
 		nodes: File | null;
@@ -27,45 +43,6 @@ export const useNewImportWizard = () => {
 		setFiles((prev) => ({ ...prev, edges: file }));
 		setError(null);
 	}, []);
-
-	const handleUploadNext = async () => {
-		if (!files.nodes || !files.edges) return;
-
-		let nCols: string[] = [];
-		let eCols: string[] = [];
-		const failedFiles: string[] = [];
-		const newFiles = { ...files };
-
-		const errorParts: string[] = [];
-
-		// Try to read headers from the Nodes file
-		try {
-			nCols = await parseFileHeaders(files.nodes);
-		} catch (_err) {
-			errorParts.push(`Nodes file (${files.nodes?.name})`);
-			newFiles.nodes = null;
-		}
-
-		// Try to read headers from the Edges file
-		try {
-			eCols = await parseFileHeaders(files.edges);
-		} catch (_err) {
-			errorParts.push(`Edges file (${files.edges?.name})`);
-			newFiles.edges = null;
-		}
-
-		// If any file failed, show an error and don't proceed
-		if (errorParts.length > 0) {
-			setError(`Failed to read ${errorParts.join(" and ")}`);
-			setFiles(newFiles);
-			return;
-		}
-
-		// Success! Save columns and move to next step
-		setColumns({ nodes: nCols, edges: eCols });
-		setCurrentStep("MAP_NODES");
-		setError(null);
-	};
 
 	// [NEW] Mapping State
 	const [mapping, setMapping] = useState<{
@@ -93,6 +70,98 @@ export const useNewImportWizard = () => {
 					mapping.source !== mapping.target
 				: false;
 
+	// Actions
+	const handleUploadNext = async () => {
+		if (!files.nodes || !files.edges) return;
+
+		let nCols: string[] = [];
+		let eCols: string[] = [];
+		const failedFiles: string[] = [];
+		const newFiles = { ...files };
+
+		try {
+			nCols = await parseFileHeaders(files.nodes);
+		} catch (_err) {
+			failedFiles.push(files.nodes?.name || "nodes.csv");
+			newFiles.nodes = null;
+		}
+
+		try {
+			eCols = await parseFileHeaders(files.edges);
+		} catch (_err) {
+			failedFiles.push(files.edges?.name || "edges.csv");
+			newFiles.edges = null;
+		}
+
+		if (failedFiles.length > 0) {
+			setError(`Failed to read file(s): ${failedFiles.join(", ")}`);
+			setFiles(newFiles);
+			return;
+		}
+
+		setColumns({ nodes: nCols, edges: eCols });
+		setCurrentStep("MAP_NODES");
+	};
+
+	const reset = useCallback(() => {
+		setCurrentStep("UPLOAD");
+		setFiles({ nodes: null, edges: null });
+		setColumns({ nodes: [], edges: [] });
+		setMapping({});
+		setError(null);
+	}, []);
+
+	const handleGenerateGraph = async () => {
+		if (!files.nodes || !files.edges) return;
+
+		try {
+			// 1. Parse Files (Parallel)
+			const [nodesResult, edgesResult] = await Promise.all([
+				parseFileFull(files.nodes),
+				parseFileFull(files.edges),
+			]);
+
+			// 2. Validate Mapping
+			const validatedMapping = parseMapping(mapping);
+			if (!validatedMapping) {
+				return;
+			}
+
+			// 3. Build Graph
+			const result = buildGraphFromCsv(
+				nodesResult.data,
+				edgesResult.data,
+				validatedMapping,
+			);
+
+			if (result.error) {
+				setError(result.error);
+				return; // Keep on same step but show error
+			}
+
+			// 4. Validate Graph
+			const validation = validateGraph(result.nodes, result.edges);
+
+			// 5. Map to ReactFlow
+			const { nodes: reactFlowNodes, edges: reactFlowEdges } = mapToReactFlow(
+				result.nodes,
+				result.edges,
+				validation,
+			);
+
+			// 6. Update Global State
+			if (onImport) {
+				onImport(reactFlowNodes, reactFlowEdges);
+			}
+
+			setCurrentStep("SUCCESS");
+			setError(null);
+		} catch (err) {
+			console.error("Graph Generation Failed", err);
+			setError("Failed to generate graph. Please check console.");
+		}
+	};
+
 	return {
 		currentStep,
 		setCurrentStep,
@@ -100,10 +169,18 @@ export const useNewImportWizard = () => {
 		setNodesFile,
 		setEdgesFile,
 		error,
-		handleUploadNext,
 		mapping,
 		updateMapping: setMappingValue,
 		isMappingValid,
 		columns,
+		actions: {
+			handleUploadNext,
+			handleGenerateGraph,
+			reset,
+			setNodesFile,
+			setEdgesFile,
+			updateMapping: setMappingValue,
+			setCurrentStep,
+		},
 	};
 };

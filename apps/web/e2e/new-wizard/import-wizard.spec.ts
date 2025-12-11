@@ -267,4 +267,179 @@ test.describe("New Import Wizard - Slice 3: Edge Mapping", () => {
 			.and(page.locator('[aria-disabled="true"]'));
 		await expect(sourceOption).toBeDisabled();
 	});
+
+	// ========== SLICE 4: HAPPY PATH INTEGRATION ==========
+	test.describe("Slice 4: Happy Path Integration", () => {
+		test("should import nodes and edges and render graph", async ({ page }) => {
+			// This test covers the full "Happy Path" from Upload -> Mapping -> Success -> Graph
+			const wizardPage = new NewWizardPage(page);
+			await wizardPage.openImportModal();
+
+			// 1. Upload
+			const nodesPath = path.join(
+				__dirname,
+				"../fixtures/csv-import/nodes_valid_custom_headers.csv",
+			);
+			const edgesPath = path.join(
+				__dirname,
+				"../fixtures/shared/edges_valid_basic.csv",
+			);
+			await wizardPage.uploadFiles(nodesPath, edgesPath);
+			await wizardPage.submitUpload();
+
+			// 2. Map Nodes
+			await wizardPage.mapColumns({
+				id: "node_id",
+				title: "name",
+				type: "node_type",
+			});
+			await wizardPage.clickNext();
+
+			// 3. Map Edges
+			await wizardPage.mapColumns({
+				source: "source",
+				target: "target",
+			});
+			await wizardPage.clickNext(); // Should Trigger Generate Graph
+
+			// 4. Verify Success Step
+			// Using data-testid for robustness
+			await expect(page.getByTestId("wizard-step-success")).toBeVisible({
+				timeout: 5000,
+			});
+			await expect(page.getByText("Import successful")).toBeVisible();
+
+			// 5. Close and Verify Graph
+			await wizardPage.finishImport();
+			await wizardPage.verifyGraphNode("First Node");
+			await wizardPage.verifyGraphNode("Second Node");
+			await wizardPage.verifyGraphEdgeCount(1);
+		});
+
+		test("should replace existing graph on second import", async ({ page }) => {
+			// Run full import flow twice.
+			const wizardPage = new NewWizardPage(page);
+
+			// --- Import 1 ---
+			await wizardPage.openImportModal();
+			await wizardPage.uploadFiles(
+				path.join(__dirname, "../fixtures/shared/nodes_valid_basic.csv"),
+				path.join(__dirname, "../fixtures/shared/edges_valid_basic.csv"),
+			);
+			await wizardPage.submitUpload();
+			await wizardPage.mapColumns({ id: "id", title: "title", type: "type" });
+			await wizardPage.clickNext();
+			await wizardPage.mapColumns({ source: "source", target: "target" });
+			await wizardPage.clickNext();
+			await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+			await wizardPage.finishImport();
+
+			await wizardPage.verifyGraphNode("First Node");
+
+			// --- Import 2 (Different Data) ---
+			await wizardPage.openImportModal();
+			const nodesBPath = path.join(
+				__dirname,
+				"../fixtures/csv-import/nodes_second_import.csv",
+			);
+			const edgesAPath = path.join(
+				__dirname,
+				"../fixtures/shared/edges_valid_basic.csv",
+			); // Dummy edges
+
+			await wizardPage.uploadFiles(nodesBPath, edgesAPath);
+			await wizardPage.submitUpload();
+
+			// Map Nodes
+			await wizardPage.mapColumns({
+				id: "id",
+				title: "title",
+				type: "type",
+			});
+			await wizardPage.clickNext();
+
+			// Map Edges
+			await wizardPage.mapColumns({
+				source: "source",
+				target: "target",
+			});
+			await wizardPage.clickNext(); // Generate
+
+			// Verify Success & Close
+			await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+			await wizardPage.finishImport();
+
+			// --- Verify Replacement ---
+			// Graph B nodes ("Third Node") should be present
+			await wizardPage.verifyGraphNode("Third Node");
+			// Graph A nodes ("First Node") should be GONE
+			await wizardPage.verifyGraphNodeMissing("First Node");
+		});
+
+		test("should reset wizard state after successful import and close", async ({
+			page,
+		}) => {
+			const wizardPage = new NewWizardPage(page);
+			// 1. Complete Import
+			await wizardPage.openImportModal();
+			await wizardPage.uploadFiles(
+				path.join(__dirname, "../fixtures/shared/nodes_valid_basic.csv"),
+				path.join(__dirname, "../fixtures/shared/edges_valid_basic.csv"),
+			);
+			await wizardPage.submitUpload();
+			await wizardPage.mapColumns({ id: "id", title: "title", type: "type" });
+			await wizardPage.clickNext();
+			await wizardPage.mapColumns({ source: "source", target: "target" });
+			await wizardPage.clickNext();
+			await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+			await wizardPage.finishImport();
+			await wizardPage.verifyDialogVisible(false);
+			await page.waitForTimeout(500); // Ensure unmount/state clearance
+
+			// 2. Re-open Modal
+			await wizardPage.openImportModal();
+
+			// 3. Verify Reset
+			// Should be back at Upload step
+			await expect(page.getByTestId("wizard-step-upload")).toBeVisible();
+			// Dropzones should be empty
+			await wizardPage.verifyDropzoneEmpty(
+				"dropzone-nodes",
+				"nodes_valid_basic.csv",
+			);
+		});
+
+		test("should import edges with only source and target columns", async ({
+			page,
+		}) => {
+			const wizardPage = new NewWizardPage(page);
+			await wizardPage.openImportModal();
+
+			const nodesPath = path.join(
+				__dirname,
+				"../fixtures/shared/nodes_valid_basic.csv",
+			);
+			const edgesPath = path.join(
+				__dirname,
+				"../fixtures/csv-import/edges_valid_no_id_column.csv",
+			);
+			await wizardPage.uploadFiles(nodesPath, edgesPath);
+			await wizardPage.submitUpload();
+
+			// Map Nodes
+			await wizardPage.mapColumns({ id: "id", title: "title", type: "type" });
+			await wizardPage.clickNext();
+
+			// Map Edges
+			await wizardPage.mapColumns({ source: "source", target: "target" });
+			await wizardPage.clickNext();
+
+			// Verify Success
+			await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+			await wizardPage.finishImport();
+
+			// Verify Edge loaded
+			await wizardPage.verifyGraphEdgeCount(1);
+		});
+	});
 });

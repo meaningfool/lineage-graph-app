@@ -1,5 +1,6 @@
 import { ArrowRight, Check, X } from "lucide-react";
 import { useState } from "react";
+import type { Edge, Node } from "reactflow";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -15,6 +16,7 @@ import { UploadStep } from "./upload-step";
 interface ImportWizardDialogProps {
 	isOpen: boolean;
 	onClose: () => void;
+	onImport: (nodes: Node[], edges: Edge[]) => void;
 }
 
 type Step = "UPLOAD" | "MAP_NODES" | "MAP_EDGES" | "SUCCESS";
@@ -29,34 +31,56 @@ const STEPS: { id: Step; label: string; index: number }[] = [
 export function ImportWizardDialog({
 	isOpen,
 	onClose,
+	onImport,
 }: ImportWizardDialogProps) {
 	const {
 		currentStep,
-		setCurrentStep,
 		files,
-		setNodesFile,
-		setEdgesFile,
-		error,
-		handleUploadNext,
-		mapping,
-		updateMapping,
-		isMappingValid,
+		actions: {
+			setNodesFile,
+			setEdgesFile,
+			updateMapping,
+			handleUploadNext,
+			handleGenerateGraph,
+			setCurrentStep,
+			reset,
+		},
 		columns,
-	} = useNewImportWizard();
+		mapping,
+		isMappingValid,
+		error, // Keep error as it's used later
+	} = useNewImportWizard({
+		onImport,
+		onClose,
+	});
 
 	// --- Navigation Helpers ---
-	const goToNext = () => {
-		if (currentStep === "UPLOAD") {
-			handleUploadNext();
-		} else if (currentStep === "MAP_NODES") setCurrentStep("MAP_EDGES");
-		else if (currentStep === "MAP_EDGES") setCurrentStep("SUCCESS");
-		else onClose();
+	const handleClose = () => {
+		reset();
+		onClose();
 	};
 
-	const goToBack = () => {
+	const handleNext = async () => {
+		if (currentStep === "UPLOAD") {
+			handleUploadNext();
+		} else if (currentStep === "MAP_NODES") {
+			setCurrentStep("MAP_EDGES");
+		} else if (currentStep === "MAP_EDGES") {
+			await handleGenerateGraph();
+		} else {
+			// Close or Reset
+			handleClose();
+		}
+	};
+
+	const handleBack = () => {
 		if (currentStep === "MAP_NODES") setCurrentStep("UPLOAD");
 		else if (currentStep === "MAP_EDGES") setCurrentStep("MAP_NODES");
-		else if (currentStep === "SUCCESS") setCurrentStep("MAP_EDGES");
+		// Success has no back, usually
+	};
+
+	const handleImportAnother = () => {
+		reset();
 	};
 
 	const isNextDisabled = () => {
@@ -73,7 +97,10 @@ export function ImportWizardDialog({
 
 	// --- Step Components (Placeholders) ---
 	const renderMapping = (type: "NODES" | "EDGES") => (
-		<div className="flex h-full w-full flex-col">
+		<div
+			className="flex h-full w-full flex-col"
+			data-testid={`step-map-${type.toLowerCase()}`}
+		>
 			<MappingTable
 				type={type}
 				columns={type === "NODES" ? columns.nodes : columns.edges}
@@ -84,19 +111,24 @@ export function ImportWizardDialog({
 	);
 
 	const renderSuccess = () => (
-		<div className="flex h-64 w-full flex-col items-center justify-center">
-			<div className="mb-4 rounded-full bg-green-100 p-4">
-				<Check className="h-12 w-12 text-green-600" />
+		<div
+			className="flex flex-col items-center justify-center space-y-4 py-12"
+			data-testid="wizard-step-success"
+		>
+			<div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+				<Check className="h-8 w-8 text-green-600" />
 			</div>
-			<h2 className="font-bold text-2xl text-gray-900">Success!</h2>
-			<p className="text-gray-500">Your graph has been generated.</p>
+			<h3 className="font-medium text-lg">Import successful</h3>
+			<p className="text-gray-500 text-sm">
+				Your data has been successfully imported into the graph.
+			</p>
 		</div>
 	);
 
 	const currentStepIndex = STEPS.find((s) => s.id === currentStep)?.index || 1;
 
 	return (
-		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+		<Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
 			<DialogContent
 				showCloseButton={false}
 				className="max-w-[95vw] gap-0 overflow-hidden p-0 sm:max-w-4xl"
@@ -113,7 +145,7 @@ export function ImportWizardDialog({
 						variant="ghost"
 						size="icon"
 						className="h-8 w-8 text-gray-500 hover:text-gray-900"
-						onClick={onClose}
+						onClick={handleClose}
 						data-testid="import-close-button"
 					>
 						<X className="h-4 w-4" />
@@ -188,30 +220,31 @@ export function ImportWizardDialog({
 				</div>
 
 				{/* Footer */}
-				<div className="flex items-center justify-between border-t bg-white px-6 py-4">
-					{currentStep !== "UPLOAD" ? (
-						<Button variant="outline" onClick={goToBack}>
+				<div className="flex justify-between border-t px-6 py-4">
+					{currentStep !== "UPLOAD" && currentStep !== "SUCCESS" ? (
+						<Button variant="outline" onClick={handleBack}>
 							Back
 						</Button>
 					) : (
-						<div /> /* Spacer */
+						<div /> // Spacer
 					)}
 
-					<Button
-						onClick={goToNext}
-						disabled={isNextDisabled()}
-						className="bg-neutral-900 hover:bg-neutral-800"
-						data-testid="import-next-button"
-					>
-						{currentStep === "SUCCESS"
-							? "Finish"
-							: currentStep === "MAP_EDGES"
-								? "Generate Graph"
-								: "Continue"}
-						{currentStep !== "SUCCESS" && (
-							<ArrowRight className="ml-2 h-4 w-4" />
-						)}
-					</Button>
+					{currentStep !== "SUCCESS" ? (
+						<Button
+							onClick={handleNext}
+							disabled={isNextDisabled()}
+							data-testid="import-next-button"
+						>
+							{currentStep === "MAP_EDGES" ? "Generate Graph" : "Next"}
+							{currentStep !== "MAP_EDGES" && (
+								<ArrowRight className="ml-2 h-4 w-4" />
+							)}
+						</Button>
+					) : (
+						<Button data-testid="import-finish-button" onClick={handleClose}>
+							Close
+						</Button>
+					)}
 				</div>
 			</DialogContent>
 		</Dialog>

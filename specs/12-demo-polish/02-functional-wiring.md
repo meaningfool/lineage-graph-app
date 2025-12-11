@@ -95,6 +95,18 @@ For each slice:
     *   **Copy** `should replace graph on second import` from `csv-import.spec.ts`.
     *   **Copy** `should import edges with only source and target columns` from `csv-import.spec.ts`.
 
+    *   **Copy** `should import edges with only source and target columns` from `csv-import.spec.ts`.
+
+### 2. Implementation
+*   **Hook**: Implement `handleImport` -> calls `buildGraphFromCsv`.
+*   **UI**: Wire `SuccessStep` to show results.
+
+---
+
+## Slice 4.1: Regression Testing
+**Goal**: Verify new wizard against existing feature suites.
+
+### 1. Tests to Create
 *   **Target File**: `apps/web/e2e/new-wizard/graph-layout.spec.ts` (Create)
     *   **Action**: Duplicate entire `e2e/graph-layout.spec.ts`. Update to use `NewWizardPage`.
 
@@ -106,10 +118,6 @@ For each slice:
 
 *   **Target File**: `apps/web/e2e/new-wizard/state-management.spec.ts` (Create)
     *   **Action**: Duplicate entire `e2e/state-management.spec.ts`. Update to use `NewWizardPage`.
-
-### 2. Implementation
-*   **Hook**: Implement `handleImport` -> calls `buildGraphFromCsv`.
-*   **UI**: Wire `SuccessStep` to show results.
 
 ---
 

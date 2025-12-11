@@ -53,6 +53,7 @@ export default function Header({ onImport }: HeaderProps) {
 							key={isWizardOpen ? "open" : "closed"}
 							isOpen={isWizardOpen}
 							onClose={() => setIsWizardOpen(false)}
+							onImport={onImport}
 						/>
 					)}
 					<ModeToggle />

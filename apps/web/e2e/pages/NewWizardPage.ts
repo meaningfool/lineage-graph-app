@@ -30,15 +30,27 @@ export class NewWizardPage {
 		await this.openImportModal();
 		await this.uploadFiles(nodesPath, edgesPath);
 		await this.submitUpload();
+
+		// Map Nodes
 		await this.mapColumns({
 			id: "id",
 			title: "title",
 			type: "type",
+		});
+		await this.verifyNextButtonEnabled();
+		await this.submitMapping();
+		await this.page.waitForTimeout(500); // Wait for transition
+
+		// Map Edges
+		await this.mapColumns({
 			source: "source",
 			target: "target",
 		});
+		await this.verifyNextButtonEnabled();
 		await this.submitMapping();
-		await this.closeImportModal();
+		await this.page.waitForTimeout(1000); // 1s for graph gen
+
+		await this.finishImport();
 		// Wait for graph to stabilize
 		await this.page.waitForTimeout(500);
 	}
@@ -101,18 +113,24 @@ export class NewWizardPage {
 		source?: string;
 		target?: string;
 	}) {
+		// Detect step based on keys
+		const isEdgeMapping = !!mapping.source || !!mapping.target;
+		const stepId = isEdgeMapping ? "step-map-edges" : "step-map-nodes";
+
 		// Wait for mapping step
-		await expect(this.page.getByText("Map Nodes", { exact: true })).toBeVisible(
-			{
-				timeout: 10000,
-			},
-		);
+		await expect(this.page.getByTestId(stepId)).toBeVisible({
+			timeout: 10000,
+		});
 
 		if (mapping.id) await this.selectColumn("id", mapping.id);
 		if (mapping.title) await this.selectColumn("title", mapping.title);
 		if (mapping.type) await this.selectColumn("type", mapping.type);
 		if (mapping.source) await this.selectColumn("source", mapping.source);
 		if (mapping.target) await this.selectColumn("target", mapping.target);
+	}
+
+	async finishImport() {
+		await this.page.getByTestId("import-finish-button").click();
 	}
 
 	async selectProperty(property: string) {
@@ -191,7 +209,7 @@ export class NewWizardPage {
 		if (visible) {
 			await expect(this.page.getByRole("dialog")).toBeVisible();
 		} else {
-			await expect(this.page.getByRole("dialog")).not.toBeVisible();
+			await expect(this.page.getByRole("dialog")).not.toBeAttached();
 		}
 	}
 
