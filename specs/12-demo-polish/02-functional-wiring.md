@@ -103,59 +103,91 @@ For each slice:
 
 ---
 
-## Slice 4.1: Regression Testing
-**Goal**: Verify new wizard against existing feature suites.
+## Slice 5: Domain Validation & Error Handling (Wizard)
+**Goal**: Verify that invalid data triggers warnings **inside the Wizard Success Step** (Not a dialog alert).
 
-### 1. Tests to Create
-*   **Target File**: `apps/web/e2e/new-wizard/graph-layout.spec.ts` (Create)
-    *   **Action**: Duplicate entire `e2e/graph-layout.spec.ts`. Update to use `NewWizardPage`.
-
-*   **Target File**: `apps/web/e2e/new-wizard/subtree-highlighting.spec.ts` (Create)
-    *   **Action**: Duplicate entire `e2e/subtree-highlighting.spec.ts`. Update to use `NewWizardPage`.
-
-*   **Target File**: `apps/web/e2e/new-wizard/camera-control.spec.ts` (Create)
-    *   **Action**: Duplicate entire `e2e/camera-control.spec.ts`. Update to use `NewWizardPage`.
-
-*   **Target File**: `apps/web/e2e/new-wizard/state-management.spec.ts` (Create)
-    *   **Action**: Duplicate entire `e2e/state-management.spec.ts`. Update to use `NewWizardPage`.
-
----
-
-## Slice 5: Domain Validation & Error Handling
-**Goal**: Invalid data distributions.
-
-### 1. Tests to Create
+### 1. Tests to Create (Porting Details)
 *   **Target File**: `apps/web/e2e/new-wizard/import-wizard.spec.ts` (Append)
-    *   **Copy** `should drop nodes with invalid types...` from `csv-import.spec.ts`.
-    *   **Copy** `should deduplicate nodes with duplicate IDs...` from `csv-import.spec.ts`.
-    *   **Copy** `should limit warning messages to 10` from `csv-import.spec.ts`.
-    *   **Copy** `should reject edges pointing to missing nodes` from `csv-import.spec.ts`.
-    *   **Copy** `should reject edges pointing to missing target node` from `csv-import.spec.ts`.
-    *   **Copy** `should reject edges pointing to nodes dropped...` from `csv-import.spec.ts`.
-    *   **Copy** `should silently deduplicate parallel edges` from `csv-import.spec.ts`.
 
-*   **Target File**: `apps/web/e2e/new-wizard/graph-validation.spec.ts` (Create)
-    *   **Action**: Duplicate entire `e2e/graph-validation.spec.ts`. Update to use `NewWizardPage`.
+    *   **Test**: `should drop nodes with invalid types and show summary`
+        *   *Legacy Flow*: Single Upload -> Next -> Mapping -> **Dialog Text Check**.
+        *   *New Wizard Flow*: Upload -> Next -> Map Nodes -> Next -> Map Edges -> Next -> **Success Step**.
+        *   *Verification Change*: Assert warnings are visible within the `SuccessStep` component (e.g., inside a warning list container), not just generic dialog text.
 
-*   **Target File**: `apps/web/e2e/new-wizard/error-display.spec.ts` (Create)
-    *   **Action**: Duplicate entire `e2e/error-display.spec.ts`. Update to use `NewWizardPage`.
+    *   **Test**: `should deduplicate nodes with duplicate IDs and show warning`
+        *   *New Wizard Flow*: (Same as above)
+        *   *Verification Change*: Verify "Duplicate Node ID" warning appears in Success Step.
+
+    *   **Test**: `should limit warning messages to 10`
+        *   *Verification Change*: Verify warning list items count in Success Step equals 10 + "more" message.
+
+    *   **Test**: `should reject edges pointing to missing nodes`
+        *   *Verification Change*: Verify "Source '...' not found" warning in Success Step.
+
+    *   **Test**: `should reject edges pointing to missing target node`
+        *   *Verification Change*: Verify "Target '...' not found" warning in Success Step.
+
+    *   **Test**: `should reject edges pointing to nodes dropped due to validation errors`
+        *   *Verification Change*: Verify cascading drop warning in Success Step.
+
+    *   **Test**: `should silently deduplicate parallel edges`
+        *   *Verification Change*: Verify final graph edge count matches expectation (Silent = No warning).
 
 ### 2. Implementation
-*   **Hook**: Ensure `buildGraphFromCsv` errors are set in state.
-*   **UI**: `SuccessStep` renders warnings.
+*   **Hook**: Update `useNewImportWizard` to capture `warnings` from `buildGraphFromCsv` and expose them in the return object.
+*   **UI**: Update `ImportWizardDialog.tsx` (Success Step) to accept and render a list of warnings (reusing legacy styles if possible).
 
 ---
 
 ## Slice 6: Advanced (Properties)
 **Goal**: Wired Properties (Pills).
 
-### 1. Tests to Create
-*   **Target File**: `apps/web/e2e/new-wizard/import-wizard.spec.ts` (Append)
-    *   **Write New** `should map node properties using pills`.
-
+### 1. Tests to Create (Porting Details)
 *   **Target File**: `apps/web/e2e/new-wizard/node-properties.spec.ts` (Create)
-    *   **Action**: Duplicate entire `e2e/node-properties.spec.ts`. Update to use `NewWizardPage`.
+    *   **Action**: Duplicate `e2e/node-properties.spec.ts` content.
+    *   **New Wizard Flow**:
+        *   Navigate to Step 2 (Nodes Mapping).
+        *   **Interaction Change**: Instead of selecting a "Property" dropdown option:
+            *   Locate the "Properties (Optional)" extraction section (Pill Selector).
+            *   Click the chip/pill for "description".
+    *   **Verification Change**: Verify the `mappedColumns` state correctly includes "description" in the properties list.
+
+*   **Target File**: `apps/web/e2e/new-wizard/import-wizard.spec.ts` (Append)
+    *   **New Test**: `should map node properties using pills`
+        *   Upload `nodes_with_desc.csv`.
+        *   Toggle "description" pill in Step 2.
+        *   Finish import.
+        *   Verify the resulting graph node has the "description" property.
 
 ### 2. Implementation
-*   **Hook**: Support properties mapping.
-*   **UI**: Wire `PillSelector` in Step 2.
+*   **Hook**: Update `mapping` state to support `properties: string[]`. Add `toggleProperty` action.
+*   **UI**: Implement `PillSelector` component in `MappingNodesStep`.
+
+---
+
+## Slice 7: Feature Regression (Post-Wizard)
+**Goal**: Verify new wizard against existing feature suites, using a "Fast Import" strategy to bypass UI complexity.
+
+### Strategy (The Bypass)
+*   **Do not port legacy tests file-by-file.**
+*   **Create a `fastImport` helper** in `NewWizardPage` that automates the entire flow (Open -> Upload -> Map Defaults -> finish).
+*   **Write new, focused tests** that verify the *outcome* (Graph state) rather than the wizard mechanics.
+
+### 1. Tests to Create
+*   **Target File**: `apps/web/e2e/new-wizard/graph-validation.spec.ts` (Create)
+    *   **Action**: Re-implement critical scenarios using `fastImport`. (Validates graph visualization of errors).
+
+*   **Target File**: `apps/web/e2e/new-wizard/error-display.spec.ts` (Create)
+    *   **Action**: Re-implement critical scenarios using `fastImport`. (Validates error panel/toggle).
+
+*   **Target File**: `apps/web/e2e/new-wizard/graph-layout.spec.ts` (Create)
+    *   **Action**: Re-implement critical scenarios using `fastImport`.
+
+*   **Target File**: `apps/web/e2e/new-wizard/subtree-highlighting.spec.ts` (Create)
+    *   **Action**: Re-implement critical scenarios using `fastImport`.
+
+*   **Target File**: `apps/web/e2e/new-wizard/camera-control.spec.ts` (Create)
+    *   **Action**: Re-implement critical scenarios using `fastImport`.
+
+*   **Target File**: `apps/web/e2e/new-wizard/state-management.spec.ts` (Create)
+    *   **Action**: Re-implement critical scenarios using `fastImport`.
