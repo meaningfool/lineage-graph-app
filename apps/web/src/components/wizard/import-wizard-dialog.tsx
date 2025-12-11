@@ -108,9 +108,9 @@ export function ImportWizardDialog({
 				</DialogHeader>
 
 				{/* Body */}
-				<div className="bg-gray-50/50 p-6">
+				<div className="flex h-[550px] flex-col gap-6 bg-gray-50/50 p-6">
 					{/* Stepper (Motif Style) */}
-					<div className="mb-8 flex items-center justify-center">
+					<div className="flex items-center justify-center">
 						{STEPS.map((step, idx) => {
 							const isActive = step.id === currentStep;
 							const isCompleted = step.index < currentStepIndex;
@@ -154,13 +154,13 @@ export function ImportWizardDialog({
 
 					{/* Error Display */}
 					{error && (
-						<div className="mb-4 rounded-md bg-destructive/15 p-3 text-center font-medium text-destructive text-sm">
+						<div className="rounded-md bg-destructive/15 p-3 text-center font-medium text-destructive text-sm">
 							{error}
 						</div>
 					)}
 
 					{/* Step Content */}
-					<div className="h-[400px] overflow-y-auto px-2 pt-4">
+					<div className="flex-1 overflow-y-auto px-2 pt-4">
 						{currentStep === "UPLOAD" && (
 							<UploadStep
 								files={files}

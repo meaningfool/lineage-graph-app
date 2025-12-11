@@ -31,7 +31,7 @@ test.describe("New Import Wizard - Slice 1: Upload & File Validation", () => {
 
 		// 5. Verify Error Message contains both errors
 		await wizardPage.verifyDialogText(
-			"Failed to read file(s): malformed.csv, malformed.csv",
+			"Failed to read Nodes file (malformed.csv) and Edges file (malformed.csv)",
 		);
 
 		// 6. Verify BOTH dropzones are cleared

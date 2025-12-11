@@ -36,11 +36,13 @@ export const useNewImportWizard = () => {
 		const failedFiles: string[] = [];
 		const newFiles = { ...files };
 
+		const errorParts: string[] = [];
+
 		// Try to read headers from the Nodes file
 		try {
 			nCols = await parseFileHeaders(files.nodes);
 		} catch (_err) {
-			failedFiles.push(files.nodes?.name || "nodes.csv");
+			errorParts.push(`Nodes file (${files.nodes?.name})`);
 			newFiles.nodes = null;
 		}
 
@@ -48,13 +50,13 @@ export const useNewImportWizard = () => {
 		try {
 			eCols = await parseFileHeaders(files.edges);
 		} catch (_err) {
-			failedFiles.push(files.edges?.name || "edges.csv");
+			errorParts.push(`Edges file (${files.edges?.name})`);
 			newFiles.edges = null;
 		}
 
 		// If any file failed, show an error and don't proceed
-		if (failedFiles.length > 0) {
-			setError(`Failed to read file(s): ${failedFiles.join(", ")}`);
+		if (errorParts.length > 0) {
+			setError(`Failed to read ${errorParts.join(" and ")}`);
 			setFiles(newFiles);
 			return;
 		}
