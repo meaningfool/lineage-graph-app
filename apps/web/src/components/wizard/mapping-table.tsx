@@ -111,11 +111,25 @@ export function MappingTable({
 										<SelectValue placeholder="Select column..." />
 									</SelectTrigger>
 									<SelectContent>
-										{columns.map((col) => (
-											<SelectItem key={col} value={col}>
-												{col}
-											</SelectItem>
-										))}
+										{columns.map((col) => {
+											// Exclusion Logic (Slice 3)
+											// Only applies to Edges (Source/Target checks)
+											let isDisabled = false;
+											if (!isNode) {
+												if (row.id === "source" && mapping.target === col) {
+													isDisabled = true;
+												}
+												if (row.id === "target" && mapping.source === col) {
+													isDisabled = true;
+												}
+											}
+
+											return (
+												<SelectItem key={col} value={col} disabled={isDisabled}>
+													{col}
+												</SelectItem>
+											);
+										})}
 									</SelectContent>
 								</Select>
 							</td>

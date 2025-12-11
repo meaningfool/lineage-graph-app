@@ -65,7 +65,7 @@ export function ImportWizardDialog({
 			// Test 3: "should disable next button if only nodes uploaded"
 			return !files.nodes || !files.edges;
 		}
-		if (currentStep === "MAP_NODES") {
+		if (currentStep === "MAP_NODES" || currentStep === "MAP_EDGES") {
 			return !isMappingValid;
 		}
 		return false;
@@ -201,6 +201,7 @@ export function ImportWizardDialog({
 						onClick={goToNext}
 						disabled={isNextDisabled()}
 						className="bg-neutral-900 hover:bg-neutral-800"
+						data-testid="import-next-button"
 					>
 						{currentStep === "SUCCESS"
 							? "Finish"

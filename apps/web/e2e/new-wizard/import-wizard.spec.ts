@@ -178,3 +178,93 @@ test.describe("New Import Wizard - Slice 2: Node Mapping & Reset", () => {
 		);
 	});
 });
+
+test.describe("New Import Wizard - Slice 3: Edge Mapping", () => {
+	test.beforeEach(async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.goto();
+	});
+
+	test("should validate edge mapping requirements", async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		// Upload valid files
+		const nodesPath = path.join(
+			__dirname,
+			"../fixtures",
+			"shared",
+			"nodes_valid_basic.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"../fixtures",
+			"shared",
+			"edges_valid_basic.csv",
+		);
+		await wizardPage.uploadNodeFile(nodesPath);
+		await wizardPage.uploadEdgeFile(edgesPath);
+		await wizardPage.clickNext();
+
+		// Map Nodes
+		await wizardPage.mapColumn("id", "id");
+		await wizardPage.mapColumn("title", "title");
+		await wizardPage.mapColumn("type", "type");
+		await wizardPage.clickNext(); // Should go to Edge Mapping
+
+		// Now we should be on Edge Mapping step
+		await expect(page.getByText("Map Edges", { exact: true })).toBeVisible();
+
+		// Next should be disabled initially
+		await wizardPage.verifyNextButtonDisabled();
+
+		// Map Source
+		await wizardPage.mapColumn("source", "source");
+		await wizardPage.verifyNextButtonDisabled();
+
+		// Map Target
+		await wizardPage.mapColumn("target", "target");
+		await wizardPage.verifyNextButtonEnabled();
+	});
+
+	test("should disable selected source column in target dropdown", async ({
+		page,
+	}) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		// Upload valid files
+		const nodesPath = path.join(
+			__dirname,
+			"../fixtures",
+			"shared",
+			"nodes_valid_basic.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"../fixtures",
+			"shared",
+			"edges_valid_basic.csv",
+		);
+		await wizardPage.uploadNodeFile(nodesPath);
+		await wizardPage.uploadEdgeFile(edgesPath);
+		await wizardPage.clickNext();
+
+		// Map Nodes & Proceed
+		await wizardPage.mapColumn("id", "id");
+		await wizardPage.mapColumn("title", "title");
+		await wizardPage.mapColumn("type", "type");
+		await wizardPage.clickNext();
+
+		// Select 'source' in Source dropdown
+		await wizardPage.openColumnDropdown("source");
+		await page.getByRole("option", { name: "source" }).click();
+
+		// Verify 'source' is disabled in Target dropdown
+		await wizardPage.openColumnDropdown("target");
+		const sourceOption = page
+			.getByRole("option", { name: "source" })
+			.and(page.locator('[aria-disabled="true"]'));
+		await expect(sourceOption).toBeDisabled();
+	});
+});

@@ -87,7 +87,11 @@ export const useNewImportWizard = () => {
 	const isMappingValid =
 		currentStep === "MAP_NODES"
 			? !!mapping.id && !!mapping.title && !!mapping.type
-			: false;
+			: currentStep === "MAP_EDGES"
+				? !!mapping.source &&
+					!!mapping.target &&
+					mapping.source !== mapping.target
+				: false;
 
 	return {
 		currentStep,

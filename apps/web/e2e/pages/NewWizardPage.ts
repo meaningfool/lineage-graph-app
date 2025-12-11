@@ -75,22 +75,15 @@ export class NewWizardPage {
 	}
 
 	async clickNext() {
-		// The new wizard uses "Continue"
-		await this.page
-			.getByRole("button", { name: "Continue", exact: true })
-			.click();
+		await this.page.getByTestId("import-next-button").click();
 	}
 
 	async verifyNextButtonEnabled() {
-		await expect(
-			this.page.getByRole("button", { name: "Continue", exact: true }),
-		).toBeEnabled();
+		await expect(this.page.getByTestId("import-next-button")).toBeEnabled();
 	}
 
 	async verifyNextButtonDisabled() {
-		await expect(
-			this.page.getByRole("button", { name: "Continue", exact: true }),
-		).toBeDisabled();
+		await expect(this.page.getByTestId("import-next-button")).toBeDisabled();
 	}
 
 	async verifyDropzoneContent(testId: string, text: string) {
@@ -165,6 +158,10 @@ export class NewWizardPage {
 		await this.page
 			.getByRole("option", { name: csvColumn, exact: true })
 			.click();
+	}
+
+	async mapColumn(field: string, csvColumn: string) {
+		await this.selectColumn(field, csvColumn);
 	}
 
 	async submitMapping() {
