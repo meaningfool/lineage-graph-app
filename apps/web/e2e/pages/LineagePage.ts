@@ -15,7 +15,11 @@ export class LineagePage {
 	}
 
 	async openImportModal() {
-		await this.page.getByRole("button", { name: "Import CSV" }).click();
+		if (this.importStrategy === "new") {
+			await this.page.getByRole("button", { name: "✨ New Import" }).click();
+		} else {
+			await this.page.getByRole("button", { name: "Import CSV" }).click();
+		}
 	}
 
 	async uploadFiles(nodesPath: string, edgesPath: string) {
@@ -65,13 +69,25 @@ export class LineagePage {
 		// Step 1 -> 2 (Upload -> Map Nodes)
 		await this.clickNext();
 
-		// Step 2 -> 3 (Map Nodes -> Map Edges)
-		// Assumption: Auto-mapping works for standard fixtures
+		// Step 2: Map Nodes
+		// Explicitly map standard fields to ensure valid state (mirroring legacy behavior)
+		await this.mapColumns({
+			id: "id",
+			title: "title",
+			type: "type",
+		});
 		await this.clickNext();
 
+		// Step 3: Map Edges
+		// Explicitly map standard fields
+		await this.mapColumns({
+			source: "source",
+			target: "target",
+		});
+
 		// Step 3 -> 4 (Map Edges -> Success)
-		// Assumption: Auto-mapping works for standard fixtures
-		await this.clickNext();
+		// Button text changes to "Generate Graph" at this step
+		await this.page.getByRole("button", { name: "Generate Graph" }).click();
 
 		// Wait for Success Step
 		await expect(this.page.getByTestId("wizard-step-success")).toBeVisible();
@@ -144,7 +160,8 @@ export class LineagePage {
 		target?: string;
 	}) {
 		// Wait for mapping step
-		await expect(this.page.getByText("Nodes", { exact: true })).toBeVisible({
+		const stepHeader = this.importStrategy === "new" ? "Map Nodes" : "Nodes";
+		await expect(this.page.getByText(stepHeader, { exact: true })).toBeVisible({
 			timeout: 10000,
 		});
 
