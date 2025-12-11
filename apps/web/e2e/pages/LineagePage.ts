@@ -23,10 +23,25 @@ export class LineagePage {
 		await this.uploadEdgeFile(edgesPath);
 	}
 
+	// Strategy for import flow (Slice 7)
+	private importStrategy: "legacy" | "new" = "legacy";
+
+	setImportStrategy(strategy: "legacy" | "new") {
+		this.importStrategy = strategy;
+	}
+
 	/**
-	 * High-level helper to perform a complete import flow with standard mapping.
+	 * High-level helper to perform a complete import flow using the selected strategy.
 	 */
 	async importGraph(nodesPath: string, edgesPath: string) {
+		if (this.importStrategy === "new") {
+			await this.importGraphNewWizard(nodesPath, edgesPath);
+		} else {
+			await this.importGraphLegacy(nodesPath, edgesPath);
+		}
+	}
+
+	private async importGraphLegacy(nodesPath: string, edgesPath: string) {
 		await this.openImportModal();
 		await this.uploadFiles(nodesPath, edgesPath);
 		await this.submitUpload();
@@ -39,6 +54,31 @@ export class LineagePage {
 		});
 		await this.submitMapping();
 		await this.closeImportModal();
+		// Wait for graph to stabilize
+		await this.page.waitForTimeout(500);
+	}
+
+	private async importGraphNewWizard(nodesPath: string, edgesPath: string) {
+		await this.openImportModal();
+		await this.uploadFiles(nodesPath, edgesPath);
+
+		// Step 1 -> 2 (Upload -> Map Nodes)
+		await this.clickNext();
+
+		// Step 2 -> 3 (Map Nodes -> Map Edges)
+		// Assumption: Auto-mapping works for standard fixtures
+		await this.clickNext();
+
+		// Step 3 -> 4 (Map Edges -> Success)
+		// Assumption: Auto-mapping works for standard fixtures
+		await this.clickNext();
+
+		// Wait for Success Step
+		await expect(this.page.getByTestId("wizard-step-success")).toBeVisible();
+
+		// Finish (Click "Close")
+		await this.page.getByRole("button", { name: "Close" }).click();
+
 		// Wait for graph to stabilize
 		await this.page.waitForTimeout(500);
 	}
