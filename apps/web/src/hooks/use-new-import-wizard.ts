@@ -62,6 +62,18 @@ export const useNewImportWizard = ({
 
 	const [warnings, setWarnings] = useState<string[]>([]);
 
+	// [NEW] Slice 6: Properties Mapping state
+	const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
+
+	const toggleProperty = useCallback((property: string) => {
+		setSelectedProperties((prev) => {
+			if (prev.includes(property)) {
+				return prev.filter((p) => p !== property);
+			}
+			return [...prev, property];
+		});
+	}, []);
+
 	// [NEW] Validation Logic
 	const isMappingValid =
 		currentStep === "MAP_NODES"
@@ -123,6 +135,7 @@ export const useNewImportWizard = ({
 		setFiles({ nodes: null, edges: null });
 		setColumns({ nodes: [], edges: [] });
 		setMapping({});
+		setSelectedProperties([]);
 		setError(null);
 		setWarnings([]);
 	}, []);
@@ -144,6 +157,9 @@ export const useNewImportWizard = ({
 			if (!validatedMapping) {
 				return;
 			}
+
+			// Inject selected properties into mapping for domain function
+			validatedMapping.nodes.properties = selectedProperties;
 
 			// 3. Build Graph
 			const result = buildGraphFromCsv(
@@ -190,7 +206,9 @@ export const useNewImportWizard = ({
 		error,
 		warnings,
 		mapping,
+		selectedProperties,
 		updateMapping: setMappingValue,
+		toggleProperty,
 		isMappingValid,
 		columns,
 		actions: {
@@ -200,6 +218,7 @@ export const useNewImportWizard = ({
 			setNodesFile,
 			setEdgesFile,
 			updateMapping: setMappingValue,
+			toggleProperty,
 			setCurrentStep,
 		},
 	};

@@ -14,36 +14,30 @@ interface MappingTableProps {
 	columns: string[];
 	mapping: Record<string, string | undefined>;
 	onChange: (field: string, value: string) => void;
+	// Props for property selection (Slice 6)
+	selectedProperties?: string[];
+	onToggleProperty?: (property: string) => void;
 }
-
-// Mock CSV Columns available for mapping
-const MOCK_COLUMNS = [
-	{ id: "c1", label: "id" },
-	{ id: "c2", label: "label_text" },
-	{ id: "c3", label: "type_category" },
-	{ id: "c4", label: "weight_kg" },
-	{ id: "c5", label: "expiry_date" },
-	{ id: "c6", label: "batch_num" },
-];
 
 export function MappingTable({
 	type,
 	columns,
 	mapping,
 	onChange,
+	selectedProperties = [],
+	onToggleProperty,
 }: MappingTableProps) {
 	const isNode = type === "NODES";
 
-	// State to track selected properties (mock)
-	const [selectedProps, setSelectedProps] = useState<string[]>([]);
+	// Filter columns that are already mapped to required fields
+	// We want to show remaining columns as optional properties
+	// Note: This simple logic assumes 1:1 mapping for required fields.
+	const mappedValues = Object.values(mapping).filter(Boolean);
+	const availableProperties = columns.filter(
+		(col) => !mappedValues.includes(col),
+	);
 
-	const toggleProperty = (id: string) => {
-		if (selectedProps.includes(id)) {
-			setSelectedProps(selectedProps.filter((p) => p !== id));
-		} else {
-			setSelectedProps([...selectedProps, id]);
-		}
-	};
+	const isPropertySelected = (col: string) => selectedProperties.includes(col);
 
 	// Define rows based on type
 	const rows = isNode
@@ -142,7 +136,7 @@ export function MappingTable({
 					))}
 
 					{/* Additional Properties Row (Nodes Only) */}
-					{isNode && (
+					{isNode && onToggleProperty && (
 						<tr className="bg-gray-50/20 hover:bg-gray-50/50">
 							<td className="p-4 align-top">
 								<div className="font-medium text-gray-900">
@@ -154,27 +148,34 @@ export function MappingTable({
 							</td>
 							<td className="p-4 align-top">
 								<div className="min-h-[42px] w-full rounded-md border border-gray-200 bg-white p-3">
-									<div className="flex flex-wrap gap-2">
-										{MOCK_COLUMNS.map((col) => {
-											const isSelected = selectedProps.includes(col.id);
-											return (
-												<button
-													key={col.id}
-													type="button"
-													onClick={() => toggleProperty(col.id)}
-													className={cn(
-														"inline-flex items-center rounded-full border px-3 py-1 font-medium text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-														isSelected
-															? "border-transparent bg-neutral-900 text-white hover:bg-neutral-800"
-															: "border-gray-200 bg-white text-gray-900 hover:border-gray-300 hover:bg-gray-100",
-													)}
-												>
-													{isSelected && <Check className="mr-1 h-3 w-3" />}
-													{col.label}
-												</button>
-											);
-										})}
-									</div>
+									{availableProperties.length === 0 ? (
+										<div className="text-gray-400 text-xs italic">
+											No optional columns available
+										</div>
+									) : (
+										<div className="flex flex-wrap gap-2">
+											{availableProperties.map((col) => {
+												const isSelected = isPropertySelected(col);
+												return (
+													<button
+														key={col}
+														type="button"
+														onClick={() => onToggleProperty(col)}
+														data-testid={`property-pill-${col}`}
+														className={cn(
+															"inline-flex items-center rounded-full border px-3 py-1 font-medium text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+															isSelected
+																? "border-transparent bg-neutral-900 text-white hover:bg-neutral-800"
+																: "border-gray-200 bg-white text-gray-900 hover:border-gray-300 hover:bg-gray-100",
+														)}
+													>
+														{isSelected && <Check className="mr-1 h-3 w-3" />}
+														{col}
+													</button>
+												);
+											})}
+										</div>
+									)}
 								</div>
 							</td>
 							<td className="p-4" />

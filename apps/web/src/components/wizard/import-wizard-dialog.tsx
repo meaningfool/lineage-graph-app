@@ -50,6 +50,8 @@ export function ImportWizardDialog({
 		isMappingValid,
 		error,
 		warnings,
+		selectedProperties,
+		toggleProperty,
 	} = useNewImportWizard({
 		onImport,
 		onClose,
@@ -107,6 +109,8 @@ export function ImportWizardDialog({
 				columns={type === "NODES" ? columns.nodes : columns.edges}
 				mapping={mapping}
 				onChange={updateMapping}
+				selectedProperties={type === "NODES" ? selectedProperties : undefined}
+				onToggleProperty={type === "NODES" ? toggleProperty : undefined}
 			/>
 		</div>
 	);
