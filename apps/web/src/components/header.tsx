@@ -50,6 +50,7 @@ export default function Header({ onImport }: HeaderProps) {
 					</Button>
 					{isWizardOpen && (
 						<ImportWizardDialog
+							key={isWizardOpen ? "open" : "closed"}
 							isOpen={isWizardOpen}
 							onClose={() => setIsWizardOpen(false)}
 						/>

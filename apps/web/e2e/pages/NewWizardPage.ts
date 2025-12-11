@@ -145,6 +145,13 @@ export class NewWizardPage {
 		await this.page.getByTestId(`mapping-select-${field}-trigger`).click();
 	}
 
+	async getDropdownOptions(field: string) {
+		await this.openColumnDropdown(field);
+		const options = await this.page.getByRole("option").allInnerTexts();
+		await this.closeDropdown();
+		return options;
+	}
+
 	async verifyDropdownOption(text: string) {
 		await expect(this.page.getByRole("option", { name: text })).toBeVisible();
 	}

@@ -38,6 +38,10 @@ export function ImportWizardDialog({
 		setEdgesFile,
 		error,
 		handleUploadNext,
+		mapping,
+		updateMapping,
+		isMappingValid,
+		columns,
 	} = useNewImportWizard();
 
 	// --- Navigation Helpers ---
@@ -61,13 +65,21 @@ export function ImportWizardDialog({
 			// Test 3: "should disable next button if only nodes uploaded"
 			return !files.nodes || !files.edges;
 		}
+		if (currentStep === "MAP_NODES") {
+			return !isMappingValid;
+		}
 		return false;
 	};
 
 	// --- Step Components (Placeholders) ---
 	const renderMapping = (type: "NODES" | "EDGES") => (
 		<div className="flex h-full w-full flex-col">
-			<MappingTable type={type} />
+			<MappingTable
+				type={type}
+				columns={type === "NODES" ? columns.nodes : columns.edges}
+				mapping={mapping}
+				onChange={updateMapping}
+			/>
 		</div>
 	);
 
@@ -102,6 +114,7 @@ export function ImportWizardDialog({
 						size="icon"
 						className="h-8 w-8 text-gray-500 hover:text-gray-900"
 						onClick={onClose}
+						data-testid="import-close-button"
 					>
 						<X className="h-4 w-4" />
 					</Button>

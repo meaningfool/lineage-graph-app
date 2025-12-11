@@ -104,3 +104,77 @@ test.describe("New Import Wizard - Slice 1: Upload & File Validation", () => {
 		await wizardPage.verifyNextButtonDisabled();
 	});
 });
+
+test.describe("New Import Wizard - Slice 2: Node Mapping & Reset", () => {
+	test.beforeEach(async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.goto();
+	});
+
+	test("should populate dropdowns with exact CSV headers", async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		// Upload valid files
+		const nodesPath = path.join(
+			__dirname,
+			"../fixtures",
+			"shared",
+			"nodes_valid_basic.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"../fixtures",
+			"shared",
+			"edges_valid_basic.csv",
+		);
+		await wizardPage.uploadNodeFile(nodesPath);
+		await wizardPage.uploadEdgeFile(edgesPath);
+		await wizardPage.clickNext();
+
+		// Verify dropdown options for 'id' field
+		// The fixture headers are: id,title,type
+		const expectedHeaders = ["id", "title", "type"];
+		const options = await wizardPage.getDropdownOptions("title"); // We changed ID from 'label' to 'title'
+		expect(options).toEqual(expectedHeaders);
+	});
+
+	test("should reset wizard state when modal is closed and reopened", async ({
+		page,
+	}) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		// 1. Upload files and go to mapping step
+		const nodesPath = path.join(
+			__dirname,
+			"../fixtures",
+			"shared",
+			"nodes_valid_basic.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"../fixtures",
+			"shared",
+			"edges_valid_basic.csv",
+		);
+		await wizardPage.uploadNodeFile(nodesPath);
+		await wizardPage.uploadEdgeFile(edgesPath);
+		await wizardPage.clickNext();
+
+		// 2. Verify we are on mapping step
+		await wizardPage.verifyMappingStep();
+
+		// 3. Close modal
+		await wizardPage.closeImportModal();
+
+		// 4. Reopen modal
+		await wizardPage.openImportModal();
+
+		// 5. Verify we are back at upload step (empty)
+		await wizardPage.verifyDropzoneEmpty(
+			"dropzone-nodes",
+			"nodes_valid_basic.csv",
+		);
+	});
+});

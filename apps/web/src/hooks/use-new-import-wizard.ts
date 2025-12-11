@@ -67,6 +67,28 @@ export const useNewImportWizard = () => {
 		setError(null);
 	};
 
+	// [NEW] Mapping State
+	const [mapping, setMapping] = useState<{
+		id?: string;
+		title?: string;
+		type?: string;
+		source?: string;
+		target?: string;
+		// NOTE: properties is handled by the generic object but likely unused in this slice's validation
+		[key: string]: string | undefined;
+	}>({});
+
+	// [NEW] Update Logic
+	const setMappingValue = useCallback((field: string, value: string) => {
+		setMapping((prev) => ({ ...prev, [field]: value }));
+	}, []);
+
+	// [NEW] Validation Logic
+	const isMappingValid =
+		currentStep === "MAP_NODES"
+			? !!mapping.id && !!mapping.title && !!mapping.type
+			: false;
+
 	return {
 		currentStep,
 		setCurrentStep,
@@ -75,5 +97,9 @@ export const useNewImportWizard = () => {
 		setEdgesFile,
 		error,
 		handleUploadNext,
+		mapping,
+		updateMapping: setMappingValue,
+		isMappingValid,
+		columns,
 	};
 };

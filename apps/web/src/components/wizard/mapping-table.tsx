@@ -11,6 +11,9 @@ import { cn } from "@/lib/utils";
 
 interface MappingTableProps {
 	type: "NODES" | "EDGES";
+	columns: string[];
+	mapping: Record<string, string | undefined>;
+	onChange: (field: string, value: string) => void;
 }
 
 // Mock CSV Columns available for mapping
@@ -23,7 +26,12 @@ const MOCK_COLUMNS = [
 	{ id: "c6", label: "batch_num" },
 ];
 
-export function MappingTable({ type }: MappingTableProps) {
+export function MappingTable({
+	type,
+	columns,
+	mapping,
+	onChange,
+}: MappingTableProps) {
 	const isNode = type === "NODES";
 
 	// State to track selected properties (mock)
@@ -47,7 +55,7 @@ export function MappingTable({ type }: MappingTableProps) {
 					description: "Unique identifier",
 				},
 				{
-					id: "label",
+					id: "title",
 					label: "Display Label",
 					required: true,
 					description: "Shown on the graph",
@@ -92,14 +100,20 @@ export function MappingTable({ type }: MappingTableProps) {
 								<div className="text-gray-500 text-xs">{row.description}</div>
 							</td>
 							<td className="p-4 align-top">
-								<Select>
-									<SelectTrigger className="w-full bg-white">
+								<Select
+									value={mapping[row.id] || ""}
+									onValueChange={(value) => onChange(row.id, value)}
+								>
+									<SelectTrigger
+										className="w-full bg-white"
+										data-testid={`mapping-select-${row.id}-trigger`}
+									>
 										<SelectValue placeholder="Select column..." />
 									</SelectTrigger>
 									<SelectContent>
-										{MOCK_COLUMNS.map((col) => (
-											<SelectItem key={col.id} value={col.id}>
-												{col.label}
+										{columns.map((col) => (
+											<SelectItem key={col} value={col}>
+												{col}
 											</SelectItem>
 										))}
 									</SelectContent>
