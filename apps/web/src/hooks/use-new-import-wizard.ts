@@ -60,6 +60,8 @@ export const useNewImportWizard = ({
 		setMapping((prev) => ({ ...prev, [field]: value }));
 	}, []);
 
+	const [warnings, setWarnings] = useState<string[]>([]);
+
 	// [NEW] Validation Logic
 	const isMappingValid =
 		currentStep === "MAP_NODES"
@@ -80,14 +82,16 @@ export const useNewImportWizard = ({
 		const newFiles = { ...files };
 
 		try {
-			nCols = await parseFileHeaders(files.nodes);
+			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+			nCols = await parseFileHeaders(files.nodes as any);
 		} catch (_err) {
 			failedFiles.push(files.nodes?.name || "nodes.csv");
 			newFiles.nodes = null;
 		}
 
 		try {
-			eCols = await parseFileHeaders(files.edges);
+			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+			eCols = await parseFileHeaders(files.edges as any);
 		} catch (_err) {
 			failedFiles.push(files.edges?.name || "edges.csv");
 			newFiles.edges = null;
@@ -120,6 +124,7 @@ export const useNewImportWizard = ({
 		setColumns({ nodes: [], edges: [] });
 		setMapping({});
 		setError(null);
+		setWarnings([]);
 	}, []);
 
 	const handleGenerateGraph = async () => {
@@ -128,8 +133,10 @@ export const useNewImportWizard = ({
 		try {
 			// 1. Parse Files (Parallel)
 			const [nodesResult, edgesResult] = await Promise.all([
-				parseFileFull(files.nodes),
-				parseFileFull(files.edges),
+				// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+				parseFileFull(files.nodes as any),
+				// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+				parseFileFull(files.edges as any),
 			]);
 
 			// 2. Validate Mapping
@@ -140,8 +147,8 @@ export const useNewImportWizard = ({
 
 			// 3. Build Graph
 			const result = buildGraphFromCsv(
-				nodesResult.data,
-				edgesResult.data,
+				nodesResult.data as unknown[],
+				edgesResult.data as unknown[],
 				validatedMapping,
 			);
 
@@ -165,6 +172,7 @@ export const useNewImportWizard = ({
 				onImport(reactFlowNodes, reactFlowEdges);
 			}
 
+			setWarnings(result.warnings);
 			setCurrentStep("SUCCESS");
 			setError(null);
 		} catch (err) {
@@ -180,6 +188,7 @@ export const useNewImportWizard = ({
 		setNodesFile,
 		setEdgesFile,
 		error,
+		warnings,
 		mapping,
 		updateMapping: setMappingValue,
 		isMappingValid,

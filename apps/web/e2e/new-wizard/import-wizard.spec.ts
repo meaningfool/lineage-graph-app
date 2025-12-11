@@ -444,3 +444,252 @@ test.describe("New Import Wizard - Slice 3: Edge Mapping", () => {
 		});
 	});
 });
+
+test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling", () => {
+	test.beforeEach(async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.goto();
+	});
+
+	test("should drop nodes with invalid types and show summary", async ({
+		page,
+	}) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		// 1. Upload
+		const nodesPath = path.join(
+			__dirname,
+			"../fixtures/csv-import/nodes_invalid_bad_type.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"../fixtures/shared/edges_valid_basic.csv",
+		);
+		await wizardPage.uploadFiles(nodesPath, edgesPath);
+		await wizardPage.submitUpload();
+
+		// 2. Map Nodes
+		await wizardPage.mapColumns({
+			id: "id",
+			title: "title",
+			type: "type",
+		});
+		await wizardPage.clickNext();
+
+		// 3. Map Edges
+		await wizardPage.mapColumns({
+			source: "source",
+			target: "target",
+		});
+		await wizardPage.clickNext(); // Should generate graph and show success
+
+		// 4. Verify Warnings in Success Step
+		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+
+		// Expect warnings to be displayed
+		await expect(page.getByText("1 node dropped")).toBeVisible();
+		// Expect warnings section to be displayed
+		await expect(page.getByText("Warnings during import:")).toBeVisible();
+		// Ensure at least one warning item is present
+		await expect(page.locator("ul li").first()).toBeVisible();
+
+		// 5. Verify import success for valid node
+		await wizardPage.finishImport();
+		await wizardPage.verifyGraphNodeCount(1);
+	});
+
+	test("should deduplicate nodes with duplicate IDs and show warning", async ({
+		page,
+	}) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		// 1. Upload
+		const nodesPath = path.join(
+			__dirname,
+			"../fixtures/csv-import/nodes_invalid_duplicate_ids.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"../fixtures/shared/edges_valid_basic.csv",
+		);
+		await wizardPage.uploadFiles(nodesPath, edgesPath);
+		await wizardPage.submitUpload();
+
+		// 2. Map Nodes
+		await wizardPage.mapColumns({
+			id: "id",
+			title: "title",
+			type: "type",
+		});
+		await wizardPage.clickNext();
+
+		// 3. Map Edges
+		await wizardPage.mapColumns({
+			source: "source",
+			target: "target",
+		});
+		await wizardPage.clickNext();
+
+		// 4. Verify Warnings
+		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+		await expect(page.getByText("1 node dropped")).toBeVisible();
+		await expect(page.getByText("node-1: Duplicate Node ID")).toBeVisible();
+
+		await wizardPage.finishImport();
+		await wizardPage.verifyGraphNodeCount(2);
+	});
+
+	test("should limit warning messages to 10", async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		// 1. Upload
+		const nodesPath = path.join(
+			__dirname,
+			"../fixtures/csv-import/nodes_stress_many_warnings.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"../fixtures/shared/edges_valid_basic.csv",
+		);
+		await wizardPage.uploadFiles(nodesPath, edgesPath);
+		await wizardPage.submitUpload();
+
+		// 2. Map Nodes
+		await wizardPage.mapColumns({
+			id: "id",
+			title: "title",
+			type: "type",
+		});
+		await wizardPage.clickNext();
+
+		// 3. Map Edges
+		await wizardPage.mapColumns({
+			source: "source",
+			target: "target",
+		});
+		await wizardPage.clickNext();
+
+		// 4. Verify Warnings Limit
+		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+		await expect(page.getByText("12 nodes dropped")).toBeVisible();
+
+		// Count warning items in the list (assuming a specific list item selector or text match)
+		// Since we don't have the implementation yet, we'll look for the "more warnings" text
+		await expect(page.getByText("more warnings")).toBeVisible();
+	});
+
+	test("should reject edges pointing to missing nodes", async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		const nodesPath = path.join(
+			__dirname,
+			"../fixtures/shared/nodes_valid_basic.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"../fixtures/csv-import/edges_invalid_missing_source.csv",
+		);
+		await wizardPage.uploadFiles(nodesPath, edgesPath);
+		await wizardPage.submitUpload();
+
+		await wizardPage.mapColumns({ id: "id", title: "title", type: "type" });
+		await wizardPage.clickNext();
+		await wizardPage.mapColumns({ source: "source", target: "target" });
+		await wizardPage.clickNext();
+
+		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+		await expect(
+			page.getByText("Edge dropped: Source 'missing-id' not found"),
+		).toBeVisible();
+	});
+
+	test("should reject edges pointing to missing target node", async ({
+		page,
+	}) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		const nodesPath = path.join(
+			__dirname,
+			"../fixtures/shared/nodes_valid_basic.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"../fixtures/csv-import/edges_invalid_missing_target.csv",
+		);
+		await wizardPage.uploadFiles(nodesPath, edgesPath);
+		await wizardPage.submitUpload();
+
+		await wizardPage.mapColumns({ id: "id", title: "title", type: "type" });
+		await wizardPage.clickNext();
+		await wizardPage.mapColumns({ source: "source", target: "target" });
+		await wizardPage.clickNext();
+
+		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+		await expect(
+			page.getByText("Edge dropped: Target 'missing-target-id' not found"),
+		).toBeVisible();
+	});
+
+	test("should reject edges pointing to nodes dropped due to validation errors", async ({
+		page,
+	}) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		const nodesPath = path.join(
+			__dirname,
+			"../fixtures/csv-import/nodes_invalid_bad_type.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"../fixtures/csv-import/edges_invalid_orphaned.csv",
+		);
+		await wizardPage.uploadFiles(nodesPath, edgesPath);
+		await wizardPage.submitUpload();
+
+		await wizardPage.mapColumns({ id: "id", title: "title", type: "type" });
+		await wizardPage.clickNext();
+		await wizardPage.mapColumns({ source: "source", target: "target" });
+		await wizardPage.clickNext();
+
+		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+		await expect(page.getByText("1 node dropped")).toBeVisible();
+		await expect(page.getByText("1 edge dropped")).toBeVisible();
+		await expect(
+			page.getByText("Edge dropped: Target 'node-2' not found"),
+		).toBeVisible();
+	});
+
+	test("should silently deduplicate parallel edges", async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		const nodesPath = path.join(
+			__dirname,
+			"../fixtures/shared/nodes_valid_basic.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"../fixtures/csv-import/edges_valid_duplicates.csv",
+		);
+		await wizardPage.uploadFiles(nodesPath, edgesPath);
+		await wizardPage.submitUpload();
+
+		await wizardPage.mapColumns({ id: "id", title: "title", type: "type" });
+		await wizardPage.clickNext();
+		await wizardPage.mapColumns({ source: "source", target: "target" });
+		await wizardPage.clickNext();
+
+		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+		// Ensure NO drop warnings
+		await expect(page.getByText("dropped")).not.toBeVisible();
+
+		await wizardPage.finishImport();
+		await wizardPage.verifyGraphEdgeCount(1);
+	});
+});

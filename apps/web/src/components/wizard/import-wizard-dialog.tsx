@@ -48,7 +48,8 @@ export function ImportWizardDialog({
 		columns,
 		mapping,
 		isMappingValid,
-		error, // Keep error as it's used later
+		error,
+		warnings,
 	} = useNewImportWizard({
 		onImport,
 		onClose,
@@ -112,16 +113,33 @@ export function ImportWizardDialog({
 
 	const renderSuccess = () => (
 		<div
-			className="flex flex-col items-center justify-center space-y-4 py-12"
+			className="flex flex-col items-center justify-center space-y-4 py-8"
 			data-testid="wizard-step-success"
 		>
 			<div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
 				<Check className="h-8 w-8 text-green-600" />
 			</div>
-			<h3 className="font-medium text-lg">Import successful</h3>
-			<p className="text-gray-500 text-sm">
-				Your data has been successfully imported into the graph.
-			</p>
+			<div className="text-center">
+				<h3 className="font-medium text-lg">Import successful</h3>
+				<p className="text-gray-500 text-sm">
+					Your data has been successfully imported into the graph.
+				</p>
+			</div>
+
+			{/* Warnings Section */}
+			{warnings.length > 0 && (
+				<div className="mt-6 w-full max-w-md rounded-md border border-amber-200 bg-amber-50 p-4">
+					<div className="mb-2 font-medium text-amber-800 text-sm">
+						Warnings during import:
+					</div>
+					<ul className="max-h-40 list-disc overflow-y-auto pl-5 text-amber-900 text-xs">
+						{warnings.map((w, idx) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+							<li key={idx}>{w}</li>
+						))}
+					</ul>
+				</div>
+			)}
 		</div>
 	);
 
