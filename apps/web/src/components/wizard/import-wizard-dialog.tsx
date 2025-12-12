@@ -139,7 +139,9 @@ export function ImportWizardDialog({
 					<ul className="max-h-40 list-disc overflow-y-auto pl-5 text-amber-900 text-xs">
 						{warnings.map((w, idx) => (
 							// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-							<li key={idx}>{w}</li>
+							<li key={idx} data-testid="warning-item">
+								{w}
+							</li>
 						))}
 					</ul>
 				</div>

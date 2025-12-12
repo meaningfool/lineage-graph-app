@@ -380,9 +380,7 @@ export class LineagePage {
 	}
 
 	async verifyWarningCount(count: number) {
-		const warningItems = this.page.locator(
-			".rounded-md.bg-yellow-500\\/15 > div",
-		);
+		const warningItems = this.page.getByTestId("warning-item");
 		await expect(warningItems).toHaveCount(count);
 	}
 
