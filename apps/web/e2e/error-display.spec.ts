@@ -111,7 +111,6 @@ test.describe("Error Display Feature", () => {
 			source: "source",
 			target: "target",
 		});
-
 		await lineagePage.submitMapping();
 		await lineagePage.closeImportModal();
 

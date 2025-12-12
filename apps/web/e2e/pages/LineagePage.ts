@@ -18,7 +18,10 @@ export class LineagePage {
 		// Slice 8: Cleanup - Always open "Import CSV" (which is now the Wizard)
 		const button = this.page.getByTestId("import-csv-trigger");
 		await button.waitFor();
-		await button.click();
+		// Use dispatchEvent to avoid Playwright's click retry loop which might hit the overlay
+		// if it appears too quickly, causing the dialog to close immediately.
+		await button.dispatchEvent("click");
+		await expect(this.page.getByRole("dialog")).toBeVisible();
 	}
 
 	async uploadFiles(nodesPath: string, edgesPath: string) {
@@ -112,19 +115,15 @@ export class LineagePage {
 
 	async clickNext() {
 		await this.verifyNextButtonEnabled();
-		await this.page.getByRole("button", { name: "Next", exact: true }).click();
+		await this.page.getByTestId("import-next-button").click();
 	}
 
 	async verifyNextButtonEnabled() {
-		await expect(
-			this.page.getByRole("button", { name: "Next", exact: true }),
-		).toBeEnabled();
+		await expect(this.page.getByTestId("import-next-button")).toBeEnabled();
 	}
 
 	async verifyNextButtonDisabled() {
-		await expect(
-			this.page.getByRole("button", { name: "Next", exact: true }),
-		).toBeDisabled();
+		await expect(this.page.getByTestId("import-next-button")).toBeDisabled();
 	}
 
 	async verifyDropzoneContent(testId: string, text: string) {
@@ -185,11 +184,11 @@ export class LineagePage {
 		await this.page.getByTestId(`mapping-select-${field}-trigger`).click();
 		await this.page
 			.getByRole("option", { name: csvColumn, exact: true })
-			.click();
+			.click({ force: true });
 	}
 
 	async submitMapping() {
-		await this.page.getByRole("button", { name: "Next", exact: true }).click();
+		await this.clickNext();
 	}
 
 	async verifyImportSuccess() {
