@@ -33,16 +33,24 @@ Following the implementation of the "New Import Wizard" (Spec 02), we conducted 
     *   *Cause*: During the wizard migration, tests were likely written to be self-contained, verifying the graph state *after* the wizard closed using the Wizard PO itself.
     *   *Correct Approach*: Once the Wizard modal closes, the test context has returned to the "Lineage Page". The tests should switch to using the `LineagePage` PO to verify the graph, keeping `NewWizardPage` focused solely on the wizard modal interaction.
 
-### D. Fixtures
-*   **Status**: ✅ Excellent
-*   **Good**: Consistent use of `path.join(__dirname, ...)` for absolute paths. Fixtures are granular and scenario-specific.
+### E. Text-Based Selector Audit (Slice 3 Update)
+*   **Status**: ✅ Improved (Navigation Hardened)
+*   **Audit**: A broad scan for fragile `getByText` usage was conducted.
+*   **Fixed (Slice 3)**:
+    *   **Wizard Navigation**: `NewWizardPage` was refactored to use `data-testid` for all step verification (`step-map-nodes`, `step-map-edges`), replacing brittle text checks.
+    *   **Properties Selection**: Refactored from a flaky dropdown search to robust "Pill" selection using `property-pill-{name}` test IDs.
+*   **Remaining Risks**:
+    *   **Success Verification**: `verifyImportSuccess` and related tests still rely on text like "Import successful" or "1 node dropped".
+        *   *Recommendation*: Add `data-testid` to summary and error containers for scoped text assertions.
+    *   **Graph Selection in Tests**: `state-management.spec.ts` uses `getByText("Node B")` to click nodes.
+        *   *Recommendation*: Use `getGraphNode("Node B")` helper from `LineagePage` (which uses internal classes) or add `data-testid` to Node components.
 
 ## 3. Comparison Matrix
 | Feature | POM Encapsulation | Selector Quality | Notes |
 | :--- | :--- | :--- | :--- |
-| `csv-import.spec.ts` | **Low** | High | Heavily relies on `page.getByText` and `page.getByTestId` inside the spec for assertions. |
-| `node-properties.spec.ts` | **High** | High | Uses `lineagePage` methods for almost all interactions and visualizations. |
-| `error-display.spec.ts` | **Medium** | High | Uses `importGraph` helper well, but verifies specific error messages via generic text locators. |
+| `csv-import.spec.ts` | **Medium** (Improved) | **Medium** | Still uses some text assertions for errors/warnings. Navigation is now robust. |
+| `node-properties.spec.ts` | **High** | **High** | Uses `NewWizardPage` for property selection (Pills) and `LineagePage` for graph checks. |
+| `error-display.spec.ts` | **High** | **High** | Fully refactored to use `NewWizardPage` and `LineagePage` appropriately. |
 
 ## 4. Conclusion
-The suite is functional and robust but carries maintenance weight due to the duplication in Page Objects and loose assertions in `csv-import.spec.ts`. A targeted refactoring session is required to align with Best Practices.
+The suite has been significantly hardened. The critical "Wizard Navigation" and "Graph Verification" layers are now robust and DRY. The remaining text-based selectors are primarily in assertion logic (verifying error messages), which is lower risk. Future work should focus on extracting `csv-import.spec.ts` assertions into the POM.

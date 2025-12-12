@@ -211,7 +211,7 @@ test.describe("New Import Wizard - Slice 3: Edge Mapping", () => {
 		await wizardPage.clickNext(); // Should go to Edge Mapping
 
 		// Now we should be on Edge Mapping step
-		await expect(page.getByText("Map Edges", { exact: true })).toBeVisible();
+		await wizardPage.verifyStepHeader("Map Edges");
 
 		// Next should be disabled initially
 		await wizardPage.verifyNextButtonDisabled();
@@ -302,10 +302,8 @@ test.describe("New Import Wizard - Slice 3: Edge Mapping", () => {
 
 			// 4. Verify Success Step
 			// Using data-testid for robustness
-			await expect(page.getByTestId("wizard-step-success")).toBeVisible({
-				timeout: 5000,
-			});
-			await expect(page.getByText("Import successful")).toBeVisible();
+			await wizardPage.verifySuccessStepVisible();
+			await wizardPage.verifyImportSuccess();
 
 			// 5. Close and Verify Graph
 			await wizardPage.finishImport();
@@ -331,7 +329,8 @@ test.describe("New Import Wizard - Slice 3: Edge Mapping", () => {
 			await wizardPage.clickNext();
 			await wizardPage.mapColumns({ source: "source", target: "target" });
 			await wizardPage.clickNext();
-			await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+
+			await wizardPage.verifySuccessStepVisible();
 			await wizardPage.finishImport();
 
 			const lineagePage = new LineagePage(page);
@@ -367,7 +366,8 @@ test.describe("New Import Wizard - Slice 3: Edge Mapping", () => {
 			await wizardPage.clickNext(); // Generate
 
 			// Verify Success & Close
-			await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+
+			await wizardPage.verifySuccessStepVisible();
 			await wizardPage.finishImport();
 
 			// --- Verify Replacement ---
@@ -392,7 +392,8 @@ test.describe("New Import Wizard - Slice 3: Edge Mapping", () => {
 			await wizardPage.clickNext();
 			await wizardPage.mapColumns({ source: "source", target: "target" });
 			await wizardPage.clickNext();
-			await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+
+			await wizardPage.verifySuccessStepVisible();
 			await wizardPage.finishImport();
 			await wizardPage.verifyDialogVisible(false);
 			await page.waitForTimeout(500); // Ensure unmount/state clearance
@@ -434,7 +435,8 @@ test.describe("New Import Wizard - Slice 3: Edge Mapping", () => {
 			await wizardPage.clickNext();
 
 			// Verify Success
-			await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+
+			await wizardPage.verifySuccessStepVisible();
 			await wizardPage.finishImport();
 
 			// Verify Edge loaded
@@ -484,12 +486,12 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 		await wizardPage.clickNext(); // Should generate graph and show success
 
 		// 4. Verify Warnings in Success Step
-		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+		await wizardPage.verifySuccessStepVisible();
 
 		// Expect warnings to be displayed
-		await expect(page.getByText("1 node dropped")).toBeVisible();
+		await wizardPage.verifyImportWarning("1 node dropped");
 		// Expect warnings section to be displayed
-		await expect(page.getByText("Warnings during import:")).toBeVisible();
+		await wizardPage.verifyImportWarning("Warnings during import:");
 		// Ensure at least one warning item is present
 		await expect(page.locator("ul li").first()).toBeVisible();
 
@@ -533,9 +535,9 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 		await wizardPage.clickNext();
 
 		// 4. Verify Warnings
-		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
-		await expect(page.getByText("1 node dropped")).toBeVisible();
-		await expect(page.getByText("node-1: Duplicate Node ID")).toBeVisible();
+		await wizardPage.verifySuccessStepVisible();
+		await wizardPage.verifyImportWarning("1 node dropped");
+		await wizardPage.verifyImportWarning("node-1: Duplicate Node ID");
 
 		await wizardPage.finishImport();
 		const lineagePage = new LineagePage(page);
@@ -574,12 +576,12 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 		await wizardPage.clickNext();
 
 		// 4. Verify Warnings Limit
-		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
-		await expect(page.getByText("12 nodes dropped")).toBeVisible();
+		await wizardPage.verifySuccessStepVisible();
+		await wizardPage.verifyImportWarning("12 nodes dropped");
 
 		// Count warning items in the list (assuming a specific list item selector or text match)
 		// Since we don't have the implementation yet, we'll look for the "more warnings" text
-		await expect(page.getByText("more warnings")).toBeVisible();
+		await wizardPage.verifyImportWarning("more warnings");
 	});
 
 	test("should reject edges pointing to missing nodes", async ({ page }) => {
@@ -602,10 +604,10 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 		await wizardPage.mapColumns({ source: "source", target: "target" });
 		await wizardPage.clickNext();
 
-		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
-		await expect(
-			page.getByText("Edge dropped: Source 'missing-id' not found"),
-		).toBeVisible();
+		await wizardPage.verifySuccessStepVisible();
+		await wizardPage.verifyImportWarning(
+			"Edge dropped: Source 'missing-id' not found",
+		);
 	});
 
 	test("should reject edges pointing to missing target node", async ({
@@ -630,10 +632,10 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 		await wizardPage.mapColumns({ source: "source", target: "target" });
 		await wizardPage.clickNext();
 
-		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
-		await expect(
-			page.getByText("Edge dropped: Target 'missing-target-id' not found"),
-		).toBeVisible();
+		await wizardPage.verifySuccessStepVisible();
+		await wizardPage.verifyImportWarning(
+			"Edge dropped: Target 'missing-target-id' not found",
+		);
 	});
 
 	test("should reject edges pointing to nodes dropped due to validation errors", async ({
@@ -658,12 +660,12 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 		await wizardPage.mapColumns({ source: "source", target: "target" });
 		await wizardPage.clickNext();
 
-		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
-		await expect(page.getByText("1 node dropped")).toBeVisible();
-		await expect(page.getByText("1 edge dropped")).toBeVisible();
-		await expect(
-			page.getByText("Edge dropped: Target 'node-2' not found"),
-		).toBeVisible();
+		await wizardPage.verifySuccessStepVisible();
+		await wizardPage.verifyImportWarning("1 node dropped");
+		await wizardPage.verifyImportWarning("1 edge dropped");
+		await wizardPage.verifyImportWarning(
+			"Edge dropped: Target 'node-2' not found",
+		);
 	});
 
 	test("should silently deduplicate parallel edges", async ({ page }) => {
@@ -686,9 +688,9 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 		await wizardPage.mapColumns({ source: "source", target: "target" });
 		await wizardPage.clickNext();
 
-		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+		await wizardPage.verifySuccessStepVisible();
 		// Ensure NO drop warnings
-		await expect(page.getByText("dropped")).not.toBeVisible();
+		await wizardPage.verifySuccessStepVisible();
 
 		await wizardPage.finishImport();
 		const lineagePage = new LineagePage(page);

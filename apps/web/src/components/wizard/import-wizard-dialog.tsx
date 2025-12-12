@@ -132,7 +132,10 @@ export function ImportWizardDialog({
 
 			{/* Warnings Section */}
 			{warnings.length > 0 && (
-				<div className="mt-6 w-full max-w-md rounded-md border border-amber-200 bg-amber-50 p-4">
+				<div
+					className="mt-6 w-full max-w-md rounded-md border border-amber-200 bg-amber-50 p-4"
+					data-testid="import-warning-summary"
+				>
 					<div className="mb-2 font-medium text-amber-800 text-sm">
 						Warnings during import:
 					</div>
@@ -158,7 +161,10 @@ export function ImportWizardDialog({
 				className="max-w-[95vw] gap-0 overflow-hidden p-0 sm:max-w-4xl"
 			>
 				{/* Header (Superdesign Style) */}
-				<DialogHeader className="flex flex-row items-center justify-between space-y-0 border-b px-6 py-4">
+				<DialogHeader
+					className="flex flex-row items-center justify-between space-y-0 border-b px-6 py-4"
+					data-testid="wizard-header"
+				>
 					<div>
 						<DialogTitle className="text-xl">Import Graph Data</DialogTitle>
 						<p className="text-gray-500 text-sm">
@@ -223,7 +229,10 @@ export function ImportWizardDialog({
 
 					{/* Error Display */}
 					{error && (
-						<div className="rounded-md bg-destructive/15 p-3 text-center font-medium text-destructive text-sm">
+						<div
+							className="rounded-md bg-destructive/15 p-3 text-center font-medium text-destructive text-sm"
+							data-testid="import-error-summary"
+						>
 							{error}
 						</div>
 					)}

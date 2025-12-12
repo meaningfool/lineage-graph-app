@@ -20,7 +20,7 @@ test.describe("State Management", () => {
 		);
 
 		// 2. Focus Node B (causing Node D to be dimmed)
-		await page.getByText("Node B", { exact: true }).click();
+		await lineagePage.getGraphNode("Node B").click();
 		await page.getByTestId("focus-toggle").click();
 
 		const nodeD_Run1 = lineagePage
@@ -48,7 +48,7 @@ test.describe("State Management", () => {
 		// Note: Button might be hidden if no node is selected, but if we just imported, nothing is selected.
 		// If we select Node B again, it should show "Focus Subtree".
 
-		await page.getByText("Node B", { exact: true }).click();
+		await lineagePage.getGraphNode("Node B").click();
 		// Check button text
 		await expect(page.getByTestId("focus-toggle")).toHaveText("Focus Subtree");
 	});

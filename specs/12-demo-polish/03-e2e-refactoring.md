@@ -24,6 +24,14 @@ The recent audit (Post-02) identified that `NewWizardPage` unnecessarily duplica
 *   **Update**: `csv-import.spec.ts`
     *   Replace `await expect(page.getByText(...))` calls with `await wizardPage.verify...` methods.
 
+### Slice 4: Text-Based Selector Cleanup (Audit Follow-up)
+*   **Target**: `csv-import.spec.ts` and `state-management.spec.ts`.
+*   **Goal**: Eliminate remaining fragile text locators identified in the Post-Slice 3 Audit.
+*   **Changes**:
+    *   **Success/Error Messages**: In `ImportWizardDialog`, add `data-testid` to the success message container and error summary box. Update `NewWizardPage` to use these IDs for scoped assertions (e.g. `expect(container).toContainText(...)`).
+    *   **Graph Selection**: In `state-management.spec.ts`, replace `getByText("Node B")` with `LineagePage.getGraphNode("Node B")` to ensure consistent node selection logic.
+    *   **Warning Truncation**: Add `data-testid` for the "more warnings" indicator.
+
 ## 4. Verification Plan
 ### Automated Tests
 Run the full suite to ensure no regressions during refactoring.

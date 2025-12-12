@@ -182,8 +182,40 @@ export class NewWizardPage {
 		await this.page.getByTestId("import-next-button").click();
 	}
 
+	async verifyStepHeader(title: string) {
+		// We check if the step with this title is active, OR if the general header contains it?
+		// "Map Edges" is a step label. "Import Graph Data" is the dialog title.
+		// The test csv-import.spec.ts does: expect(page.getByText("Map Edges")).toBeVisible().
+		// This likely refers to the STEPPER indicator or the Dialog Title?
+		// The stepper has labels.
+		// Let's stick to the Plan: verify the text is visible, but maybe scoped?
+		// Actually, let's verify the STEP ID is visible, which we already do in mapColumns.
+		// But verifyStepHeader is for "Map Edges" specifically.
+		// Let's just use `wizard-step-header`? No, that's the dialog title.
+		// Let's use getByText but strict. Or use the testID I added.
+		// Wait, I didn't add testID for stepper labels.
+		await expect(this.page.getByText(title, { exact: true })).toBeVisible();
+	}
+
+	async verifyImportError(text: string) {
+		await expect(this.page.getByTestId("import-error-summary")).toContainText(
+			text,
+		);
+	}
+
+	async verifyImportWarning(text: string) {
+		await expect(this.page.getByTestId("import-warning-summary")).toContainText(
+			text,
+		);
+	}
+
+	async verifySuccessStepVisible() {
+		await expect(this.page.getByTestId("wizard-step-success")).toBeVisible();
+	}
+
 	async verifyImportSuccess() {
-		await expect(this.page.getByRole("dialog")).toContainText(
+		await this.verifySuccessStepVisible();
+		await expect(this.page.getByTestId("wizard-step-success")).toContainText(
 			"Import successful",
 		);
 	}
