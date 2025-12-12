@@ -1,5 +1,6 @@
 import * as path from "node:path";
 import { expect, test } from "@playwright/test";
+import { LineagePage } from "./pages/LineagePage";
 import { NewWizardPage } from "./pages/NewWizardPage";
 
 test.describe("New Import Wizard - Slice 1: Upload & File Validation", () => {
@@ -308,9 +309,11 @@ test.describe("New Import Wizard - Slice 3: Edge Mapping", () => {
 
 			// 5. Close and Verify Graph
 			await wizardPage.finishImport();
-			await wizardPage.verifyGraphNode("First Node");
-			await wizardPage.verifyGraphNode("Second Node");
-			await wizardPage.verifyGraphEdgeCount(1);
+
+			const lineagePage = new LineagePage(page);
+			await lineagePage.verifyGraphNode("First Node");
+			await lineagePage.verifyGraphNode("Second Node");
+			await lineagePage.verifyGraphEdgeCount(1);
 		});
 
 		test("should replace existing graph on second import", async ({ page }) => {
@@ -331,7 +334,8 @@ test.describe("New Import Wizard - Slice 3: Edge Mapping", () => {
 			await expect(page.getByTestId("wizard-step-success")).toBeVisible();
 			await wizardPage.finishImport();
 
-			await wizardPage.verifyGraphNode("First Node");
+			const lineagePage = new LineagePage(page);
+			await lineagePage.verifyGraphNode("First Node");
 
 			// --- Import 2 (Different Data) ---
 			await wizardPage.openImportModal();
@@ -368,9 +372,9 @@ test.describe("New Import Wizard - Slice 3: Edge Mapping", () => {
 
 			// --- Verify Replacement ---
 			// Graph B nodes ("Third Node") should be present
-			await wizardPage.verifyGraphNode("Third Node");
+			await lineagePage.verifyGraphNode("Third Node");
 			// Graph A nodes ("First Node") should be GONE
-			await wizardPage.verifyGraphNodeMissing("First Node");
+			await lineagePage.verifyGraphNodeMissing("First Node");
 		});
 
 		test("should reset wizard state after successful import and close", async ({
@@ -434,7 +438,8 @@ test.describe("New Import Wizard - Slice 3: Edge Mapping", () => {
 			await wizardPage.finishImport();
 
 			// Verify Edge loaded
-			await wizardPage.verifyGraphEdgeCount(1);
+			const lineagePage = new LineagePage(page);
+			await lineagePage.verifyGraphEdgeCount(1);
 		});
 	});
 });
@@ -490,7 +495,8 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 
 		// 5. Verify import success for valid node
 		await wizardPage.finishImport();
-		await wizardPage.verifyGraphNodeCount(1);
+		const lineagePage = new LineagePage(page);
+		await lineagePage.verifyGraphNodeCount(1);
 	});
 
 	test("should deduplicate nodes with duplicate IDs and show warning", async ({
@@ -532,7 +538,8 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 		await expect(page.getByText("node-1: Duplicate Node ID")).toBeVisible();
 
 		await wizardPage.finishImport();
-		await wizardPage.verifyGraphNodeCount(2);
+		const lineagePage = new LineagePage(page);
+		await lineagePage.verifyGraphNodeCount(2);
 	});
 
 	test("should limit warning messages to 10", async ({ page }) => {
@@ -684,6 +691,7 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 		await expect(page.getByText("dropped")).not.toBeVisible();
 
 		await wizardPage.finishImport();
-		await wizardPage.verifyGraphEdgeCount(1);
+		const lineagePage = new LineagePage(page);
+		await lineagePage.verifyGraphEdgeCount(1);
 	});
 });

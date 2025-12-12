@@ -379,11 +379,6 @@ export class LineagePage {
 		await expect(this.page.locator(".react-flow__node")).toHaveCount(count);
 	}
 
-	async verifyWarningCount(count: number) {
-		const warningItems = this.page.getByTestId("warning-item");
-		await expect(warningItems).toHaveCount(count);
-	}
-
 	async verifyNodeHasPulse(text: string) {
 		const nodeContent = this.getGraphNode(text).getByTestId(
 			"custom-node-content",
