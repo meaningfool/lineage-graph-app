@@ -1,18 +1,17 @@
-"use client";
 import { Upload } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { CSVImportModal } from "./csv-import-modal";
 import { ModeToggle } from "./mode-toggle";
+import { ImportWizardDialog } from "./wizard/import-wizard-dialog";
 
 interface HeaderProps {
 	onImport: (nodes: any[], edges: any[]) => void;
 }
 
 export default function Header({ onImport }: HeaderProps) {
-	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+	const [isWizardOpen, setIsWizardOpen] = useState(false);
 	const links = [{ to: "/", label: "Home" }];
 
 	return (
@@ -28,14 +27,20 @@ export default function Header({ onImport }: HeaderProps) {
 					})}
 				</nav>
 				<div className="flex items-center gap-2">
-					<Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
+					<Button
+						variant="outline"
+						onClick={() => setIsWizardOpen(true)}
+						data-testid="import-csv-trigger"
+					>
 						<Upload className="mr-2 h-4 w-4" />
 						Import CSV
 					</Button>
-					{isImportModalOpen && (
-						<CSVImportModal
+					{isWizardOpen && (
+						<ImportWizardDialog
+							key={isWizardOpen ? "open" : "closed"}
+							isOpen={isWizardOpen}
+							onClose={() => setIsWizardOpen(false)}
 							onImport={onImport}
-							onClose={() => setIsImportModalOpen(false)}
 						/>
 					)}
 					<ModeToggle />

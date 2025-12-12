@@ -1,3 +1,24 @@
+# 🛑 CORE DIRECTIVES (CRITICAL) - READ FIRST
+
+## 1. ANSWER ONLY MODE
+*   **IF THE USER ASKS A QUESTION:** You must **ANSWER** the question and **STOP**.
+    *   **DO NOT** write code.
+    *   **DO NOT** update plans.
+    *   **DO NOT** assume the user wants you to fix it immediately.
+    *   *Correct Behavior*: Explain the issue -> Ask "Shall I proceed with the fix?" -> **STOP**.
+    *   *Note*: You **MAY** run tests to gather information, but do **NOT** let failing tests bias you into "fixing mode" when the prompt was just a question.
+
+## 2. STRICT ADHERENCE
+*   **FOLLOW INSTRUCTIONS LITERALLY.** If asked to "fix the first test", fix **ONLY** the first test. Do not touch the others.
+*   **ONE STEP AT A TIME.** When diagnosing multiple failures, fix **ONE** specific issue, verify it, and **STOP** to report.
+
+## 3. DIAGNOSIS PROTOCOL (NO RABBIT HOLES)
+*   **VERIFY BASIC ASSUMPTIONS FIRST.** Before hypothesizing "race conditions", "React lifecycle issues", or "complex async bugs":
+    *   1. **Does the element exist?** (Check the DOM/Component code for the ID).
+    *   2. **Is the text exact?** (Copy-paste the actual vs expected).
+    *   3. **Is the logic wired?** (Check if the correct prop is passed).
+*   **OCCAM'S RAZOR:** It is currently 95% likely to be a simple ID mismatch, text mismatch, or missing prop. **Verify these first.**
+
 # Lineage App Project Context
 
 ## Spec-driven development workflow

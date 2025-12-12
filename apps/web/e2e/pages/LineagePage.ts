@@ -14,184 +14,60 @@ export class LineagePage {
 		await this.page.waitForLoadState("networkidle");
 	}
 
-	async openImportModal() {
-		await this.page.getByRole("button", { name: "Import CSV" }).click();
-	}
-
-	async uploadFiles(nodesPath: string, edgesPath: string) {
-		await this.uploadNodeFile(nodesPath);
-		await this.uploadEdgeFile(edgesPath);
-	}
-
 	/**
-	 * High-level helper to perform a complete import flow with standard mapping.
+	 * High-level helper to perform a complete import flow using the New Wizard.
+	 * Delegates to NewWizardPage to avoid code duplication.
 	 */
-	async importGraph(nodesPath: string, edgesPath: string) {
-		await this.openImportModal();
-		await this.uploadFiles(nodesPath, edgesPath);
-		await this.submitUpload();
-		await this.mapColumns({
+	async importGraph(
+		nodesPath: string,
+		edgesPath: string,
+		callbacks?: { onNodeMapping?: () => Promise<void> },
+		overrideMapping?: {
+			nodes?: { id?: string; title?: string; type?: string };
+			edges?: { source?: string; target?: string };
+		},
+	) {
+		// Import locally to avoid circular dependencies if any, though regular import is fine here.
+		const { NewWizardPage } = await import("./NewWizardPage");
+		const wizard = new NewWizardPage(this.page);
+
+		await wizard.openImportModal();
+		await wizard.uploadFiles(nodesPath, edgesPath);
+		await wizard.submitUpload();
+
+		// Step 2: Map Nodes
+		await wizard.mapColumns({
 			id: "id",
 			title: "title",
 			type: "type",
+			...overrideMapping?.nodes,
+		});
+
+		if (callbacks?.onNodeMapping) {
+			await callbacks.onNodeMapping();
+		}
+
+		await wizard.verifyNextButtonEnabled();
+		await wizard.submitMapping();
+
+		// Step 3: Map Edges
+		await wizard.mapColumns({
 			source: "source",
 			target: "target",
+			...overrideMapping?.edges,
 		});
-		await this.submitMapping();
-		await this.closeImportModal();
+
+		await wizard.verifyNextButtonEnabled();
+		await wizard.submitMapping(); // Generates Graph
+
+		// Wait for Success Step
+		await wizard.verifyImportSuccess();
+
+		// Finish
+		await wizard.finishImport();
+
 		// Wait for graph to stabilize
 		await this.page.waitForTimeout(500);
-	}
-
-	async uploadNodeFile(filePath: string) {
-		await this.uploadFile("dropzone-nodes", filePath);
-	}
-
-	async uploadEdgeFile(filePath: string) {
-		await this.uploadFile("dropzone-edges", filePath);
-	}
-
-	private async uploadFile(testId: string, filePath: string) {
-		const buffer = fs.readFileSync(filePath);
-		const fileName = path.basename(filePath);
-		const dataTransfer = await this.page.evaluateHandle(
-			async ({ bufferStr, fileName }) => {
-				const dt = new DataTransfer();
-				const file = new File([bufferStr], fileName, { type: "text/csv" });
-				dt.items.add(file);
-				return dt;
-			},
-			{ bufferStr: buffer.toString(), fileName },
-		);
-		await this.page.dispatchEvent(`[data-testid="${testId}"] input`, "drop", {
-			dataTransfer,
-		});
-	}
-
-	async submitUpload() {
-		await this.clickNext();
-	}
-
-	async clickNext() {
-		await this.page.getByRole("button", { name: "Next", exact: true }).click();
-	}
-
-	async verifyNextButtonEnabled() {
-		await expect(
-			this.page.getByRole("button", { name: "Next", exact: true }),
-		).toBeEnabled();
-	}
-
-	async verifyNextButtonDisabled() {
-		await expect(
-			this.page.getByRole("button", { name: "Next", exact: true }),
-		).toBeDisabled();
-	}
-
-	async verifyDropzoneContent(testId: string, text: string) {
-		await expect(this.page.getByTestId(testId)).toContainText(text);
-	}
-
-	async verifyDropzoneEmpty(testId: string, text: string) {
-		await expect(this.page.getByTestId(testId)).not.toContainText(text);
-	}
-
-	async mapColumns(mapping: {
-		id?: string;
-		title?: string;
-		type?: string;
-		source?: string;
-		target?: string;
-	}) {
-		// Wait for mapping step
-		await expect(this.page.getByText("Nodes", { exact: true })).toBeVisible({
-			timeout: 10000,
-		});
-
-		if (mapping.id) await this.selectColumn("id", mapping.id);
-		if (mapping.title) await this.selectColumn("title", mapping.title);
-		if (mapping.type) await this.selectColumn("type", mapping.type);
-		if (mapping.source) await this.selectColumn("source", mapping.source);
-		if (mapping.target) await this.selectColumn("target", mapping.target);
-	}
-
-	async selectProperty(property: string) {
-		await this.page.getByTestId("mapping-select-properties-trigger").click();
-		// Try finding by text or data-value to be robust
-		const option = this.page
-			.locator(`[role="option"]`)
-			.filter({ hasText: property })
-			.or(this.page.locator(`[data-value="${property}"]`));
-		await option.first().click();
-		await this.page.keyboard.press("Escape");
-	}
-
-	async verifyMappingStep() {
-		await expect(this.page.getByText("Nodes", { exact: true })).toBeVisible({
-			timeout: 10000,
-		});
-	}
-
-	async openColumnDropdown(field: string) {
-		await this.page.getByTestId(`mapping-select-${field}-trigger`).click();
-	}
-
-	async verifyDropdownOption(text: string) {
-		await expect(this.page.getByRole("option", { name: text })).toBeVisible();
-	}
-
-	async closeDropdown() {
-		await this.page.keyboard.press("Escape");
-	}
-
-	private async selectColumn(field: string, csvColumn: string) {
-		await this.page.getByTestId(`mapping-select-${field}-trigger`).click();
-		await this.page
-			.getByRole("option", { name: csvColumn, exact: true })
-			.click();
-	}
-
-	async submitMapping() {
-		await this.page.getByRole("button", { name: "Next", exact: true }).click();
-	}
-
-	async verifyImportSuccess() {
-		await expect(this.page.getByRole("dialog")).toContainText(
-			"Import successful",
-		);
-	}
-
-	async closeImportModal() {
-		await this.page.getByTestId("import-close-button").click();
-	}
-
-	async cancelImport() {
-		// Try closing via dialog close button first, fallback to Escape
-		if (await this.page.getByTestId("dialog-close-button").isVisible()) {
-			await this.page.getByTestId("dialog-close-button").click();
-		} else {
-			await this.page.keyboard.press("Escape");
-		}
-	}
-
-	async verifyDialogVisible(visible: boolean) {
-		if (visible) {
-			await expect(this.page.getByRole("dialog")).toBeVisible();
-		} else {
-			await expect(this.page.getByRole("dialog")).not.toBeVisible();
-		}
-	}
-
-	async verifyDialogText(text: string) {
-		await expect(this.page.getByRole("dialog")).toContainText(text);
-	}
-
-	async verifyDialogDoesNotContainText(text: string) {
-		await expect(this.page.getByRole("dialog")).not.toContainText(text);
-	}
-
-	async verifyUploadStepVisible() {
-		await expect(this.page.getByText("Nodes CSV (Required)")).toBeVisible();
 	}
 
 	async verifyGraphNode(text: string) {
@@ -341,13 +217,6 @@ export class LineagePage {
 
 	async verifyGraphNodeCount(count: number) {
 		await expect(this.page.locator(".react-flow__node")).toHaveCount(count);
-	}
-
-	async verifyWarningCount(count: number) {
-		const warningItems = this.page.locator(
-			".rounded-md.bg-yellow-500\\/15 > div",
-		);
-		await expect(warningItems).toHaveCount(count);
 	}
 
 	async verifyNodeHasPulse(text: string) {

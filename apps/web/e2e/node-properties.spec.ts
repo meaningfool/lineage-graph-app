@@ -1,53 +1,22 @@
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { LineagePage } from "./pages/LineagePage";
+import { NewWizardPage } from "./pages/NewWizardPage";
 
-test.describe("Node Properties", () => {
+// Slice 8: Cleanup - Removed Strategy Loop
+const strategy = "new";
+
+test.describe("Node Properties (Regression)", () => {
+	let lineagePage: LineagePage;
+
 	test.beforeEach(async ({ page }) => {
-		const lineagePage = new LineagePage(page);
+		lineagePage = new LineagePage(page);
 		await lineagePage.goto();
-	});
-
-	test("should display properties field in mapping step (Slice 2)", async ({
-		page,
-	}) => {
-		const lineagePage = new LineagePage(page);
-		await lineagePage.openImportModal();
-
-		const nodesPath = path.join(
-			__dirname,
-			"fixtures",
-			"node-properties",
-			"nodes_with_desc.csv",
-		);
-		const edgesPath = path.join(
-			__dirname,
-			"fixtures",
-			"node-properties",
-			"edges_with_desc.csv",
-		);
-		await lineagePage.uploadFiles(nodesPath, edgesPath);
-		await lineagePage.clickNext();
-
-		// 2. Verify Properties Field
-		await expect(page.getByText("Properties (Optional)")).toBeVisible();
-
-		// 3. Verify Dropdown Content
-		await lineagePage.selectProperty("description");
-		// Note: selectProperty selects and closes. To verify content we might need to open it manually or trust selectProperty works.
-		// The original test verified the option is visible.
-		// Let's just verify we can select it.
-
-		// 4. Verify Default Selection (Empty) - The original test checked this.
-		// We can skip detailed UI state checks if we trust the flow, but let's keep it robust.
 	});
 
 	test("should display first property in node card (Slice 1 Preview)", async ({
 		page,
 	}) => {
-		const lineagePage = new LineagePage(page);
-		await lineagePage.openImportModal();
-
 		const nodesPath = path.join(
 			__dirname,
 			"fixtures",
@@ -60,25 +29,14 @@ test.describe("Node Properties", () => {
 			"node-properties",
 			"edges_with_desc.csv",
 		);
-		await lineagePage.uploadFiles(nodesPath, edgesPath);
-		await lineagePage.clickNext();
 
-		// 5. Map Columns
-		await lineagePage.mapColumns({
-			id: "id",
-			title: "title",
-			type: "type",
-			source: "source",
-			target: "target",
+		// Import with 'description' property selected
+		const wizardPage = new NewWizardPage(page);
+		await lineagePage.importGraph(nodesPath, edgesPath, {
+			onNodeMapping: async () => {
+				await wizardPage.selectProperty("description");
+			},
 		});
-
-		// Explicitly map 'description' property
-		await lineagePage.selectProperty("description");
-
-		// 6. Import
-		await lineagePage.submitMapping();
-		await lineagePage.verifyImportSuccess();
-		await lineagePage.closeImportModal();
 
 		// 7. Verify Side Panel Interaction (Slice 2)
 		await lineagePage.clickNode("User Table");
@@ -104,9 +62,6 @@ test.describe("Node Properties", () => {
 	test("should handle selection, visual cues, and long content (Slice 3)", async ({
 		page,
 	}) => {
-		const lineagePage = new LineagePage(page);
-		await lineagePage.openImportModal();
-
 		const nodesPath = path.join(
 			__dirname,
 			"fixtures",
@@ -119,27 +74,15 @@ test.describe("Node Properties", () => {
 			"node-properties",
 			"edges_long_content.csv",
 		);
-		await lineagePage.uploadFiles(nodesPath, edgesPath);
-		await lineagePage.clickNext();
 
-		await lineagePage.mapColumns({
-			id: "id",
-			title: "title",
-			type: "type",
-			source: "source",
-			target: "target",
+		// Import with 'description' and 'prop1' properties selected
+		const wizardPage = new NewWizardPage(page);
+		await lineagePage.importGraph(nodesPath, edgesPath, {
+			onNodeMapping: async () => {
+				await wizardPage.selectProperty("description");
+				await wizardPage.selectProperty("prop1");
+			},
 		});
-
-		// Explicitly map 'description' property and 'prop1'
-		await lineagePage.selectProperty("description");
-		// For prop1 (data-value="prop1"), our selectProperty helper uses getByRole("option", { name: property }).
-		// If the CSV header is "prop1", the option name should be "prop1".
-		// The original test used `page.locator('[data-value="prop1"]').click()`.
-		// Let's assume selectProperty works if the option text matches.
-		await lineagePage.selectProperty("prop1");
-
-		await lineagePage.submitMapping();
-		await lineagePage.closeImportModal();
 
 		// 2. Verify Hover Cursor
 		const nodeA = lineagePage.getGraphNode("Node A");
@@ -181,9 +124,6 @@ test.describe("Node Properties", () => {
 	test("should not import unselected properties (Slice 3)", async ({
 		page,
 	}) => {
-		const lineagePage = new LineagePage(page);
-		await lineagePage.openImportModal();
-
 		const nodesPath = path.join(
 			__dirname,
 			"fixtures",
@@ -196,23 +136,15 @@ test.describe("Node Properties", () => {
 			"node-properties",
 			"edges_long_content.csv",
 		);
-		await lineagePage.uploadFiles(nodesPath, edgesPath);
-		await lineagePage.clickNext();
 
-		await lineagePage.mapColumns({
-			id: "id",
-			title: "title",
-			type: "type",
-			source: "source",
-			target: "target",
+		// Import with ONLY 'description' selected
+		const wizardPage = new NewWizardPage(page);
+		await lineagePage.importGraph(nodesPath, edgesPath, {
+			onNodeMapping: async () => {
+				await wizardPage.selectProperty("description");
+				// Leave prop1 unselected
+			},
 		});
-
-		// 3. Select ONLY 'description', leave 'prop1' unselected
-		await lineagePage.selectProperty("description");
-
-		// 4. Import
-		await lineagePage.submitMapping();
-		await lineagePage.closeImportModal();
 
 		// 5. Verify Side Panel
 		await lineagePage.clickNode("Node A");

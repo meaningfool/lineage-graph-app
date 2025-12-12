@@ -2,6 +2,9 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { LineagePage } from "./pages/LineagePage";
 
+// Slice 8: Cleanup - Removed Strategy Loop
+const strategy = "new";
+
 test.describe("Subtree Highlighting", () => {
 	let lineagePage: LineagePage;
 

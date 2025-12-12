@@ -2,14 +2,19 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { LineagePage } from "./pages/LineagePage";
 
-test.describe("Graph Validation", () => {
+// Slice 8: Cleanup - Removed Strategy Loop
+// const STRATEGIES = ["legacy", "new"] as const;
+const strategy = "new";
+
+test.describe("Graph Validation Rules (Legacy Parity via New Wizard)", () => {
+	let lineagePage: LineagePage;
+
 	test.beforeEach(async ({ page }) => {
-		const lineagePage = new LineagePage(page);
+		lineagePage = new LineagePage(page);
 		await lineagePage.goto();
 	});
 
 	test("should validate Input node rules (Slice 2.1)", async ({ page }) => {
-		const lineagePage = new LineagePage(page);
 		const nodesPath = path.join(
 			__dirname,
 			"fixtures",
@@ -49,7 +54,6 @@ test.describe("Graph Validation", () => {
 	});
 
 	test("should validate Output node rules (Slice 2.2)", async ({ page }) => {
-		const lineagePage = new LineagePage(page);
 		const nodesPath = path.join(
 			__dirname,
 			"fixtures",
@@ -89,7 +93,6 @@ test.describe("Graph Validation", () => {
 	});
 
 	test("should validate Step node rules (Slice 2.3)", async ({ page }) => {
-		const lineagePage = new LineagePage(page);
 		const nodesPath = path.join(
 			__dirname,
 			"fixtures",
@@ -129,7 +132,6 @@ test.describe("Graph Validation", () => {
 	});
 
 	test("should detect self-cycles (Slice 3.1)", async ({ page }) => {
-		const lineagePage = new LineagePage(page);
 		const nodesPath = path.join(
 			__dirname,
 			"fixtures",
@@ -158,7 +160,6 @@ test.describe("Graph Validation", () => {
 	});
 
 	test("should detect multi-node cycles (Slice 3.2)", async ({ page }) => {
-		const lineagePage = new LineagePage(page);
 		const nodesPath = path.join(
 			__dirname,
 			"fixtures",

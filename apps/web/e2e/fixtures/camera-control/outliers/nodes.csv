@@ -1,0 +1,3 @@
+id,title,type
+MainCluster,Main Cluster,STEP
+OutlierNode,Outlier Node,STEP
