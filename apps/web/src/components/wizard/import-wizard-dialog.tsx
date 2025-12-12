@@ -198,9 +198,9 @@ export function ImportWizardDialog({
 											className={cn(
 												"z-20 flex h-8 w-8 items-center justify-center rounded-full text-sm ring-4 ring-white transition-colors",
 												isActive
-													? "bg-neutral-900 font-semibold text-white"
+													? "bg-indigo-600 font-semibold text-white"
 													: isCompleted
-														? "bg-emerald-500 text-white"
+														? "bg-green-500 text-white"
 														: "bg-gray-200 text-gray-500",
 											)}
 										>
@@ -209,7 +209,7 @@ export function ImportWizardDialog({
 										<span
 											className={cn(
 												"absolute top-full mt-2 w-32 text-center font-medium text-xs",
-												isActive ? "text-neutral-900" : "text-gray-500",
+												isActive ? "text-indigo-900" : "text-gray-500",
 											)}
 										>
 											{step.label}
@@ -219,7 +219,7 @@ export function ImportWizardDialog({
 										<div
 											className={cn(
 												"h-[2px] w-16 transition-colors",
-												isCompleted ? "bg-emerald-500" : "bg-gray-200",
+												isCompleted ? "bg-green-500" : "bg-gray-200",
 											)}
 										/>
 									)}
@@ -267,6 +267,7 @@ export function ImportWizardDialog({
 
 					{currentStep !== "SUCCESS" ? (
 						<Button
+							className="bg-indigo-600 hover:bg-indigo-700"
 							onClick={handleNext}
 							disabled={isNextDisabled()}
 							data-testid="import-next-button"
@@ -277,7 +278,11 @@ export function ImportWizardDialog({
 							)}
 						</Button>
 					) : (
-						<Button data-testid="import-finish-button" onClick={handleClose}>
+						<Button
+							className="bg-indigo-600 hover:bg-indigo-700"
+							data-testid="import-finish-button"
+							onClick={handleClose}
+						>
 							Close
 						</Button>
 					)}

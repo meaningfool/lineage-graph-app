@@ -27,7 +27,7 @@ export function WelcomeDialog({
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 text-2xl">
-						<Rocket className="h-6 w-6 text-emerald-600" />
+						<Rocket className="h-6 w-6 text-indigo-600" />
 						Welcome to DataLineage
 					</DialogTitle>
 					<DialogDescription className="pt-2 text-base">
@@ -45,7 +45,7 @@ export function WelcomeDialog({
 				<DialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
 					<Button
 						type="button"
-						className="w-full bg-emerald-600 hover:bg-emerald-700"
+						className="w-full bg-indigo-600 hover:bg-indigo-700"
 						onClick={onStart}
 						data-testid="welcome-start-button"
 					>

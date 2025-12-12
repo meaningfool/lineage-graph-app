@@ -96,13 +96,15 @@ export default function Home() {
 				},
 			}));
 
-			const demoEdges: Edge[] = (edgesParsed.data as any[]).map((row) => ({
-				id: `e-${row.source}-${row.target}`,
-				source: row.source,
-				target: row.target,
-				type: "smoothstep",
-				animated: true,
-			}));
+			const demoEdges: Edge[] = (edgesParsed.data as any[]).map(
+				(row, index) => ({
+					id: `e-${row.source}-${row.target}-${index}`,
+					source: row.source,
+					target: row.target,
+					type: "smoothstep",
+					animated: true,
+				}),
+			);
 
 			handleImport(demoNodes, demoEdges);
 			setShowWelcome(false);

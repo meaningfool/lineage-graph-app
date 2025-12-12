@@ -28,7 +28,7 @@ export default function Header({
 							<img
 								src="/nano-banana.png"
 								alt="Nano Banana Logo"
-								className="h-full w-full object-cover"
+								className="h-full w-full object-cover hue-rotate-90 saturate-150 filter"
 							/>
 						</div>
 						<span className="font-bold text-foreground text-xl tracking-tight">
@@ -38,7 +38,7 @@ export default function Header({
 				</div>
 				<div className="flex items-center gap-2">
 					<Button
-						variant="outline"
+						className="bg-indigo-600 hover:bg-indigo-700"
 						onClick={() => setIsWizardOpen(true)}
 						data-testid="import-csv-trigger"
 					>
