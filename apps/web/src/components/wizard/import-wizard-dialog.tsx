@@ -1,4 +1,4 @@
-import { ArrowRight, Check, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, X } from "lucide-react";
 import { useState } from "react";
 import type { Edge, Node } from "reactflow";
 import { Button } from "@/components/ui/button";
@@ -133,15 +133,16 @@ export function ImportWizardDialog({
 			{/* Warnings Section */}
 			{warnings.length > 0 && (
 				<div
-					className="mt-6 w-full max-w-md rounded-md border border-amber-200 bg-amber-50 p-4"
+					className="mt-6 w-full max-w-lg rounded-md border border-amber-200 bg-amber-50 p-4"
 					data-testid="import-warning-summary"
 				>
-					<div className="mb-2 font-medium text-amber-800 text-sm">
+					<div className="mb-3 flex items-center gap-2 font-medium text-amber-800 text-sm">
+						<AlertTriangle className="h-4 w-4" />
 						Warnings during import:
 					</div>
-					<ul className="max-h-40 list-disc overflow-y-auto pl-5 text-amber-900 text-xs">
+					<ul className="max-h-60 list-disc space-y-1 overflow-y-auto pl-5 text-amber-900 text-sm">
 						{warnings.map((w, idx) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+							// biome-ignore lint/suspicious/noArrayIndexKey: List is static for this render
 							<li key={idx} data-testid="warning-item">
 								{w}
 							</li>

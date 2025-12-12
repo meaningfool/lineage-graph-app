@@ -256,7 +256,25 @@ def main():
         c_src = random.choice(deep_nodes)
         c_tgt = random.choice(shallow_nodes)
         edges.append((c_src, c_tgt))
-        print(f"Cycle: {c_src.label} -> {c_tgt.label}")
+        print(f"Long Cycle: {c_src.label} -> {c_tgt.label}")
+
+    # 5b. Self-Loop
+    if len(all_nodes) > 5:
+        self_loop_node = random.choice(all_nodes)
+        edges.append((self_loop_node, self_loop_node))
+        print(f"Self-Loop: {self_loop_node.label}")
+
+    # 5c. Multi-Node Short Cycle (A->B->C->A)
+    # Pick a random node and try to find a path of length 2, then connect back
+    # Alternatively, just pick 3 random nodes and force a cycle
+    if len(all_nodes) > 10:
+        # Pick 3 random distinct nodes
+        cycle_nodes = random.sample(all_nodes, 3)
+        n1, n2, n3 = cycle_nodes[0], cycle_nodes[1], cycle_nodes[2]
+        edges.append((n1, n2))
+        edges.append((n2, n3))
+        edges.append((n3, n1))
+        print(f"Short Cycle: {n1.label} -> {n2.label} -> {n3.label} -> {n1.label}")
 
     # Orphan (Disconnected)
     orphan = Node(2, "STEP")
