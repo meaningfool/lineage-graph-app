@@ -15,11 +15,10 @@ export class LineagePage {
 	}
 
 	async openImportModal() {
-		if (this.importStrategy === "new") {
-			await this.page.getByRole("button", { name: "✨ New Import" }).click();
-		} else {
-			await this.page.getByRole("button", { name: "Import CSV" }).click();
-		}
+		// Slice 8: Cleanup - Always open "Import CSV" (which is now the Wizard)
+		const button = this.page.getByTestId("import-csv-trigger");
+		await button.waitFor();
+		await button.click();
 	}
 
 	async uploadFiles(nodesPath: string, edgesPath: string) {
@@ -27,61 +26,23 @@ export class LineagePage {
 		await this.uploadEdgeFile(edgesPath);
 	}
 
-	// Strategy for import flow (Slice 7)
-	private importStrategy: "legacy" | "new" = "legacy";
-
-	setImportStrategy(strategy: "legacy" | "new") {
-		this.importStrategy = strategy;
-	}
-
 	/**
-	 * High-level helper to perform a complete import flow using the selected strategy.
+	 * High-level helper to perform a complete import flow using the New Wizard.
 	 */
 	async importGraph(
 		nodesPath: string,
 		edgesPath: string,
 		callbacks?: { onNodeMapping?: () => Promise<void> },
-	) {
-		if (this.importStrategy === "new") {
-			await this.importGraphNewWizard(nodesPath, edgesPath, callbacks);
-		} else {
-			await this.importGraphLegacy(nodesPath, edgesPath, callbacks);
-		}
-	}
-
-	private async importGraphLegacy(
-		nodesPath: string,
-		edgesPath: string,
-		callbacks?: { onNodeMapping?: () => Promise<void> },
-	) {
-		await this.openImportModal();
-		await this.uploadFiles(nodesPath, edgesPath);
-		await this.submitUpload();
-		await this.mapColumns({
-			id: "id",
-			title: "title",
-			type: "type",
-			source: "source",
-			target: "target",
-		});
-		if (callbacks?.onNodeMapping) {
-			await callbacks.onNodeMapping();
-		}
-		await this.submitMapping();
-		await this.closeImportModal();
-		// Wait for graph to stabilize
-		await this.page.waitForTimeout(500);
-	}
-
-	private async importGraphNewWizard(
-		nodesPath: string,
-		edgesPath: string,
-		callbacks?: { onNodeMapping?: () => Promise<void> },
+		overrideMapping?: {
+			nodes?: { id?: string; title?: string; type?: string };
+			edges?: { source?: string; target?: string };
+		},
 	) {
 		await this.openImportModal();
 		await this.uploadFiles(nodesPath, edgesPath);
 
 		// Step 1 -> 2 (Upload -> Map Nodes)
+		await this.verifyNextButtonEnabled();
 		await this.clickNext();
 
 		// Step 2: Map Nodes
@@ -90,10 +51,12 @@ export class LineagePage {
 			id: "id",
 			title: "title",
 			type: "type",
+			...overrideMapping?.nodes,
 		});
 		if (callbacks?.onNodeMapping) {
 			await callbacks.onNodeMapping();
 		}
+		await this.verifyNextButtonEnabled();
 		await this.clickNext();
 
 		// Step 3: Map Edges
@@ -101,6 +64,7 @@ export class LineagePage {
 		await this.mapColumns({
 			source: "source",
 			target: "target",
+			...overrideMapping?.edges,
 		});
 
 		// Step 3 -> 4 (Map Edges -> Success)
@@ -147,6 +111,7 @@ export class LineagePage {
 	}
 
 	async clickNext() {
+		await this.verifyNextButtonEnabled();
 		await this.page.getByRole("button", { name: "Next", exact: true }).click();
 	}
 
@@ -178,7 +143,10 @@ export class LineagePage {
 		target?: string;
 	}) {
 		// Wait for mapping step
-		const stepHeader = this.importStrategy === "new" ? "Map Nodes" : "Nodes";
+		// If mapping source/target, we expect "Map Edges" (Step 3)
+		// Otherwise "Map Nodes" (Step 2)
+		const stepHeader =
+			mapping.source || mapping.target ? "Map Edges" : "Map Nodes";
 		await expect(this.page.getByText(stepHeader, { exact: true })).toBeVisible({
 			timeout: 10000,
 		});
@@ -191,20 +159,8 @@ export class LineagePage {
 	}
 
 	async selectProperty(property: string) {
-		if (this.importStrategy === "new") {
-			// New Wizard: Click the pill
-			await this.page.getByTestId(`property-pill-${property}`).click();
-		} else {
-			// Legacy Wizard: Use Dropdown
-			await this.page.getByTestId("mapping-select-properties-trigger").click();
-			// Try finding by text or data-value to be robust
-			const option = this.page
-				.locator(`[role="option"]`)
-				.filter({ hasText: property })
-				.or(this.page.locator(`[data-value="${property}"]`));
-			await option.first().click();
-			await this.page.keyboard.press("Escape");
-		}
+		// New Wizard: Click the pill
+		await this.page.getByTestId(`property-pill-${property}`).click();
 	}
 
 	async verifyMappingStep() {

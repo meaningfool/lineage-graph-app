@@ -15,7 +15,7 @@ export class NewWizardPage {
 	}
 
 	async openImportModal() {
-		await this.page.getByRole("button", { name: "New Import" }).click();
+		await this.page.getByRole("button", { name: "Import CSV" }).click();
 	}
 
 	async uploadFiles(nodesPath: string, edgesPath: string) {

@@ -1,685 +1,689 @@
-import path from "node:path";
+import * as path from "node:path";
 import { expect, test } from "@playwright/test";
-import { LineagePage } from "./pages/LineagePage";
+import { NewWizardPage } from "./pages/NewWizardPage";
 
-test.describe("CSV Import Feature", () => {
+test.describe("New Import Wizard - Slice 1: Upload & File Validation", () => {
 	test.beforeEach(async ({ page }) => {
-		const lineagePage = new LineagePage(page);
-		await lineagePage.goto();
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.goto();
 	});
 
-	// ========== 1. HAPPY PATH (The "Golden Flow") ==========
-	test.describe("Happy Path", () => {
-		test("should import nodes and edges with mapped fields", async ({
-			page,
-		}) => {
-			const lineagePage = new LineagePage(page);
+	test("should show error for malformed CSV", async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		// 1. Open Modal
+		await wizardPage.openImportModal();
 
-			// 1. Open Modal
-			await lineagePage.openImportModal();
+		// 2. Upload malformed file as Nodes
+		const malformedPath = path.join(
+			__dirname,
+			"./fixtures",
+			"shared",
+			"malformed.csv",
+		);
+		await wizardPage.uploadNodeFile(malformedPath);
 
-			// 2. Upload Files
+		// 3. Upload malformed file as Edges
+		await wizardPage.uploadEdgeFile(malformedPath);
+
+		// 4. Click Next
+		await wizardPage.verifyNextButtonEnabled();
+		await wizardPage.clickNext();
+
+		// 5. Verify Error Message contains both errors
+		await wizardPage.verifyDialogText(
+			"Failed to read Nodes file (malformed.csv) and Edges file (malformed.csv)",
+		);
+
+		// 6. Verify BOTH dropzones are cleared
+		await wizardPage.verifyDropzoneEmpty("dropzone-nodes");
+		await wizardPage.verifyDropzoneEmpty("dropzone-edges");
+	});
+
+	test("should allow uploading an edges file along with nodes", async ({
+		page,
+	}) => {
+		const wizardPage = new NewWizardPage(page);
+		// 1. Click "Import CSV" button
+		await wizardPage.openImportModal();
+
+		// 2. Upload Nodes file
+		const nodesPath = path.join(
+			__dirname,
+			"./fixtures",
+			"shared",
+			"nodes_valid_basic.csv",
+		);
+		await wizardPage.uploadNodeFile(nodesPath);
+
+		// 3. Upload Edges file
+		const edgesPath = path.join(
+			__dirname,
+			"./fixtures",
+			"shared",
+			"edges_valid_basic.csv",
+		);
+		await wizardPage.uploadEdgeFile(edgesPath);
+
+		// Verify files are recognized
+		await wizardPage.verifyDropzoneContent(
+			"dropzone-nodes",
+			"nodes_valid_basic.csv",
+		);
+		await wizardPage.verifyDropzoneContent(
+			"dropzone-edges",
+			"edges_valid_basic.csv",
+		);
+
+		// 4. Click Next
+		await wizardPage.verifyNextButtonEnabled();
+		await wizardPage.clickNext();
+
+		// 5. Complete Mapping Step (Just to ensure we moved past upload)
+		// NOTE: In this slice we only care about getting past the upload step with valid files
+		await wizardPage.verifyMappingStep();
+	});
+
+	test("should disable next button if only nodes uploaded", async ({
+		page,
+	}) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		const nodesPath = path.join(
+			__dirname,
+			"./fixtures",
+			"shared",
+			"nodes_valid_basic.csv",
+		);
+		await wizardPage.uploadNodeFile(nodesPath);
+
+		await wizardPage.verifyDropzoneContent(
+			"dropzone-nodes",
+			"nodes_valid_basic.csv",
+		);
+		await wizardPage.verifyNextButtonDisabled();
+	});
+});
+
+test.describe("New Import Wizard - Slice 2: Node Mapping & Reset", () => {
+	test.beforeEach(async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.goto();
+	});
+
+	test("should populate dropdowns with exact CSV headers", async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		// Upload valid files
+		const nodesPath = path.join(
+			__dirname,
+			"./fixtures",
+			"shared",
+			"nodes_valid_basic.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"./fixtures",
+			"shared",
+			"edges_valid_basic.csv",
+		);
+		await wizardPage.uploadNodeFile(nodesPath);
+		await wizardPage.uploadEdgeFile(edgesPath);
+		await wizardPage.clickNext();
+
+		// Verify dropdown options for 'id' field
+		// The fixture headers are: id,title,type
+		const expectedHeaders = ["id", "title", "type"];
+		const options = await wizardPage.getDropdownOptions("title"); // We changed ID from 'label' to 'title'
+		expect(options).toEqual(expectedHeaders);
+	});
+
+	test("should reset wizard state when modal is closed and reopened", async ({
+		page,
+	}) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		// 1. Upload files and go to mapping step
+		const nodesPath = path.join(
+			__dirname,
+			"./fixtures",
+			"shared",
+			"nodes_valid_basic.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"./fixtures",
+			"shared",
+			"edges_valid_basic.csv",
+		);
+		await wizardPage.uploadNodeFile(nodesPath);
+		await wizardPage.uploadEdgeFile(edgesPath);
+		await wizardPage.clickNext();
+
+		// 2. Verify we are on mapping step
+		await wizardPage.verifyMappingStep();
+
+		// 3. Close modal
+		await wizardPage.closeImportModal();
+
+		// 4. Reopen modal
+		await wizardPage.openImportModal();
+
+		// 5. Verify we are back at upload step (empty)
+		await wizardPage.verifyDropzoneEmpty("dropzone-nodes");
+	});
+});
+
+test.describe("New Import Wizard - Slice 3: Edge Mapping", () => {
+	test.beforeEach(async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.goto();
+	});
+
+	test("should validate edge mapping requirements", async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		// Upload valid files
+		const nodesPath = path.join(
+			__dirname,
+			"./fixtures",
+			"shared",
+			"nodes_valid_basic.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"./fixtures",
+			"shared",
+			"edges_valid_basic.csv",
+		);
+		await wizardPage.uploadNodeFile(nodesPath);
+		await wizardPage.uploadEdgeFile(edgesPath);
+		await wizardPage.clickNext();
+
+		// Map Nodes
+		await wizardPage.mapColumn("id", "id");
+		await wizardPage.mapColumn("title", "title");
+		await wizardPage.mapColumn("type", "type");
+		await wizardPage.clickNext(); // Should go to Edge Mapping
+
+		// Now we should be on Edge Mapping step
+		await expect(page.getByText("Map Edges", { exact: true })).toBeVisible();
+
+		// Next should be disabled initially
+		await wizardPage.verifyNextButtonDisabled();
+
+		// Map Source
+		await wizardPage.mapColumn("source", "source");
+		await wizardPage.verifyNextButtonDisabled();
+
+		// Map Target
+		await wizardPage.mapColumn("target", "target");
+		await wizardPage.verifyNextButtonEnabled();
+	});
+
+	test("should disable selected source column in target dropdown", async ({
+		page,
+	}) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		// Upload valid files
+		const nodesPath = path.join(
+			__dirname,
+			"./fixtures",
+			"shared",
+			"nodes_valid_basic.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"./fixtures",
+			"shared",
+			"edges_valid_basic.csv",
+		);
+		await wizardPage.uploadNodeFile(nodesPath);
+		await wizardPage.uploadEdgeFile(edgesPath);
+		await wizardPage.clickNext();
+
+		// Map Nodes & Proceed
+		await wizardPage.mapColumn("id", "id");
+		await wizardPage.mapColumn("title", "title");
+		await wizardPage.mapColumn("type", "type");
+		await wizardPage.clickNext();
+
+		// Select 'source' in Source dropdown
+		await wizardPage.openColumnDropdown("source");
+		await page.getByRole("option", { name: "source" }).click();
+
+		// Verify 'source' is disabled in Target dropdown
+		await wizardPage.openColumnDropdown("target");
+		const sourceOption = page
+			.getByRole("option", { name: "source" })
+			.and(page.locator('[aria-disabled="true"]'));
+		await expect(sourceOption).toBeDisabled();
+	});
+
+	// ========== SLICE 4: HAPPY PATH INTEGRATION ==========
+	test.describe("Slice 4: Happy Path Integration", () => {
+		test("should import nodes and edges and render graph", async ({ page }) => {
+			// This test covers the full "Happy Path" from Upload -> Mapping -> Success -> Graph
+			const wizardPage = new NewWizardPage(page);
+			await wizardPage.openImportModal();
+
+			// 1. Upload
 			const nodesPath = path.join(
 				__dirname,
-				"fixtures",
-				"csv-import",
-				"nodes_valid_custom_headers.csv",
+				"./fixtures/csv-import/nodes_valid_custom_headers.csv",
 			);
 			const edgesPath = path.join(
 				__dirname,
-				"fixtures",
-				"shared",
-				"edges_valid_basic.csv",
+				"./fixtures/shared/edges_valid_basic.csv",
 			);
-			await lineagePage.uploadFiles(nodesPath, edgesPath);
+			await wizardPage.uploadFiles(nodesPath, edgesPath);
+			await wizardPage.submitUpload();
 
-			// 3. Click Next
-			await lineagePage.submitUpload();
-
-			// 4. Map columns
-			await lineagePage.mapColumns({
+			// 2. Map Nodes
+			await wizardPage.mapColumns({
 				id: "node_id",
 				title: "name",
 				type: "node_type",
+			});
+			await wizardPage.clickNext();
+
+			// 3. Map Edges
+			await wizardPage.mapColumns({
 				source: "source",
 				target: "target",
 			});
+			await wizardPage.clickNext(); // Should Trigger Generate Graph
 
-			// 5. Click Next to import
-			await lineagePage.submitMapping();
-
-			// 6. Verify Success
-			await lineagePage.verifyImportSuccess();
-
-			// 7. Close modal
-			await lineagePage.closeImportModal();
-
-			// 8. Verify nodes are displayed on graph
-			await lineagePage.verifyGraphNode("First Node");
-			await lineagePage.verifyGraphNode("Second Node");
-			// Verify edge
-			await lineagePage.verifyGraphEdgeCount(1);
-		});
-
-		test("should allow uploading an edges file along with nodes", async ({
-			page,
-		}) => {
-			const lineagePage = new LineagePage(page);
-			// 1. Click "Import CSV" button
-			await lineagePage.openImportModal();
-
-			// 2. Upload Nodes file
-			const nodesPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"nodes_valid_basic.csv",
-			);
-			await lineagePage.uploadNodeFile(nodesPath);
-
-			// 3. Upload Edges file
-			const edgesPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"edges_valid_basic.csv",
-			);
-			await lineagePage.uploadEdgeFile(edgesPath);
-
-			// Verify files are recognized
-			await lineagePage.verifyDropzoneContent(
-				"dropzone-nodes",
-				"nodes_valid_basic.csv",
-			);
-			await lineagePage.verifyDropzoneContent(
-				"dropzone-edges",
-				"edges_valid_basic.csv",
-			);
-
-			// 4. Click Next
-			await lineagePage.verifyNextButtonEnabled();
-			await lineagePage.clickNext();
-
-			// 5. Complete Mapping Step
-			await lineagePage.mapColumns({
-				id: "id",
-				title: "title",
-				type: "type",
-				source: "source",
-				target: "target",
+			// 4. Verify Success Step
+			// Using data-testid for robustness
+			await expect(page.getByTestId("wizard-step-success")).toBeVisible({
+				timeout: 5000,
 			});
-			await lineagePage.submitMapping();
-			await lineagePage.verifyImportSuccess();
-			await lineagePage.closeImportModal();
+			await expect(page.getByText("Import successful")).toBeVisible();
 
-			// 6. Verify Nodes are displayed
-			await lineagePage.verifyGraphNode("First Node");
-			await lineagePage.verifyGraphNode("Second Node");
-
-			// 7. Verify Edges are displayed
-			await lineagePage.verifyGraphEdgeCount(1);
-		});
-	});
-
-	// ========== 2. WORKFLOW & STATE ==========
-	test.describe("Workflow & State", () => {
-		test("should reset wizard state when modal is closed and reopened", async ({
-			page,
-		}) => {
-			const lineagePage = new LineagePage(page);
-			// 1. Open Modal
-			await lineagePage.openImportModal();
-
-			// 2. Upload BOTH files (Required to enable Next)
-			const nodesPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"nodes_valid_basic.csv",
-			);
-			await lineagePage.uploadNodeFile(nodesPath);
-
-			const edgesPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"edges_valid_basic.csv",
-			);
-			await lineagePage.uploadEdgeFile(edgesPath);
-
-			// 3. Go to Mapping Step
-			await lineagePage.verifyNextButtonEnabled();
-			await lineagePage.clickNext();
-			await lineagePage.verifyMappingStep();
-
-			// 4. Close Modal (Cancel)
-			await lineagePage.cancelImport();
-			await lineagePage.verifyDialogVisible(false);
-
-			// 5. Reopen Modal
-			await lineagePage.openImportModal();
-
-			// 6. Verify we are back at Step 1 (Upload)
-			await lineagePage.verifyUploadStepVisible();
-			await lineagePage.verifyMappingStep().catch(() => {}); // Should fail or we check not visible
-			await expect(page.getByText("Nodes", { exact: true })).not.toBeVisible();
-
-			// 7. Verify Next button is disabled (files cleared)
-			await lineagePage.verifyNextButtonDisabled();
+			// 5. Close and Verify Graph
+			await wizardPage.finishImport();
+			await wizardPage.verifyGraphNode("First Node");
+			await wizardPage.verifyGraphNode("Second Node");
+			await wizardPage.verifyGraphEdgeCount(1);
 		});
 
-		test("should show error for malformed CSV", async ({ page }) => {
-			const lineagePage = new LineagePage(page);
-			// 1. Open Modal
-			await lineagePage.openImportModal();
+		test("should replace existing graph on second import", async ({ page }) => {
+			// Run full import flow twice.
+			const wizardPage = new NewWizardPage(page);
 
-			// 2. Upload malformed file as Nodes
-			const malformedPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"malformed.csv",
+			// --- Import 1 ---
+			await wizardPage.openImportModal();
+			await wizardPage.uploadFiles(
+				path.join(__dirname, "./fixtures/shared/nodes_valid_basic.csv"),
+				path.join(__dirname, "./fixtures/shared/edges_valid_basic.csv"),
 			);
-			await lineagePage.uploadNodeFile(malformedPath);
+			await wizardPage.submitUpload();
+			await wizardPage.mapColumns({ id: "id", title: "title", type: "type" });
+			await wizardPage.clickNext();
+			await wizardPage.mapColumns({ source: "source", target: "target" });
+			await wizardPage.clickNext();
+			await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+			await wizardPage.finishImport();
 
-			// 3. Upload malformed file as Edges
-			await lineagePage.uploadEdgeFile(malformedPath);
+			await wizardPage.verifyGraphNode("First Node");
 
-			// 4. Click Next
-			await lineagePage.verifyNextButtonEnabled();
-			await lineagePage.clickNext();
-
-			// 5. Verify Error Message contains both errors
-			await lineagePage.verifyDialogText(
-				"Failed to read file(s): malformed.csv, malformed.csv",
-			);
-
-			// 6. Verify BOTH dropzones are cleared
-			await lineagePage.verifyDropzoneEmpty("dropzone-nodes", "malformed.csv");
-			await lineagePage.verifyDropzoneEmpty("dropzone-edges", "malformed.csv");
-		});
-
-		test("should reset wizard after successful import", async ({ page }) => {
-			const lineagePage = new LineagePage(page);
-			// 1. Perform a successful import
-			await lineagePage.openImportModal();
-			const nodesPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"nodes_valid_basic.csv",
-			);
-			await lineagePage.uploadNodeFile(nodesPath);
-			const edgesPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"edges_valid_basic.csv",
-			);
-			await lineagePage.uploadEdgeFile(edgesPath);
-
-			await lineagePage.clickNext();
-			await lineagePage.mapColumns({
-				id: "id",
-				title: "title",
-				type: "type",
-				source: "source",
-				target: "target",
-			});
-			await lineagePage.submitMapping();
-
-			// 2. Verify Success Step
-			await lineagePage.verifyImportSuccess();
-
-			// 3. Close via the "Close" button in the Results step
-			await lineagePage.closeImportModal();
-			await lineagePage.verifyDialogVisible(false);
-
-			// 4. Re-open Modal
-			await lineagePage.openImportModal();
-
-			// 5. Verify we are back at Upload step
-			await lineagePage.verifyUploadStepVisible();
-			await lineagePage.verifyDropzoneContent("dropzone-nodes", "Drag & drop"); // Or just check it exists
-		});
-
-		test("should replace graph on second import", async ({ page }) => {
-			const lineagePage = new LineagePage(page);
-			// 1. First Import (Graph A)
-			await lineagePage.openImportModal();
-			const nodesAPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"nodes_valid_basic.csv",
-			); // 2 nodes
-			await lineagePage.uploadNodeFile(nodesAPath);
-			const edgesAPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"edges_valid_basic.csv",
-			);
-			await lineagePage.uploadEdgeFile(edgesAPath);
-
-			await lineagePage.clickNext();
-			await lineagePage.mapColumns({
-				id: "id",
-				title: "title",
-				type: "type",
-				source: "source",
-				target: "target",
-			});
-			await lineagePage.submitMapping();
-			await lineagePage.closeImportModal();
-
-			// Verify Graph A (First Node)
-			await lineagePage.verifyGraphNode("First Node");
-
-			// 2. Second Import (Graph B)
-			await lineagePage.openImportModal();
+			// --- Import 2 (Different Data) ---
+			await wizardPage.openImportModal();
 			const nodesBPath = path.join(
 				__dirname,
-				"fixtures",
-				"csv-import",
-				"nodes_second_import.csv",
-			); // "Third Node", "Fourth Node"
-			await lineagePage.uploadNodeFile(nodesBPath);
+				"./fixtures/csv-import/nodes_second_import.csv",
+			);
+			const edgesAPath = path.join(
+				__dirname,
+				"./fixtures/shared/edges_valid_basic.csv",
+			); // Dummy edges
 
-			// Upload dummy edges for B (Required)
-			await lineagePage.uploadEdgeFile(edgesAPath);
+			await wizardPage.uploadFiles(nodesBPath, edgesAPath);
+			await wizardPage.submitUpload();
 
-			await lineagePage.clickNext();
-
-			// Map columns for B
-			await lineagePage.mapColumns({
+			// Map Nodes
+			await wizardPage.mapColumns({
 				id: "id",
 				title: "title",
 				type: "type",
+			});
+			await wizardPage.clickNext();
+
+			// Map Edges
+			await wizardPage.mapColumns({
 				source: "source",
 				target: "target",
 			});
-			await lineagePage.submitMapping();
+			await wizardPage.clickNext(); // Generate
 
-			// Close
-			await lineagePage.closeImportModal();
+			// Verify Success & Close
+			await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+			await wizardPage.finishImport();
 
-			// 3. Verify Graph B is present
-			await lineagePage.verifyGraphNode("Third Node");
-			await lineagePage.verifyGraphNode("Fourth Node");
-
-			// 4. Verify Graph A is GONE
-			await lineagePage.verifyGraphNodeMissing("First Node");
+			// --- Verify Replacement ---
+			// Graph B nodes ("Third Node") should be present
+			await wizardPage.verifyGraphNode("Third Node");
+			// Graph A nodes ("First Node") should be GONE
+			await wizardPage.verifyGraphNodeMissing("First Node");
 		});
-	});
 
-	// ========== 3. COLUMN MAPPING LOGIC ==========
-	test.describe("Column Mapping Logic", () => {
-		test("should show mapping step with ID, Title, and Type dropdowns", async ({
+		test("should reset wizard state after successful import and close", async ({
 			page,
 		}) => {
-			const lineagePage = new LineagePage(page);
-			await lineagePage.openImportModal();
-			const fixturePath = path.join(
-				__dirname,
-				"fixtures",
-				"csv-import",
-				"nodes_valid_custom_headers.csv",
+			const wizardPage = new NewWizardPage(page);
+			// 1. Complete Import
+			await wizardPage.openImportModal();
+			await wizardPage.uploadFiles(
+				path.join(__dirname, "./fixtures/shared/nodes_valid_basic.csv"),
+				path.join(__dirname, "./fixtures/shared/edges_valid_basic.csv"),
 			);
-			await lineagePage.uploadNodeFile(fixturePath);
-			const edgesPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"edges_valid_basic.csv",
-			);
-			await lineagePage.uploadEdgeFile(edgesPath);
-			await lineagePage.clickNext();
+			await wizardPage.submitUpload();
+			await wizardPage.mapColumns({ id: "id", title: "title", type: "type" });
+			await wizardPage.clickNext();
+			await wizardPage.mapColumns({ source: "source", target: "target" });
+			await wizardPage.clickNext();
+			await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+			await wizardPage.finishImport();
+			await wizardPage.verifyDialogVisible(false);
+			await page.waitForTimeout(500); // Ensure unmount/state clearance
 
-			await lineagePage.verifyDialogText("Nodes");
+			// 2. Re-open Modal
+			await wizardPage.openImportModal();
+			await wizardPage.verifyDialogFullyOpen();
 
-			// Verify ID dropdown options
-			await lineagePage.openColumnDropdown("id");
-			await lineagePage.verifyDropdownOption("node_id");
-			await lineagePage.closeDropdown();
-
-			// Verify Title dropdown options
-			await lineagePage.openColumnDropdown("title");
-			await lineagePage.verifyDropdownOption("name");
-			await lineagePage.closeDropdown();
-
-			// Verify Type dropdown options
-			await lineagePage.openColumnDropdown("type");
-			await lineagePage.verifyDropdownOption("node_type");
-			await lineagePage.closeDropdown();
-		});
-
-		test("should validate mapping requirements", async ({ page }) => {
-			const lineagePage = new LineagePage(page);
-			await lineagePage.openImportModal();
-			const fixturePath = path.join(
-				__dirname,
-				"fixtures",
-				"csv-import",
-				"nodes_valid_custom_headers.csv",
-			);
-			await lineagePage.uploadNodeFile(fixturePath);
-			const edgesPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"edges_valid_basic.csv",
-			);
-			await lineagePage.uploadEdgeFile(edgesPath);
-			await lineagePage.clickNext();
-
-			await lineagePage.verifyNextButtonDisabled();
-
-			await lineagePage.openColumnDropdown("id");
-			await lineagePage.verifyDropdownOption("node_id");
-			await page.getByRole("option", { name: "node_id" }).click(); // Helper needed?
-			await lineagePage.verifyNextButtonDisabled();
-
-			await lineagePage.openColumnDropdown("title");
-			await page.getByRole("option", { name: "name" }).click();
-			await lineagePage.verifyNextButtonDisabled();
-
-			await lineagePage.openColumnDropdown("type");
-			await page.getByRole("option", { name: "node_type" }).click();
-			await lineagePage.verifyNextButtonDisabled();
-
-			await lineagePage.openColumnDropdown("source");
-			await page.getByRole("option", { name: "source" }).click();
-
-			await lineagePage.openColumnDropdown("target");
-			await page.getByRole("option", { name: "target" }).click();
-			await lineagePage.verifyNextButtonEnabled();
-		});
-	});
-
-	// ========== 4. NODE VALIDATION ==========
-	test.describe.skip("Node Validation", () => {
-		test("should drop nodes with invalid types and show summary", async ({
-			page,
-		}) => {
-			const lineagePage = new LineagePage(page);
-			await lineagePage.openImportModal();
-			const fixturePath = path.join(
-				__dirname,
-				"fixtures",
-				"csv-import",
-				"nodes_invalid_bad_type.csv",
-			);
-			await lineagePage.uploadNodeFile(fixturePath);
-			const edgesPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"edges_valid_basic.csv",
-			);
-			await lineagePage.uploadEdgeFile(edgesPath);
-			await lineagePage.clickNext();
-
-			await lineagePage.mapColumns({
-				id: "id",
-				title: "title",
-				type: "type",
-				source: "source",
-				target: "target",
-			});
-			await lineagePage.submitMapping();
-
-			await lineagePage.verifyDialogText("1 node dropped");
-			await lineagePage.verifyDialogText("node-2: Invalid type");
-
-			// Verify import success for valid node
-			await lineagePage.closeImportModal();
-			await lineagePage.verifyGraphNodeCount(1);
-		});
-
-		test("should deduplicate nodes with duplicate IDs and show warning", async ({
-			page,
-		}) => {
-			const lineagePage = new LineagePage(page);
-			await lineagePage.openImportModal();
-			const fixturePath = path.join(
-				__dirname,
-				"fixtures",
-				"csv-import",
-				"nodes_invalid_duplicate_ids.csv",
-			);
-			await lineagePage.uploadNodeFile(fixturePath);
-			const edgesPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"edges_valid_basic.csv",
-			);
-			await lineagePage.uploadEdgeFile(edgesPath);
-			await lineagePage.clickNext();
-
-			await lineagePage.mapColumns({
-				id: "id",
-				title: "title",
-				type: "type",
-				source: "source",
-				target: "target",
-			});
-			await lineagePage.submitMapping();
-
-			await lineagePage.verifyDialogText("1 node dropped");
-			await lineagePage.verifyDialogText("node-1: Duplicate Node ID");
-
-			await lineagePage.closeImportModal();
-			await lineagePage.verifyGraphNodeCount(2);
-		});
-
-		test("should limit warning messages to 10", async ({ page }) => {
-			const lineagePage = new LineagePage(page);
-			await lineagePage.openImportModal();
-			const nodesPath = path.join(
-				__dirname,
-				"fixtures",
-				"csv-import",
-				"nodes_stress_many_warnings.csv",
-			);
-			await lineagePage.uploadNodeFile(nodesPath);
-			const edgesPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"edges_valid_basic.csv",
-			);
-			await lineagePage.uploadEdgeFile(edgesPath);
-			await lineagePage.clickNext();
-
-			await lineagePage.mapColumns({
-				id: "id",
-				title: "title",
-				type: "type",
-				source: "source",
-				target: "target",
-			});
-			await lineagePage.submitMapping();
-
-			await lineagePage.verifyDialogText("12 nodes dropped");
-			await lineagePage.verifyWarningCount(11); // 10 warnings + 1 "more" message
-			await lineagePage.verifyDialogText("more warnings");
-		});
-	});
-
-	// ========== 5. EDGE VALIDATION ==========
-	test.describe.skip("Edge Validation", () => {
-		test("should reject edges pointing to missing nodes", async ({ page }) => {
-			const lineagePage = new LineagePage(page);
-			await lineagePage.openImportModal();
-			const nodesPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"nodes_valid_basic.csv",
-			);
-			await lineagePage.uploadNodeFile(nodesPath);
-			const edgesPath = path.join(
-				__dirname,
-				"fixtures",
-				"csv-import",
-				"edges_invalid_missing_source.csv",
-			);
-			await lineagePage.uploadEdgeFile(edgesPath);
-			await lineagePage.clickNext();
-
-			await lineagePage.mapColumns({
-				id: "id",
-				title: "title",
-				type: "type",
-				source: "source",
-				target: "target",
-			});
-			await lineagePage.submitMapping();
-
-			await lineagePage.verifyDialogText(
-				"Edge dropped: Source 'missing-id' not found",
-			);
-		});
-
-		test("should reject edges pointing to missing target node", async ({
-			page,
-		}) => {
-			const lineagePage = new LineagePage(page);
-			await lineagePage.openImportModal();
-			const nodesPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"nodes_valid_basic.csv",
-			);
-			await lineagePage.uploadNodeFile(nodesPath);
-			const edgesPath = path.join(
-				__dirname,
-				"fixtures",
-				"csv-import",
-				"edges_invalid_missing_target.csv",
-			);
-			await lineagePage.uploadEdgeFile(edgesPath);
-			await lineagePage.clickNext();
-
-			await lineagePage.mapColumns({
-				id: "id",
-				title: "title",
-				type: "type",
-				source: "source",
-				target: "target",
-			});
-			await lineagePage.submitMapping();
-
-			await lineagePage.verifyDialogText(
-				"Edge dropped: Target 'missing-target-id' not found",
-			);
-		});
-
-		test("should reject edges pointing to nodes dropped due to validation errors", async ({
-			page,
-		}) => {
-			const lineagePage = new LineagePage(page);
-			await lineagePage.openImportModal();
-			const nodesPath = path.join(
-				__dirname,
-				"fixtures",
-				"csv-import",
-				"nodes_invalid_bad_type.csv",
-			);
-			await lineagePage.uploadNodeFile(nodesPath);
-			const edgesPath = path.join(
-				__dirname,
-				"fixtures",
-				"csv-import",
-				"edges_invalid_orphaned.csv",
-			);
-			await lineagePage.uploadEdgeFile(edgesPath);
-			await lineagePage.clickNext();
-
-			await lineagePage.mapColumns({
-				id: "id",
-				title: "title",
-				type: "type",
-				source: "source",
-				target: "target",
-			});
-			await lineagePage.submitMapping();
-
-			await lineagePage.verifyDialogText("1 node dropped");
-			await lineagePage.verifyDialogText("1 edge dropped");
-			await lineagePage.verifyDialogText(
-				"Edge dropped: Target 'node-2' not found",
-			);
+			// 3. Verify Reset
+			// Should be back at Upload step
+			await wizardPage.verifyUploadStepVisible();
+			// Dropzones should be empty
+			await wizardPage.verifyDropzoneEmpty("dropzone-nodes");
 		});
 
 		test("should import edges with only source and target columns", async ({
 			page,
 		}) => {
-			const lineagePage = new LineagePage(page);
-			await lineagePage.openImportModal();
+			const wizardPage = new NewWizardPage(page);
+			await wizardPage.openImportModal();
+
 			const nodesPath = path.join(
 				__dirname,
-				"fixtures",
-				"shared",
-				"nodes_valid_basic.csv",
+				"./fixtures/shared/nodes_valid_basic.csv",
 			);
-			await lineagePage.uploadNodeFile(nodesPath);
 			const edgesPath = path.join(
 				__dirname,
-				"fixtures",
-				"csv-import",
-				"edges_valid_no_id_column.csv",
+				"./fixtures/csv-import/edges_valid_no_id_column.csv",
 			);
-			await lineagePage.uploadEdgeFile(edgesPath);
-			await lineagePage.clickNext();
+			await wizardPage.uploadFiles(nodesPath, edgesPath);
+			await wizardPage.submitUpload();
 
-			await lineagePage.mapColumns({
-				id: "id",
-				title: "title",
-				type: "type",
-				source: "source",
-				target: "target",
-			});
-			await lineagePage.submitMapping();
+			// Map Nodes
+			await wizardPage.mapColumns({ id: "id", title: "title", type: "type" });
+			await wizardPage.clickNext();
 
-			await lineagePage.verifyImportSuccess();
-			await lineagePage.verifyGraphEdgeCount(1);
+			// Map Edges
+			await wizardPage.mapColumns({ source: "source", target: "target" });
+			await wizardPage.clickNext();
+
+			// Verify Success
+			await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+			await wizardPage.finishImport();
+
+			// Verify Edge loaded
+			await wizardPage.verifyGraphEdgeCount(1);
 		});
+	});
+});
 
-		test("should silently deduplicate parallel edges", async ({ page }) => {
-			const lineagePage = new LineagePage(page);
-			await lineagePage.openImportModal();
-			const nodesPath = path.join(
-				__dirname,
-				"fixtures",
-				"shared",
-				"nodes_valid_basic.csv",
-			);
-			await lineagePage.uploadNodeFile(nodesPath);
-			const edgesPath = path.join(
-				__dirname,
-				"fixtures",
-				"csv-import",
-				"edges_valid_duplicates.csv",
-			);
-			await lineagePage.uploadEdgeFile(edgesPath);
-			await lineagePage.clickNext();
+test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling", () => {
+	test.beforeEach(async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.goto();
+	});
 
-			await lineagePage.mapColumns({
-				id: "id",
-				title: "title",
-				type: "type",
-				source: "source",
-				target: "target",
-			});
-			await lineagePage.submitMapping();
+	test("should drop nodes with invalid types and show summary", async ({
+		page,
+	}) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
 
-			await lineagePage.verifyImportSuccess();
-			await lineagePage.verifyDialogDoesNotContainText("dropped");
-			await lineagePage.verifyGraphEdgeCount(1);
+		// 1. Upload
+		const nodesPath = path.join(
+			__dirname,
+			"./fixtures/csv-import/nodes_invalid_bad_type.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"./fixtures/shared/edges_valid_basic.csv",
+		);
+		await wizardPage.uploadFiles(nodesPath, edgesPath);
+		await wizardPage.submitUpload();
+
+		// 2. Map Nodes
+		await wizardPage.mapColumns({
+			id: "id",
+			title: "title",
+			type: "type",
 		});
+		await wizardPage.clickNext();
+
+		// 3. Map Edges
+		await wizardPage.mapColumns({
+			source: "source",
+			target: "target",
+		});
+		await wizardPage.clickNext(); // Should generate graph and show success
+
+		// 4. Verify Warnings in Success Step
+		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+
+		// Expect warnings to be displayed
+		await expect(page.getByText("1 node dropped")).toBeVisible();
+		// Expect warnings section to be displayed
+		await expect(page.getByText("Warnings during import:")).toBeVisible();
+		// Ensure at least one warning item is present
+		await expect(page.locator("ul li").first()).toBeVisible();
+
+		// 5. Verify import success for valid node
+		await wizardPage.finishImport();
+		await wizardPage.verifyGraphNodeCount(1);
+	});
+
+	test("should deduplicate nodes with duplicate IDs and show warning", async ({
+		page,
+	}) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		// 1. Upload
+		const nodesPath = path.join(
+			__dirname,
+			"./fixtures/csv-import/nodes_invalid_duplicate_ids.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"./fixtures/shared/edges_valid_basic.csv",
+		);
+		await wizardPage.uploadFiles(nodesPath, edgesPath);
+		await wizardPage.submitUpload();
+
+		// 2. Map Nodes
+		await wizardPage.mapColumns({
+			id: "id",
+			title: "title",
+			type: "type",
+		});
+		await wizardPage.clickNext();
+
+		// 3. Map Edges
+		await wizardPage.mapColumns({
+			source: "source",
+			target: "target",
+		});
+		await wizardPage.clickNext();
+
+		// 4. Verify Warnings
+		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+		await expect(page.getByText("1 node dropped")).toBeVisible();
+		await expect(page.getByText("node-1: Duplicate Node ID")).toBeVisible();
+
+		await wizardPage.finishImport();
+		await wizardPage.verifyGraphNodeCount(2);
+	});
+
+	test("should limit warning messages to 10", async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		// 1. Upload
+		const nodesPath = path.join(
+			__dirname,
+			"./fixtures/csv-import/nodes_stress_many_warnings.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"./fixtures/shared/edges_valid_basic.csv",
+		);
+		await wizardPage.uploadFiles(nodesPath, edgesPath);
+		await wizardPage.submitUpload();
+
+		// 2. Map Nodes
+		await wizardPage.mapColumns({
+			id: "id",
+			title: "title",
+			type: "type",
+		});
+		await wizardPage.clickNext();
+
+		// 3. Map Edges
+		await wizardPage.mapColumns({
+			source: "source",
+			target: "target",
+		});
+		await wizardPage.clickNext();
+
+		// 4. Verify Warnings Limit
+		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+		await expect(page.getByText("12 nodes dropped")).toBeVisible();
+
+		// Count warning items in the list (assuming a specific list item selector or text match)
+		// Since we don't have the implementation yet, we'll look for the "more warnings" text
+		await expect(page.getByText("more warnings")).toBeVisible();
+	});
+
+	test("should reject edges pointing to missing nodes", async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		const nodesPath = path.join(
+			__dirname,
+			"./fixtures/shared/nodes_valid_basic.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"./fixtures/csv-import/edges_invalid_missing_source.csv",
+		);
+		await wizardPage.uploadFiles(nodesPath, edgesPath);
+		await wizardPage.submitUpload();
+
+		await wizardPage.mapColumns({ id: "id", title: "title", type: "type" });
+		await wizardPage.clickNext();
+		await wizardPage.mapColumns({ source: "source", target: "target" });
+		await wizardPage.clickNext();
+
+		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+		await expect(
+			page.getByText("Edge dropped: Source 'missing-id' not found"),
+		).toBeVisible();
+	});
+
+	test("should reject edges pointing to missing target node", async ({
+		page,
+	}) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		const nodesPath = path.join(
+			__dirname,
+			"./fixtures/shared/nodes_valid_basic.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"./fixtures/csv-import/edges_invalid_missing_target.csv",
+		);
+		await wizardPage.uploadFiles(nodesPath, edgesPath);
+		await wizardPage.submitUpload();
+
+		await wizardPage.mapColumns({ id: "id", title: "title", type: "type" });
+		await wizardPage.clickNext();
+		await wizardPage.mapColumns({ source: "source", target: "target" });
+		await wizardPage.clickNext();
+
+		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+		await expect(
+			page.getByText("Edge dropped: Target 'missing-target-id' not found"),
+		).toBeVisible();
+	});
+
+	test("should reject edges pointing to nodes dropped due to validation errors", async ({
+		page,
+	}) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		const nodesPath = path.join(
+			__dirname,
+			"./fixtures/csv-import/nodes_invalid_bad_type.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"./fixtures/csv-import/edges_invalid_orphaned.csv",
+		);
+		await wizardPage.uploadFiles(nodesPath, edgesPath);
+		await wizardPage.submitUpload();
+
+		await wizardPage.mapColumns({ id: "id", title: "title", type: "type" });
+		await wizardPage.clickNext();
+		await wizardPage.mapColumns({ source: "source", target: "target" });
+		await wizardPage.clickNext();
+
+		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+		await expect(page.getByText("1 node dropped")).toBeVisible();
+		await expect(page.getByText("1 edge dropped")).toBeVisible();
+		await expect(
+			page.getByText("Edge dropped: Target 'node-2' not found"),
+		).toBeVisible();
+	});
+
+	test("should silently deduplicate parallel edges", async ({ page }) => {
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
+
+		const nodesPath = path.join(
+			__dirname,
+			"./fixtures/shared/nodes_valid_basic.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"./fixtures/csv-import/edges_valid_duplicates.csv",
+		);
+		await wizardPage.uploadFiles(nodesPath, edgesPath);
+		await wizardPage.submitUpload();
+
+		await wizardPage.mapColumns({ id: "id", title: "title", type: "type" });
+		await wizardPage.clickNext();
+		await wizardPage.mapColumns({ source: "source", target: "target" });
+		await wizardPage.clickNext();
+
+		await expect(page.getByTestId("wizard-step-success")).toBeVisible();
+		// Ensure NO drop warnings
+		await expect(page.getByText("dropped")).not.toBeVisible();
+
+		await wizardPage.finishImport();
+		await wizardPage.verifyGraphEdgeCount(1);
 	});
 });

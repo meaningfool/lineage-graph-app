@@ -191,3 +191,30 @@ For each slice:
 
 *   **Target File**: `apps/web/e2e/new-wizard/state-management.spec.ts` (Create)
     *   **Action**: Re-implement critical scenarios using `fastImport`.
+
+---
+
+## Slice 8: Cleanup & Replacement
+**Goal**: Remove Old Wizard and replace with New Wizard (Strict Replacement).
+
+### 1. Test Cleanup
+1.  **Merge** `e2e/new-wizard/node-properties.spec.ts` into `e2e/new-wizard/import-wizard.spec.ts`.
+2.  **Delete** `e2e/csv-import.spec.ts` (Legacy).
+3.  **Move/Rename** `e2e/new-wizard/import-wizard.spec.ts` -> `e2e/csv-import.spec.ts`.
+4.  **Remove** `e2e/new-wizard/` folder.
+5.  **Refactor** Parameterized Tests:
+    *   `graph-validation.spec.ts`, `camera-control.spec.ts`, `graph-layout.spec.ts`, `subtree-highlighting.spec.ts`, `node-properties.spec.ts`.
+    *   Remove `STRATEGIES` loop.
+    *   Remove `LineagePage.setImportStrategy`.
+    *   Use New Wizard flow exclusively (via `importGraph`).
+
+### 2. Code Cleanup
+1.  **Remove** Legacy Components: `CSVImportModal`, etc.
+2.  **Refactor** `LineagePage.ts`:
+    *   Remove `importStrategy` property.
+    *   Remove `importGraphLegacy`.
+    *   Rename `importGraphNewWizard` -> `importGraph` (or merge logic).
+3.  **Refactor** `Header.tsx`:
+    *   Remove "Import CSV" (Legacy) button/logic.
+    *   Rename "✨ New Import" to "Import CSV".
+    *   Ensure it opens `ImportWizardDialog`.
