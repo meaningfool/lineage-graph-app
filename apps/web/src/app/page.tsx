@@ -44,7 +44,7 @@ export default function Home() {
 	return (
 		<div className="flex h-full w-full flex-col">
 			<Header onImport={handleImport} />
-			<div className="p-2" />
+
 			<LineageGraph
 				key={graphId}
 				nodes={layouted.nodes}

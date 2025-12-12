@@ -183,9 +183,9 @@ export function ImportWizardDialog({
 				</DialogHeader>
 
 				{/* Body */}
-				<div className="flex h-[550px] flex-col gap-6 bg-gray-50/50 p-6">
+				<div className="flex h-[550px] flex-col gap-3 bg-gray-50/50 p-6">
 					{/* Stepper (Motif Style) */}
-					<div className="flex items-center justify-center">
+					<div className="flex items-center justify-center pb-8">
 						{STEPS.map((step, idx) => {
 							const isActive = step.id === currentStep;
 							const isCompleted = step.index < currentStepIndex;
