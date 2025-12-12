@@ -1,6 +1,7 @@
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { LineagePage } from "./pages/LineagePage";
+import { NewWizardPage } from "./pages/NewWizardPage";
 
 // Slice 8: Cleanup - Removed Strategy Loop
 const strategy = "new";
@@ -30,9 +31,10 @@ test.describe("Node Properties (Regression)", () => {
 		);
 
 		// Import with 'description' property selected
+		const wizardPage = new NewWizardPage(page);
 		await lineagePage.importGraph(nodesPath, edgesPath, {
 			onNodeMapping: async () => {
-				await lineagePage.selectProperty("description");
+				await wizardPage.selectProperty("description");
 			},
 		});
 
@@ -74,10 +76,11 @@ test.describe("Node Properties (Regression)", () => {
 		);
 
 		// Import with 'description' and 'prop1' properties selected
+		const wizardPage = new NewWizardPage(page);
 		await lineagePage.importGraph(nodesPath, edgesPath, {
 			onNodeMapping: async () => {
-				await lineagePage.selectProperty("description");
-				await lineagePage.selectProperty("prop1");
+				await wizardPage.selectProperty("description");
+				await wizardPage.selectProperty("prop1");
 			},
 		});
 
@@ -135,9 +138,10 @@ test.describe("Node Properties (Regression)", () => {
 		);
 
 		// Import with ONLY 'description' selected
+		const wizardPage = new NewWizardPage(page);
 		await lineagePage.importGraph(nodesPath, edgesPath, {
 			onNodeMapping: async () => {
-				await lineagePage.selectProperty("description");
+				await wizardPage.selectProperty("description");
 				// Leave prop1 unselected
 			},
 		});

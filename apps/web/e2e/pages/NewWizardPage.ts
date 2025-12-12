@@ -137,22 +137,15 @@ export class NewWizardPage {
 	}
 
 	async selectProperty(property: string) {
-		await this.page.getByTestId("mapping-select-properties-trigger").click();
-		// Try finding by text or data-value to be robust
-		const option = this.page
-			.locator(`[role="option"]`)
-			.filter({ hasText: property })
-			.or(this.page.locator(`[data-value="${property}"]`));
-		await option.first().click();
-		await this.page.keyboard.press("Escape");
+		const pill = this.page.getByTestId(`property-pill-${property}`);
+		await expect(pill).toBeVisible();
+		await pill.click();
 	}
 
 	async verifyMappingStep() {
-		await expect(this.page.getByText("Map Nodes", { exact: true })).toBeVisible(
-			{
-				timeout: 10000,
-			},
-		);
+		await expect(this.page.getByTestId("step-map-nodes")).toBeVisible({
+			timeout: 10000,
+		});
 	}
 
 	async openColumnDropdown(field: string) {
@@ -186,7 +179,7 @@ export class NewWizardPage {
 	}
 
 	async submitMapping() {
-		await this.page.getByRole("button", { name: "Next", exact: true }).click();
+		await this.page.getByTestId("import-next-button").click();
 	}
 
 	async verifyImportSuccess() {

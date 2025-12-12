@@ -1,10 +1,10 @@
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { LineagePage } from "./pages/LineagePage";
+import { NewWizardPage } from "./pages/NewWizardPage";
 
 test.describe("Error Display Feature", () => {
 	test.describe.configure({ mode: "serial" });
-	// Removed serial mode
 
 	test.beforeEach(async ({ page }) => {
 		const lineagePage = new LineagePage(page);
@@ -13,7 +13,8 @@ test.describe("Error Display Feature", () => {
 
 	test("Scenario 1: No Errors [NEW]", async ({ page }) => {
 		const lineagePage = new LineagePage(page);
-		await lineagePage.openImportModal();
+		const wizardPage = new NewWizardPage(page);
+		// Removed redundant openImportModal() as importGraph handles it
 
 		const nodesPath = path.join(
 			__dirname,
@@ -27,6 +28,8 @@ test.describe("Error Display Feature", () => {
 			"shared",
 			"edges_valid_basic.csv",
 		);
+		// Note: LineagePage.importGraph now delegates to NewWizardPage internally,
+		// so we can still use it for high-level setup simplifiction.
 		await lineagePage.importGraph(nodesPath, edgesPath);
 
 		// 2. Assertion: Error Toggle is NOT visible
@@ -35,7 +38,8 @@ test.describe("Error Display Feature", () => {
 
 	test("Scenario 2: With Errors [NEW]", async ({ page }) => {
 		const lineagePage = new LineagePage(page);
-		await lineagePage.openImportModal();
+		const wizardPage = new NewWizardPage(page);
+		// Removed redundant openImportModal() as importGraph handles it
 
 		const nodesPath = path.join(
 			__dirname,
@@ -80,7 +84,8 @@ test.describe("Error Display Feature", () => {
 
 	test("Scenario 3: Opening the Panel [NEW]", async ({ page }) => {
 		const lineagePage = new LineagePage(page);
-		await lineagePage.openImportModal();
+		const wizardPage = new NewWizardPage(page);
+		await wizardPage.openImportModal();
 
 		const nodesPath = path.join(
 			__dirname,
@@ -94,25 +99,25 @@ test.describe("Error Display Feature", () => {
 			"error-display",
 			"edges_errors_display.csv",
 		);
-		await lineagePage.uploadFiles(nodesPath, edgesPath);
-		await lineagePage.clickNext();
+		await wizardPage.uploadFiles(nodesPath, edgesPath);
+		await wizardPage.clickNext();
 
 		// 1. Map Nodes
-		await lineagePage.mapColumns({
+		await wizardPage.mapColumns({
 			id: "id",
 			title: "label",
 			type: "type",
 		});
 
-		await lineagePage.clickNext();
+		await wizardPage.clickNext();
 
 		// 2. Map Edges
-		await lineagePage.mapColumns({
+		await wizardPage.mapColumns({
 			source: "source",
 			target: "target",
 		});
-		await lineagePage.submitMapping();
-		await lineagePage.closeImportModal();
+		await wizardPage.submitMapping();
+		await wizardPage.closeImportModal();
 
 		// 2. Action: Click Error Toggle
 		await lineagePage.openErrorPanel();
@@ -123,7 +128,8 @@ test.describe("Error Display Feature", () => {
 
 	test("Scenario 4: Closing the Panel [NEW]", async ({ page }) => {
 		const lineagePage = new LineagePage(page);
-		await lineagePage.openImportModal();
+		const wizardPage = new NewWizardPage(page);
+		// Removed redundant openImportModal() as importGraph handles it
 
 		const nodesPath = path.join(
 			__dirname,
@@ -153,7 +159,8 @@ test.describe("Error Display Feature", () => {
 
 	test("Scenario 5: List Accuracy [NEW]", async ({ page }) => {
 		const lineagePage = new LineagePage(page);
-		await lineagePage.openImportModal();
+		const wizardPage = new NewWizardPage(page); // Kept for consistency if needed, though unused explicitly here now
+		// Removed redundant openImportModal() as importGraph handles it
 
 		const nodesPath = path.join(
 			__dirname,
@@ -179,7 +186,8 @@ test.describe("Error Display Feature", () => {
 
 	test("Scenario 6: Multiple Errors [NEW]", async ({ page }) => {
 		const lineagePage = new LineagePage(page);
-		await lineagePage.openImportModal();
+		const wizardPage = new NewWizardPage(page);
+		// Removed redundant openImportModal() as importGraph handles it
 
 		const nodesPath = path.join(
 			__dirname,
@@ -205,7 +213,8 @@ test.describe("Error Display Feature", () => {
 
 	test("Scenario 7: Select Node from Error [NEW]", async ({ page }) => {
 		const lineagePage = new LineagePage(page);
-		await lineagePage.openImportModal();
+		const wizardPage = new NewWizardPage(page);
+		// Removed redundant openImportModal() as importGraph handles it
 
 		const nodesPath = path.join(
 			__dirname,
@@ -241,7 +250,8 @@ test.describe("Error Display Feature", () => {
 
 	test("Scenario 8: Select Edge from Error [NEW]", async ({ page }) => {
 		const lineagePage = new LineagePage(page);
-		await lineagePage.openImportModal();
+		const wizardPage = new NewWizardPage(page);
+		// Removed redundant openImportModal() as importGraph handles it
 
 		const nodesPath = path.join(
 			__dirname,
@@ -275,7 +285,8 @@ test.describe("Error Display Feature", () => {
 
 	test("Scenario 9: Exclusive Pulse [NEW]", async ({ page }) => {
 		const lineagePage = new LineagePage(page);
-		await lineagePage.openImportModal();
+		const wizardPage = new NewWizardPage(page);
+		// Removed redundant openImportModal() as importGraph handles it
 
 		const nodesPath = path.join(
 			__dirname,
@@ -314,7 +325,8 @@ test.describe("Error Display Feature", () => {
 	});
 	test("Scenario 10: Restart Pulse on Re-click [NEW]", async ({ page }) => {
 		const lineagePage = new LineagePage(page);
-		await lineagePage.openImportModal();
+		const wizardPage = new NewWizardPage(page);
+		// Removed redundant openImportModal() as importGraph handles it
 
 		const nodesPath = path.join(
 			__dirname,
