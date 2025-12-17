@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timedelta
 
 # Configuration
-OUTPUT_DIR = "apps/web/e2e/fixtures/demo-polish"
+OUTPUT_DIR = "apps/web/public/demo"
 RANDOM_SEED = 42 # For reproducibility (optional, turn off for true random)
 
 # Dimensions (Box)
