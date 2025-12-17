@@ -58,6 +58,8 @@ export const useNewImportWizard = ({
 	// [NEW] Update Logic
 	const setMappingValue = useCallback((field: string, value: string) => {
 		setMapping((prev) => ({ ...prev, [field]: value }));
+		// Uncheck from properties if selected (Slice 6 polish)
+		setSelectedProperties((prev) => prev.filter((p) => p !== value));
 	}, []);
 
 	const [warnings, setWarnings] = useState<string[]>([]);
@@ -127,6 +129,14 @@ export const useNewImportWizard = ({
 		}
 
 		setColumns({ nodes: nCols, edges: eCols });
+
+		// [FIX] Persist Unselected State:
+		// If we already have mappings (e.g. user went Back -> Next), don't re-select mapped fields.
+		// We filter out any column that is ALREADY mapped to ID/Label/Type.
+		const mappedValues = Object.values(mapping).filter(Boolean);
+		const initialSelection = nCols.filter((col) => !mappedValues.includes(col));
+
+		setSelectedProperties(initialSelection);
 		setCurrentStep("MAP_NODES");
 	};
 

@@ -31,26 +31,28 @@ export function NodeDetailsPanel({
 		>
 			<div className="mb-4 flex flex-shrink-0 items-center justify-between">
 				<h3 className="font-semibold text-lg">{label}</h3>
-				<div className="flex items-center">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={onToggleFocus}
-						data-testid="focus-toggle"
-						data-active={isFocused}
-						className="mr-2"
-					>
-						{isFocused ? "Clear Focus" : "Focus Subtree"}
-					</Button>
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={onClose}
-						className="h-8 w-8"
-					>
-						<X className="h-4 w-4" />
-					</Button>
-				</div>
+				<Button
+					variant="ghost"
+					size="icon"
+					onClick={onClose}
+					className="h-8 w-8"
+				>
+					<X className="h-4 w-4" />
+				</Button>
+			</div>
+
+			{/* Action Toolbar */}
+			<div className="mb-4 flex items-center border-b pb-4">
+				<Button
+					variant="outline"
+					size="sm"
+					onClick={onToggleFocus}
+					data-testid="focus-toggle"
+					data-active={isFocused}
+					className="w-auto"
+				>
+					{isFocused ? "Clear Focus" : "Focus Subtree"}
+				</Button>
 			</div>
 
 			<div className="flex-grow space-y-4 overflow-y-auto">

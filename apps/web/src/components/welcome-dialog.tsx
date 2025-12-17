@@ -73,6 +73,27 @@ export function WelcomeDialog({
 					>
 						Try with chemical-lineage.csv
 					</Button>
+
+					<div className="relative flex items-center py-2">
+						<span className="w-full border-t" />
+						<span className="px-2 text-muted-foreground text-xs uppercase">
+							Or
+						</span>
+						<span className="w-full border-t" />
+					</div>
+
+					<p className="text-center text-muted-foreground text-sm">
+						Download{" "}
+						<a
+							href="/demo/chemical-lineage.zip"
+							download
+							className="text-indigo-600 underline hover:text-indigo-800"
+						>
+							chemical-lineage.csv
+						</a>
+						<br />
+						to try the upload wizard for yourself.
+					</p>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

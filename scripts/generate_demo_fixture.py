@@ -290,21 +290,21 @@ def main():
         for n in nodes_csv_list:
             all_keys.update(n.props.keys())
         
-        # Enforce Order: id, label, type, THEN sorted properties
+        # Enforce Order: ID, Label, Type, THEN sorted properties
         sorted_props = sorted(list(all_keys))
-        fieldnames = ["id", "label", "type"] + sorted_props
+        fieldnames = ["ID", "Label", "Type"] + sorted_props
         
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for n in nodes_csv_list:
-            row = {"id": n.id, "label": n.label, "type": n.type, **n.props}
+            row = {"ID": n.id, "Label": n.label, "Type": n.type, **n.props}
             writer.writerow(row)
 
     with open(os.path.join(OUTPUT_DIR, "edges.csv"), "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["source", "target", "label"])
+        writer.writerow(["Source", "Target"])
         for src, tgt in edges:
-            writer.writerow([src.id, tgt.id, "Flows To"])
+            writer.writerow([src.id, tgt.id])
 
     print(f"Generated {len(nodes_csv_list)} nodes, {len(edges)} edges.")
 

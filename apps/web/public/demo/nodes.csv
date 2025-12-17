@@ -1,31 +1,30 @@
-id,label,type,Batch,Cert_ID,Container,Density,Duration_Min,Expiry,Instrument,Location,Machine,Method,Moisture_Pct,Operator,Recorded_By,Reviewer,Speed_RPM,Status,Supplier,Temp_C,Timestamp,Weight_Kg
-ec862e10,Corn Starch,INPUT,RM-8010,CERT-12625,,,,2025-09-08,,Silo 1,,,,,User-396,,,,RawMat Ltd,,2025-12-17T15:35:08.139544,
-359bdf6a,Croscarmellose Sodium,INPUT,RM-2848,CERT-10026,,,,2026-11-22,,Warehouse A,,,,,User-373,,,,RawMat Ltd,,2025-12-17T15:35:08.139592,
-c9f277c2,Hypromellose,INPUT,RM-2865,CERT-40078,,,,2026-07-20,,Warehouse A,,,,,User-922,,,,GlobalPharma,,2025-12-17T15:35:08.139611,
-0f3777d2,Disintegration Time,OUTPUT,,,,,,,Inst-8,,,USP <711>,,Op-18,User-604,Mgr-5,,Pass,,,2025-12-17T15:35:08.139625,
-98bfc9e8,Friability Test,OUTPUT,,,,,,,Inst-7,,,USP <711>,,Op-34,User-507,Mgr-3,,Pass,,,2025-12-17T15:35:08.139635,
-98a91812,Loss on Drying,OUTPUT,,,,,,,Inst-1,,,USP <711>,,Op-2,User-867,Mgr-1,,Fail,,,2025-12-17T15:35:08.139644,
-c2beef69,Uniformity of Dosage,OUTPUT,,,,,,,Inst-2,,,USP <711>,,Op-46,User-824,Mgr-4,,Pass,,,2025-12-17T15:35:08.139651,
-8d64f1f3,Hardness Limit,OUTPUT,,,,,,,Inst-5,,,USP <711>,,Op-13,User-455,Mgr-2,,Pass,,,2025-12-17T15:35:08.139659,
-a93f6eb2,Blend A,STEP,,,Bin-196,0.77,,,,,,,3.5%,,User-618,,,Released,,,2025-12-17T15:35:08.139667,216
-ad020eb4,Pellets (Uncoated),STEP,,,Bin-198,0.65,,,,,,,3.5%,,User-656,,,Released,,,2025-12-17T15:35:08.139679,180
-691367db,Dry Milling,STEP,,,,,191,,,,Mach-795,,,Op-51,User-123,,804,,,70,2025-12-17T15:35:08.139688,
-9b1c6647,Granulated Bulk,STEP,,,Bin-109,0.33,,,,,,,1.3%,,User-906,,,Released,,,2025-12-17T15:35:08.139700,184
-90b9eb8c,Roller Compaction,STEP,,,,,74,,,,Mach-440,,,Op-54,User-229,,586,,,70,2025-12-17T15:35:08.139710,
-7ac91be4,High Shear Mixing,STEP,,,,,192,,,,Mach-884,,,Op-85,User-440,,1429,,,23,2025-12-17T15:35:08.139718,
-d21848d4,Milled Fines,STEP,,,Bin-139,0.79,,,,,,,2.1%,,User-109,,,Released,,,2025-12-17T15:35:08.139726,162
-a19d49f9,Spray Drying,STEP,,,,,152,,,,Mach-522,,,Op-70,User-236,,1231,,,32,2025-12-17T15:35:08.139734,
-1ec6d351,Wet Granulation,STEP,,,,,224,,,,Mach-367,,,Op-62,User-541,,544,,,22,2025-12-17T15:35:08.139742,
-ddd27f00,Rework Material,STEP,,,Bin-129,0.53,,,,,,,3.3%,,User-488,,,Released,,,2025-12-17T15:35:08.139750,252
-b70996be,Premix Blend,STEP,,,Bin-145,0.31,,,,,,,3.4%,,User-738,,,Released,,,2025-12-17T15:35:08.139757,117
-4605d09b,Stability Sample,STEP,,,Bin-191,0.40,,,,,,,1.1%,,User-270,,,Released,,,2025-12-17T15:35:08.139765,285
-1e78bfc9,Checkweighing,STEP,,,,,68,,,,Mach-522,,,Op-77,User-449,,614,,,79,2025-12-17T15:35:08.139773,
-b2ef2316,Micronization,STEP,,,,,84,,,,Mach-243,,,Op-55,User-817,,964,,,22,2025-12-17T15:35:08.139780,
-4082846f,Coated Tablet,STEP,,,Bin-122,0.74,,,,,,,2.9%,,User-105,,,Released,,,2025-12-17T15:35:08.139788,311
-89d24a17,Quarantine Stock,STEP,,,Bin-119,0.34,,,,,,,4.4%,,User-872,,,Released,,,2025-12-17T15:35:08.139795,142
-fa1bb30c,Cartoning,STEP,,,,,223,,,,Mach-308,,,Op-94,User-433,,1296,,,64,2025-12-17T15:35:08.139802,
-dd6a9f06,Compacted Ribbons,STEP,,,Bin-188,0.76,,,,,,,4.1%,,User-754,,,Released,,,2025-12-17T15:35:08.139810,399
-57ea1e81,Tablets (Unpolished),STEP,,,Bin-126,0.37,,,,,,,1.1%,,User-582,,,Released,,,2025-12-17T15:35:08.139817,376
-4e08ac42,Fluid Bed Drying,STEP,,,,,212,,,,Mach-889,,,Op-76,User-872,,982,,,56,2025-12-17T15:35:08.139824,
-97167062,Dried Powder,STEP,,,Bin-100,0.45,,,,,,,3.0%,,User-721,,,Released,,,2025-12-17T15:35:08.139832,220
-5251330b,Orphaned Material,STEP,,,,,229,,,,Mach-162,,,Op-74,User-315,,1238,,,41,2025-12-17T15:35:08.139918,
+ID,Label,Type,Batch,Box_Count,Cert_ID,Container,Density,Duration_Min,Expiry,Instrument,Location,Machine,Market,Method,Moisture_Pct,Operator,QA_Signoff,Recorded_By,Release_Date,Reviewer,Speed_RPM,Status,Supplier,Temp_C,Timestamp,Weight_Kg
+6f924f50,Polyethylene Glycol,INPUT,RM-9281,,CERT-38690,,,,2025-11-29,,Cold Storage,,,,,,,User-788,,,,,BioSynth,,2025-12-17T16:27:49.759451,
+cf874fea,Fd&C Blue #2,INPUT,RM-9820,,CERT-50098,,,,2026-08-27,,Zone B,,,,,,,User-258,,,,,PureChem Inc,,2025-12-17T16:27:49.759493,
+1429765c,Purified Water,INPUT,RM-4579,,CERT-75386,,,,2025-04-27,,Cold Storage,,,,,,,User-299,,,,,GlobalPharma,,2025-12-17T16:27:49.759511,
+329e19b1,Weight Variation,OUTPUT,,,,,,,,Inst-9,,,,USP <711>,,Op-35,,User-458,,Mgr-1,,Pass,,,2025-12-17T16:27:49.759526,
+bbc4c88e,Particle Size Dist,OUTPUT,,,,,,,,Inst-9,,,,USP <711>,,Op-17,,User-924,,Mgr-1,,Fail,,,2025-12-17T16:27:49.759537,
+a72831ca,Vitamin C 1000mg,OUTPUT,FG-33476,3474,,,,,,,,,JP,,,,Yes,User-739,2025-06-27,,,,,,2025-12-17T16:27:49.759547,
+16e07f0c,AllergyStop 24h,OUTPUT,FG-79093,2944,,,,,,,,,US,,,,Yes,User-287,2025-01-04,,,,,,2025-12-17T16:27:49.759559,
+58f2a4b1,Pellets (Uncoated),STEP,,,,Bin-197,0.45,,,,,,,,1.8%,,,User-155,,,,Released,,,2025-12-17T16:27:49.759571,339
+e4b3e1ac,Tablet Polishing,STEP,,,,,,58,,,,Mach-271,,,,Op-69,,User-475,,,1032,,,40,2025-12-17T16:27:49.759587,
+2bc8fb00,Induction Sealing,STEP,,,,,,192,,,,Mach-725,,,,Op-95,,User-890,,,766,,,38,2025-12-17T16:27:49.759596,
+7469be44,Pan Coating,STEP,,,,,,76,,,,Mach-329,,,,Op-54,,User-156,,,660,,,20,2025-12-17T16:27:49.759605,
+197a9604,Cartoning,STEP,,,,,,218,,,,Mach-131,,,,Op-57,,User-614,,,1052,,,69,2025-12-17T16:27:49.759617,
+5b39cdcc,Hot Melt Extrusion,STEP,,,,,,121,,,,Mach-219,,,,Op-62,,User-127,,,1261,,,45,2025-12-17T16:27:49.759626,
+bf5c03a1,V-Blending,STEP,,,,,,180,,,,Mach-379,,,,Op-66,,User-540,,,977,,,38,2025-12-17T16:27:49.759634,
+3d8b26ad,Bottle Packing,STEP,,,,,,201,,,,Mach-315,,,,Op-72,,User-612,,,973,,,44,2025-12-17T16:27:49.759643,
+346e7407,Double Cone Blending,STEP,,,,,,174,,,,Mach-470,,,,Op-61,,User-517,,,1359,,,29,2025-12-17T16:27:49.759651,
+78cd102e,Micronization,STEP,,,,,,80,,,,Mach-946,,,,Op-67,,User-537,,,819,,,60,2025-12-17T16:27:49.759658,
+8d6c57b7,Quarantine Stock,STEP,,,,Bin-182,0.75,,,,,,,,1.2%,,,User-904,,,,Released,,,2025-12-17T16:27:49.759666,309
+94fe1589,Extrudate Strands,STEP,,,,Bin-171,0.43,,,,,,,,2.7%,,,User-339,,,,Released,,,2025-12-17T16:27:49.759675,424
+ba5b131d,Stability Sample,STEP,,,,Bin-189,0.62,,,,,,,,0.8%,,,User-102,,,,Released,,,2025-12-17T16:27:49.759684,76
+226115a2,Rotary Compression,STEP,,,,,,68,,,,Mach-818,,,,Op-99,,User-450,,,600,,,26,2025-12-17T16:27:49.759691,
+1f6ccb86,Blend B,STEP,,,,Bin-134,0.44,,,,,,,,2.0%,,,User-733,,,,Released,,,2025-12-17T16:27:49.759699,61
+ec043c14,Coated Tablet,STEP,,,,Bin-142,0.53,,,,,,,,3.9%,,,User-345,,,,Released,,,2025-12-17T16:27:49.759706,384
+18c3080e,Sifting,STEP,,,,,,165,,,,Mach-414,,,,Op-74,,User-487,,,735,,,72,2025-12-17T16:27:49.759714,
+7ecaac0d,Final Bulk,STEP,,,,Bin-178,0.73,,,,,,,,1.7%,,,User-699,,,,Released,,,2025-12-17T16:27:49.759722,193
+bc3e33c0,Labeling,STEP,,,,,,226,,,,Mach-852,,,,Op-56,,User-142,,,1103,,,36,2025-12-17T16:27:49.759729,
+e7d7bb42,Tray Drying,STEP,,,,,,123,,,,Mach-641,,,,Op-85,,User-375,,,893,,,48,2025-12-17T16:27:49.759737,
+248adc22,Checkweighing,STEP,,,,,,167,,,,Mach-761,,,,Op-89,,User-747,,,1137,,,64,2025-12-17T16:27:49.759745,
+019a5920,Orphaned Material,STEP,,,,,,182,,,,Mach-455,,,,Op-96,,User-848,,,508,,,60,2025-12-17T16:27:49.759842,

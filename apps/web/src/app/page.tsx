@@ -83,24 +83,24 @@ export default function Home() {
 
 			// Dynamic Property Extraction for Demo Data
 			// We assume the demo file has standard columns + extra properties
-			// We grab all keys from the first row that are NOT id/label/type
+			// We grab all keys from the first row that are NOT ID/Label/Type
 			const firstRow = nodesParsed.data[0] as Record<string, unknown>;
 			const allKeys = Object.keys(firstRow || {});
 			const propertyKeys = allKeys.filter(
-				(k) => !["id", "label", "type"].includes(k),
+				(k) => !["ID", "Label", "Type"].includes(k),
 			);
 
 			// Construct Mapping
 			const mapping = {
 				nodes: {
-					id: "id",
-					title: "label",
-					type: "type",
+					id: "ID",
+					title: "Label",
+					type: "Type",
 					properties: propertyKeys,
 				} as ValidatedNodeMapping,
 				edges: {
-					source: "source",
-					target: "target",
+					source: "Source",
+					target: "Target",
 				} as ValidatedEdgeMapping,
 			};
 
