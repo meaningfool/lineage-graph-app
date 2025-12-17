@@ -1,5 +1,4 @@
 import { Upload } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,7 @@ export default function Header({
 		<div>
 			<div className="flex flex-row items-center justify-between px-4 py-2">
 				<div className="flex items-center gap-6">
-					<Link href="/" className="flex items-center gap-2 hover:opacity-80">
+					<div className="flex items-center gap-2">
 						<div className="relative h-8 w-8 overflow-hidden rounded-md">
 							<img
 								src="/nano-banana.png"
@@ -34,7 +33,7 @@ export default function Header({
 						<span className="font-bold text-foreground text-xl tracking-tight">
 							DataLineage
 						</span>
-					</Link>
+					</div>
 				</div>
 				<div className="flex items-center gap-2">
 					<Button

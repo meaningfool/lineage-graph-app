@@ -28,6 +28,9 @@ export function WelcomeDialog({
 				className="duration-0 data-[state=open]:animate-none sm:max-w-md"
 				overlayClassName="duration-0 data-[state=open]:animate-none"
 				onOpenAutoFocus={(e) => e.preventDefault()}
+				onInteractOutside={(e) => e.preventDefault()}
+				onEscapeKeyDown={(e) => e.preventDefault()}
+				showCloseButton={false}
 			>
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 text-2xl">
