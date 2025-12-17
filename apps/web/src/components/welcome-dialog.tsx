@@ -24,7 +24,11 @@ export function WelcomeDialog({
 }: WelcomeDialogProps) {
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="sm:max-w-md">
+			<DialogContent
+				className="duration-0 data-[state=open]:animate-none sm:max-w-md"
+				overlayClassName="duration-0 data-[state=open]:animate-none"
+				onOpenAutoFocus={(e) => e.preventDefault()}
+			>
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 text-2xl">
 						<Rocket className="h-6 w-6 text-indigo-600" />

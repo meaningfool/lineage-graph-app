@@ -44,17 +44,22 @@ function DialogOverlay({
 	);
 }
 
+interface DialogContentProps
+	extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+	showCloseButton?: boolean;
+	overlayClassName?: string;
+}
+
 function DialogContent({
 	className,
 	children,
 	showCloseButton = true,
+	overlayClassName,
 	...props
-}: React.ComponentProps<typeof DialogPrimitive.Content> & {
-	showCloseButton?: boolean;
-}) {
+}: DialogContentProps) {
 	return (
 		<DialogPortal data-slot="dialog-portal">
-			<DialogOverlay />
+			<DialogOverlay className={overlayClassName} />
 			<DialogPrimitive.Content
 				data-slot="dialog-content"
 				className={cn(
