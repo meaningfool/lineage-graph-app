@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timedelta
 
 # Configuration
-OUTPUT_DIR = "apps/web/e2e/fixtures/demo-polish"
+OUTPUT_DIR = "apps/web/public/demo"
 RANDOM_SEED = 42 # For reproducibility (optional, turn off for true random)
 
 # Dimensions (Box)
@@ -256,7 +256,25 @@ def main():
         c_src = random.choice(deep_nodes)
         c_tgt = random.choice(shallow_nodes)
         edges.append((c_src, c_tgt))
-        print(f"Cycle: {c_src.label} -> {c_tgt.label}")
+        print(f"Long Cycle: {c_src.label} -> {c_tgt.label}")
+
+    # 5b. Self-Loop
+    if len(all_nodes) > 5:
+        self_loop_node = random.choice(all_nodes)
+        edges.append((self_loop_node, self_loop_node))
+        print(f"Self-Loop: {self_loop_node.label}")
+
+    # 5c. Multi-Node Short Cycle (A->B->C->A)
+    # Pick a random node and try to find a path of length 2, then connect back
+    # Alternatively, just pick 3 random nodes and force a cycle
+    if len(all_nodes) > 10:
+        # Pick 3 random distinct nodes
+        cycle_nodes = random.sample(all_nodes, 3)
+        n1, n2, n3 = cycle_nodes[0], cycle_nodes[1], cycle_nodes[2]
+        edges.append((n1, n2))
+        edges.append((n2, n3))
+        edges.append((n3, n1))
+        print(f"Short Cycle: {n1.label} -> {n2.label} -> {n3.label} -> {n1.label}")
 
     # Orphan (Disconnected)
     orphan = Node(2, "STEP")
@@ -272,21 +290,21 @@ def main():
         for n in nodes_csv_list:
             all_keys.update(n.props.keys())
         
-        # Enforce Order: id, label, type, THEN sorted properties
+        # Enforce Order: ID, Label, Type, THEN sorted properties
         sorted_props = sorted(list(all_keys))
-        fieldnames = ["id", "label", "type"] + sorted_props
+        fieldnames = ["ID", "Label", "Type"] + sorted_props
         
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for n in nodes_csv_list:
-            row = {"id": n.id, "label": n.label, "type": n.type, **n.props}
+            row = {"ID": n.id, "Label": n.label, "Type": n.type, **n.props}
             writer.writerow(row)
 
     with open(os.path.join(OUTPUT_DIR, "edges.csv"), "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["source", "target", "label"])
+        writer.writerow(["Source", "Target"])
         for src, tgt in edges:
-            writer.writerow([src.id, tgt.id, "Flows To"])
+            writer.writerow([src.id, tgt.id])
 
     print(f"Generated {len(nodes_csv_list)} nodes, {len(edges)} edges.")
 

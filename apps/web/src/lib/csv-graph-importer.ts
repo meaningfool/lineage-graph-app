@@ -36,13 +36,28 @@ export interface ValidatedEdgeMapping {
 	target: string;
 }
 
+// [NEW] Structured Warning Report
+export interface ImportError {
+	id: string;
+	message: string;
+}
+
+export interface CategoryReport {
+	droppedCount: number;
+	errors: ImportError[];
+}
+
+export interface ImportReport {
+	nodes: CategoryReport;
+	edges: CategoryReport;
+	general: string[];
+}
+
 // The result of our import process.
-// It can contain data (nodes/edges), warnings (things that looked weird but we fixed),
-// or a critical error (we couldn't process the file at all).
 export interface ImportResult {
 	nodes: GraphNode[];
 	edges: GraphEdge[];
-	warnings: string[];
+	report: ImportReport; // Replaces 'warnings: string[]'
 	error: string | null;
 }
 
@@ -55,6 +70,23 @@ export const sanitizeId = (id: string) => id.trim();
 // Used when filtering arrays to remove null values.
 export const isGraphNode = (n: GraphNode | null): n is GraphNode => n !== null;
 export const isGraphEdge = (e: GraphEdge | null): e is GraphEdge => e !== null;
+
+// [NEW] Narrow interface for fragile Zod Enum/Literal issue properties
+// Helps avoid 'any' casts when probing for allowed values in different Zod versions
+interface ZodEnumIssueNarrow {
+	values?: string[];
+}
+
+/**
+ * Resiliently extracts allowed values from a Zod issue.
+ * Specifically handles Zod 4.x pattern where enum/literal failures
+ * use the 'values' property.
+ */
+function getAllowedValues(issue: unknown): string[] | undefined {
+	const narrow = issue as ZodEnumIssueNarrow;
+	const list = narrow.values;
+	return Array.isArray(list) ? list : undefined;
+}
 
 // Validates that the user has mapped all required fields.
 // Returns null if anything is missing.
@@ -120,10 +152,16 @@ export const buildGraphFromCsv = (
 	mapping: { nodes: ValidatedNodeMapping; edges: ValidatedEdgeMapping },
 ): ImportResult => {
 	const { nodes: nodeMapping, edges: edgeMapping } = mapping;
-	const validationWarnings: string[] = [];
+
+	const report: ImportReport = {
+		nodes: { droppedCount: 0, errors: [] },
+		edges: { droppedCount: 0, errors: [] },
+		general: [],
+	};
+
+	const MAX_ERRORS_PER_CATEGORY = 50; // Cap detailed errors to avoid huge objects
 
 	// --- NODES PROCESSING ---
-	let droppedNodesCount = 0;
 	const seenNodeIds = new Map<string, boolean>(); // To track duplicates
 
 	const nodes = nodesData
@@ -148,14 +186,30 @@ export const buildGraphFromCsv = (
 			const validation = GraphNodeSchema.safeParse(rawNode);
 
 			if (!validation.success) {
-				// If ID is missing, we might not even be able to report it well, but
-				// if ID exists and just failed validation (e.g. empty), we report it.
-				// For now, if Zod fails, we treat it as a dropped node.
-				droppedNodesCount++;
-				const errorMsg = validation.error.issues[0].message;
-				// Try to get a meaningful identifier for the warning
-				const identifier = rawId || `Row ${nodesData.indexOf(row) + 1}`;
-				validationWarnings.push(`${identifier}: ${errorMsg}`);
+				report.nodes.droppedCount++;
+				if (report.nodes.errors.length < MAX_ERRORS_PER_CATEGORY) {
+					const issue = validation.error.issues[0];
+					let errorMsg = issue.message;
+
+					// Clarify validation errors with allowed values (Zod 4.x pattern)
+					const code = issue.code as string;
+					if (code === "invalid_value") {
+						const options = getAllowedValues(issue);
+						if (options) {
+							errorMsg = `Invalid value. Must be one of: ${options.join(", ")}`;
+						}
+					}
+
+					// Prefix field name if available
+					if (issue.path.length > 0) {
+						errorMsg = `${issue.path.join(".")}: ${errorMsg}`;
+					}
+
+					const identifier = rawId
+						? `ID: ${rawId}`
+						: `Row ${nodesData.indexOf(row) + 1}`;
+					report.nodes.errors.push({ id: identifier, message: errorMsg });
+				}
 				return null;
 			}
 
@@ -163,8 +217,13 @@ export const buildGraphFromCsv = (
 
 			// Deduplication: If we've seen this ID before, skip it.
 			if (seenNodeIds.has(validNode.id)) {
-				droppedNodesCount++;
-				validationWarnings.push(`${validNode.id}: Duplicate Node ID`);
+				report.nodes.droppedCount++;
+				if (report.nodes.errors.length < MAX_ERRORS_PER_CATEGORY) {
+					report.nodes.errors.push({
+						id: `ID: ${validNode.id}`,
+						message: "Duplicate Node ID",
+					});
+				}
 				return null;
 			}
 			seenNodeIds.set(validNode.id, true);
@@ -191,18 +250,11 @@ export const buildGraphFromCsv = (
 		})
 		.filter((n): n is GraphNode => n !== null); // Explicit type guard inline to be safe
 
-	if (validationWarnings.length > 0 && droppedNodesCount > 0) {
-		validationWarnings.unshift(
-			`${droppedNodesCount} node${droppedNodesCount > 1 ? "s" : ""} dropped`,
-		);
-	}
-
 	// Create a set of VALID node IDs for edge validation.
 	// We need this to check if an edge connects to a real node.
 	const validNodeIds = new Set(nodes.map((n) => n.id));
 
 	// --- EDGES PROCESSING ---
-	let droppedEdgesCount = 0;
 	const seenEdgeKeys = new Map<string, boolean>();
 
 	const edges = edgesData
@@ -224,10 +276,13 @@ export const buildGraphFromCsv = (
 			const validation = GraphEdgeSchema.safeParse(rawEdge);
 
 			if (!validation.success) {
-				droppedEdgesCount++;
-				// Should not really happen given the 'rawSource/rawTarget' check above
-				// unless we add more constraints to schema (e.g. min length, format)
-				validationWarnings.push("Edge dropped: Invalid format");
+				report.edges.droppedCount++;
+				if (report.edges.errors.length < MAX_ERRORS_PER_CATEGORY) {
+					report.edges.errors.push({
+						id: "Unknown",
+						message: "Invalid format",
+					});
+				}
 				return null;
 			}
 
@@ -245,13 +300,23 @@ export const buildGraphFromCsv = (
 
 			// Referential Integrity: Do both ends of the edge exist?
 			if (!validNodeIds.has(sourceId)) {
-				droppedEdgesCount++;
-				validationWarnings.push(`Edge dropped: Source '${sourceId}' not found`);
+				report.edges.droppedCount++;
+				if (report.edges.errors.length < MAX_ERRORS_PER_CATEGORY) {
+					report.edges.errors.push({
+						id: `Edge to ID: ${targetId}`,
+						message: `Source ID: '${sourceId}' not found`,
+					});
+				}
 				return null;
 			}
 			if (!validNodeIds.has(targetId)) {
-				droppedEdgesCount++;
-				validationWarnings.push(`Edge dropped: Target '${targetId}' not found`);
+				report.edges.droppedCount++;
+				if (report.edges.errors.length < MAX_ERRORS_PER_CATEGORY) {
+					report.edges.errors.push({
+						id: `Edge from ID: ${sourceId}`,
+						message: `Target ID: '${targetId}' not found`,
+					});
+				}
 				return null;
 			}
 
@@ -262,26 +327,10 @@ export const buildGraphFromCsv = (
 		})
 		.filter(isGraphEdge);
 
-	if (droppedEdgesCount > 0) {
-		validationWarnings.push(
-			`${droppedEdgesCount} edge${droppedEdgesCount > 1 ? "s" : ""} dropped`,
-		);
-	}
-
-	// --- WARNING LIMITS ---
-	// Don't overwhelm the user with 1000 warnings. Cap it at 10.
-	const MAX_WARNINGS = 10;
-	const displayWarnings = validationWarnings.slice(0, MAX_WARNINGS);
-	if (validationWarnings.length > MAX_WARNINGS) {
-		displayWarnings.push(
-			`...and ${validationWarnings.length - MAX_WARNINGS} more warnings`,
-		);
-	}
-
 	return {
 		nodes,
 		edges,
-		warnings: displayWarnings,
+		report,
 		error: null,
 	};
 };

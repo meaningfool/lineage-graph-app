@@ -32,10 +32,9 @@ export function MappingTable({
 	// Filter columns that are already mapped to required fields
 	// We want to show remaining columns as optional properties
 	// Note: This simple logic assumes 1:1 mapping for required fields.
-	const mappedValues = Object.values(mapping).filter(Boolean);
-	const availableProperties = columns.filter(
-		(col) => !mappedValues.includes(col),
-	);
+	// Note: We used to filter mapped values, but now we keep them visible
+	// so the user sees them uncheck instead of disappear.
+	const availableProperties = columns;
 
 	const isPropertySelected = (col: string) => selectedProperties.includes(col);
 
@@ -99,7 +98,7 @@ export function MappingTable({
 									onValueChange={(value) => onChange(row.id, value)}
 								>
 									<SelectTrigger
-										className="w-full bg-white"
+										className="w-full cursor-pointer bg-white" // Added cursor-pointer
 										data-testid={`mapping-select-${row.id}-trigger`}
 									>
 										<SelectValue placeholder="Select column..." />
@@ -163,13 +162,12 @@ export function MappingTable({
 														onClick={() => onToggleProperty(col)}
 														data-testid={`property-pill-${col}`}
 														className={cn(
-															"inline-flex items-center rounded-full border px-3 py-1 font-medium text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+															"inline-flex items-center rounded-full border px-3 py-1 font-medium text-xs transition-colors focus:outline-none",
 															isSelected
-																? "border-transparent bg-neutral-900 text-white hover:bg-neutral-800"
-																: "border-gray-200 bg-white text-gray-900 hover:border-gray-300 hover:bg-gray-100",
+																? "border-transparent bg-indigo-600 text-white hover:bg-indigo-700"
+																: "border-gray-200 bg-white text-gray-900 hover:border-indigo-600 hover:bg-gray-50",
 														)}
 													>
-														{isSelected && <Check className="mr-1 h-3 w-3" />}
 														{col}
 													</button>
 												);

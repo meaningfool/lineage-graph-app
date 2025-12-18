@@ -33,24 +33,39 @@ Address scattered UI/UX issues identified during the demo preparation and add a 
 
 ## 3. Implementation Plan
 
-### Slice 1: Header & Wizard Visuals (CSS Only)
-1.  **Component**: `TopBar` (or Header).
-    *   Add Title/Icon.
-    *   Remove ThemeToggle.
-    *   Fix Margins/Z-index issues.
-2.  **Component**: `UploadStep`.
-    *   Standardize `Dropzone` styles.
-    *   Fix Error container styles.
+### Slice 1: Wizard Upload Error Layout
+1.  **Component**: `import-wizard-dialog.tsx`.
+    *   Fix CSS for the error message container in the upload step.
 
-### Slice 2: Welcome Modal (New Feature)
-1.  **New Component**: `WelcomeDialog.tsx`.
-2.  **State**: Controlled by parent (`Page` or `Layout`).
-3.  **Interaction**: Clicking CTA -> `setWelcomeOpen(false)` -> `setImportOpen(true)`.
+### Slice 2: Dropzone Consistency
+1.  **Component**: `import-wizard-dialog.tsx`.
+    *   Standardize visual styles (color, font) for Nodes vs Edges dropzones.
 
-### Slice 3: Warnings & Fixtures
-1.  **Component**: `ImportWizardDialog.tsx` (Success Step section).
-    *   Style user feedback.
-2.  **Script**: Update `scripts/generate_demo_fixture.py` (or manual CSVs) to include required edge cases.
+### Slice 3: Header Error Button Margin
+1.  **Component**: `header.tsx` / `page.tsx`.
+    *   Fix margin of the "Error Panel" count button.
+    *   Ensure Canvas top offset is correct relative to the header.
+
+### Slice 4: Header Logo
+1.  **Component**: `header.tsx`.
+    *   Add App Title/Logo to the left.
+
+### Slice 5: Remove Theme Toggle
+1.  **Component**: `header.tsx`.
+    *   Remove the theme toggle button.
+
+### Slice 6: Welcome Modal
+1.  **New Component**: `welcome-dialog.tsx`.
+2.  **State**: Managed in `page.tsx`.
+3.  **Flow**: First load -> Show Modal -> Click Start -> Open Wizard.
+
+### Slice 7: Warning Display Polish
+1.  **Component**: `import-wizard-dialog.tsx`.
+    *   Polish the warnings list in the Success Step.
+
+### Slice 8: Demo Fixtures
+1.  **Script**: `generate_demo_fixture.py`.
+    *   Add Self-loop and Multi-node Cycle cases.
 
 ## 4. Tests
 *   **E2E**: Add a test in `welcome-flow.spec.ts` (new file) to verify the Welcome Modal appears and opens the Import Wizard.

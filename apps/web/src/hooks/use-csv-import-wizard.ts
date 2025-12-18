@@ -185,9 +185,19 @@ export function useCSVImportWizard({
 				validation,
 			);
 
-			if (result.warnings.length > 0) {
+			if (
+				result.report.nodes.droppedCount > 0 ||
+				result.report.edges.droppedCount > 0
+			) {
 				// If there are warnings (e.g., some rows dropped), show them to the user.
-				setFeedback({ error: null, warnings: result.warnings });
+				setFeedback({
+					error: null,
+					warnings: [
+						...result.report.general,
+						...result.report.nodes.errors.map((e) => e.message),
+						...result.report.edges.errors.map((e) => e.message),
+					],
+				});
 				// We still perform the import!
 				onImport(reactFlowNodes, reactFlowEdges);
 				setCurrentStep("results");

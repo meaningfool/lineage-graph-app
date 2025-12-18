@@ -42,7 +42,7 @@ describe("CSV Graph Importer", () => {
 				title: "Step Node",
 				type: "STEP",
 			});
-			expect(result.warnings).toHaveLength(0);
+			expect(result.report.nodes.errors).toHaveLength(0);
 		});
 
 		it("should normalize node types (case insensitive)", () => {
@@ -73,9 +73,10 @@ describe("CSV Graph Importer", () => {
 
 			expect(result.nodes).toHaveLength(1);
 			expect(result.nodes[0].id).toBe("1");
-			expect(result.warnings).toContain("1 node dropped");
-			expect(result.warnings.some((w) => w.includes("Invalid type"))).toBe(
-				true,
+			expect(result.report.nodes.droppedCount).toBe(1);
+			expect(result.report.nodes.errors[0].id).toBe("ID: 2");
+			expect(result.report.nodes.errors[0].message).toContain(
+				"type: Invalid value. Must be one of: INPUT, STEP, OUTPUT",
 			);
 		});
 
@@ -92,10 +93,12 @@ describe("CSV Graph Importer", () => {
 
 			expect(result.nodes).toHaveLength(1);
 			expect(result.nodes[0].title).toBe("First");
-			expect(result.warnings).toContain("1 node dropped");
-			expect(result.warnings.some((w) => w.includes("Duplicate Node ID"))).toBe(
-				true,
-			);
+			expect(result.report.nodes.droppedCount).toBe(1);
+			expect(
+				result.report.nodes.errors.some(
+					(e) => e.id === "ID: 1" && e.message.includes("Duplicate Node ID"),
+				),
+			).toBe(true);
 		});
 
 		it("should import explicit properties", () => {
@@ -156,9 +159,13 @@ describe("CSV Graph Importer", () => {
 			});
 
 			expect(result.edges).toHaveLength(0);
-			expect(result.warnings).toContain("2 edges dropped");
+			expect(result.report.edges.droppedCount).toBe(2);
 			expect(
-				result.warnings.some((w) => w.includes("Target 'MISSING' not found")),
+				result.report.edges.errors.some(
+					(e) =>
+						e.id === "Edge to ID: 1" &&
+						e.message.includes("Source ID: 'MISSING' not found"),
+				),
 			).toBe(true);
 		});
 
@@ -179,16 +186,16 @@ describe("CSV Graph Importer", () => {
 
 			expect(result.edges).toHaveLength(1);
 			// Deduplication is silent, so no warnings expected for this
-			expect(result.warnings).toHaveLength(0);
+			expect(result.report.edges.droppedCount).toBe(0);
 		});
 	});
 
 	describe("Warning Limits", () => {
-		it("should cap warnings at 10", () => {
+		it("should cap warnings at 50", () => {
 			// biome-ignore lint/suspicious/noExplicitAny: Test mock data
 			const nodesData: any[] = [];
-			// Generate 15 invalid nodes
-			for (let i = 0; i < 15; i++) {
+			// Generate 60 invalid nodes
+			for (let i = 0; i < 60; i++) {
 				nodesData.push({ id: `bad-${i}`, title: "Bad", type: "INVALID" });
 			}
 
@@ -197,10 +204,10 @@ describe("CSV Graph Importer", () => {
 				edges: defaultEdgeMapping,
 			});
 
-			expect(result.warnings.length).toBeLessThanOrEqual(11); // 10 warnings + 1 summary
-			expect(result.warnings[result.warnings.length - 1]).toContain(
-				"more warnings",
-			);
+			// We expect 60 dropped nodes total
+			expect(result.report.nodes.droppedCount).toBe(60);
+			// But only 50 detailed errors stored
+			expect(result.report.nodes.errors.length).toBe(50);
 		});
 	});
 });

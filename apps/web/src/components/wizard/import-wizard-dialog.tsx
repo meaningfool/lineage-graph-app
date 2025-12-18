@@ -1,4 +1,4 @@
-import { ArrowRight, Check, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, ChevronDown, X } from "lucide-react";
 import { useState } from "react";
 import type { Edge, Node } from "reactflow";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,7 @@ export function ImportWizardDialog({
 		mapping,
 		isMappingValid,
 		error,
-		warnings,
+		report,
 		selectedProperties,
 		toggleProperty,
 	} = useNewImportWizard({
@@ -115,6 +115,73 @@ export function ImportWizardDialog({
 		</div>
 	);
 
+	/* Helper Component for Warning Sections */
+	const WarningSection = ({
+		title,
+		count,
+		errors,
+	}: {
+		title: string;
+		count: number;
+		errors: { id: string; message: string }[];
+	}) => {
+		const [isOpen, setIsOpen] = useState(false);
+
+		if (count === 0) return null;
+
+		return (
+			<div
+				className="w-full max-w-lg overflow-hidden rounded-md border border-amber-200 bg-amber-50"
+				data-testid={`warning-section-${title.toLowerCase()}`}
+			>
+				<button
+					type="button"
+					onClick={() => setIsOpen(!isOpen)}
+					className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-amber-100/50"
+				>
+					<div className="flex items-center gap-2 font-medium text-amber-800 text-sm">
+						<AlertTriangle className="h-4 w-4" />
+						<span>
+							{count} {title} Dropped
+						</span>
+					</div>
+					<ChevronDown
+						className={cn(
+							"h-4 w-4 text-amber-800 transition-transform duration-200",
+							isOpen && "rotate-180",
+						)}
+					/>
+				</button>
+
+				{/* Always render content but control visibility to support animation if we added it, 
+				    but here just conditional rendering for simplicity */}
+				{isOpen && (
+					<div className="border-amber-200 border-t bg-white/50 px-4 py-3">
+						<ul className="max-h-60 list-none space-y-2 overflow-y-auto text-amber-900 text-sm">
+							{errors.map((err, idx) => (
+								<li
+									key={`${err.id}-${idx}`}
+									className="flex flex-col gap-0.5"
+									data-testid="warning-item"
+								>
+									<span className="font-semibold text-xs opacity-80">
+										{err.id}
+									</span>
+									<span>{err.message}</span>
+								</li>
+							))}
+							{errors.length < count && (
+								<li className="pt-2 text-center text-xs italic opacity-60">
+									...and {count - errors.length} more
+								</li>
+							)}
+						</ul>
+					</div>
+				)}
+			</div>
+		);
+	};
+
 	const renderSuccess = () => (
 		<div
 			className="flex flex-col items-center justify-center space-y-4 py-8"
@@ -131,22 +198,24 @@ export function ImportWizardDialog({
 			</div>
 
 			{/* Warnings Section */}
-			{warnings.length > 0 && (
+			{(report.nodes.droppedCount > 0 || report.edges.droppedCount > 0) && (
 				<div
-					className="mt-6 w-full max-w-md rounded-md border border-amber-200 bg-amber-50 p-4"
+					className="mt-4 flex w-full flex-col items-center gap-3"
 					data-testid="import-warning-summary"
 				>
-					<div className="mb-2 font-medium text-amber-800 text-sm">
-						Warnings during import:
+					<div className="mb-1 self-center font-medium text-muted-foreground text-sm">
+						Warnings found during import:
 					</div>
-					<ul className="max-h-40 list-disc overflow-y-auto pl-5 text-amber-900 text-xs">
-						{warnings.map((w, idx) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-							<li key={idx} data-testid="warning-item">
-								{w}
-							</li>
-						))}
-					</ul>
+					<WarningSection
+						title="Nodes"
+						count={report.nodes.droppedCount}
+						errors={report.nodes.errors}
+					/>
+					<WarningSection
+						title="Edges"
+						count={report.edges.droppedCount}
+						errors={report.edges.errors}
+					/>
 				</div>
 			)}
 		</div>
@@ -183,9 +252,9 @@ export function ImportWizardDialog({
 				</DialogHeader>
 
 				{/* Body */}
-				<div className="flex h-[550px] flex-col gap-6 bg-gray-50/50 p-6">
+				<div className="flex h-[550px] flex-col gap-3 bg-gray-50/50 p-6">
 					{/* Stepper (Motif Style) */}
-					<div className="flex items-center justify-center">
+					<div className="flex items-center justify-center pb-8">
 						{STEPS.map((step, idx) => {
 							const isActive = step.id === currentStep;
 							const isCompleted = step.index < currentStepIndex;
@@ -197,9 +266,9 @@ export function ImportWizardDialog({
 											className={cn(
 												"z-20 flex h-8 w-8 items-center justify-center rounded-full text-sm ring-4 ring-white transition-colors",
 												isActive
-													? "bg-neutral-900 font-semibold text-white"
+													? "bg-indigo-600 font-semibold text-white"
 													: isCompleted
-														? "bg-emerald-500 text-white"
+														? "bg-green-500 text-white"
 														: "bg-gray-200 text-gray-500",
 											)}
 										>
@@ -208,7 +277,7 @@ export function ImportWizardDialog({
 										<span
 											className={cn(
 												"absolute top-full mt-2 w-32 text-center font-medium text-xs",
-												isActive ? "text-neutral-900" : "text-gray-500",
+												isActive ? "text-indigo-900" : "text-gray-500",
 											)}
 										>
 											{step.label}
@@ -218,7 +287,7 @@ export function ImportWizardDialog({
 										<div
 											className={cn(
 												"h-[2px] w-16 transition-colors",
-												isCompleted ? "bg-emerald-500" : "bg-gray-200",
+												isCompleted ? "bg-green-500" : "bg-gray-200",
 											)}
 										/>
 									)}
@@ -266,6 +335,7 @@ export function ImportWizardDialog({
 
 					{currentStep !== "SUCCESS" ? (
 						<Button
+							className="bg-indigo-600 hover:bg-indigo-700"
 							onClick={handleNext}
 							disabled={isNextDisabled()}
 							data-testid="import-next-button"
@@ -276,7 +346,11 @@ export function ImportWizardDialog({
 							)}
 						</Button>
 					) : (
-						<Button data-testid="import-finish-button" onClick={handleClose}>
+						<Button
+							className="bg-indigo-600 hover:bg-indigo-700"
+							data-testid="import-finish-button"
+							onClick={handleClose}
+						>
 							Close
 						</Button>
 					)}

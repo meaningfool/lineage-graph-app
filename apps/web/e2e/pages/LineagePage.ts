@@ -10,7 +10,7 @@ export class LineagePage {
 	}
 
 	async goto() {
-		await this.page.goto("/");
+		await this.page.goto("/?skipWelcome=true");
 		await this.page.waitForLoadState("networkidle");
 	}
 

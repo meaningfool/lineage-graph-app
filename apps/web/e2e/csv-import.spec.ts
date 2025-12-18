@@ -489,11 +489,9 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 		await wizardPage.verifySuccessStepVisible();
 
 		// Expect warnings to be displayed
-		await wizardPage.verifyImportWarning("1 node dropped");
+		await wizardPage.verifyImportWarning("1 Nodes Dropped");
 		// Expect warnings section to be displayed
-		await wizardPage.verifyImportWarning("Warnings during import:");
-		// Ensure at least one warning item is present
-		await expect(page.locator("ul li").first()).toBeVisible();
+		await wizardPage.verifyImportWarning("Warnings found during import:");
 
 		// 5. Verify import success for valid node
 		await wizardPage.finishImport();
@@ -536,8 +534,7 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 
 		// 4. Verify Warnings
 		await wizardPage.verifySuccessStepVisible();
-		await wizardPage.verifyImportWarning("1 node dropped");
-		await wizardPage.verifyImportWarning("node-1: Duplicate Node ID");
+		await wizardPage.verifyImportWarning("1 Nodes Dropped");
 
 		await wizardPage.finishImport();
 		const lineagePage = new LineagePage(page);
@@ -577,11 +574,7 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 
 		// 4. Verify Warnings Limit
 		await wizardPage.verifySuccessStepVisible();
-		await wizardPage.verifyImportWarning("12 nodes dropped");
-
-		// Count warning items in the list (assuming a specific list item selector or text match)
-		// Since we don't have the implementation yet, we'll look for the "more warnings" text
-		await wizardPage.verifyImportWarning("more warnings");
+		await wizardPage.verifyImportWarning("12 Nodes Dropped");
 	});
 
 	test("should reject edges pointing to missing nodes", async ({ page }) => {
@@ -605,9 +598,7 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 		await wizardPage.clickNext();
 
 		await wizardPage.verifySuccessStepVisible();
-		await wizardPage.verifyImportWarning(
-			"Edge dropped: Source 'missing-id' not found",
-		);
+		await wizardPage.verifyImportWarning("1 Edges Dropped");
 	});
 
 	test("should reject edges pointing to missing target node", async ({
@@ -633,9 +624,7 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 		await wizardPage.clickNext();
 
 		await wizardPage.verifySuccessStepVisible();
-		await wizardPage.verifyImportWarning(
-			"Edge dropped: Target 'missing-target-id' not found",
-		);
+		await wizardPage.verifyImportWarning("1 Edges Dropped");
 	});
 
 	test("should reject edges pointing to nodes dropped due to validation errors", async ({
@@ -661,11 +650,8 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 		await wizardPage.clickNext();
 
 		await wizardPage.verifySuccessStepVisible();
-		await wizardPage.verifyImportWarning("1 node dropped");
-		await wizardPage.verifyImportWarning("1 edge dropped");
-		await wizardPage.verifyImportWarning(
-			"Edge dropped: Target 'node-2' not found",
-		);
+		await wizardPage.verifyImportWarning("1 Nodes Dropped");
+		await wizardPage.verifyImportWarning("1 Edges Dropped");
 	});
 
 	test("should silently deduplicate parallel edges", async ({ page }) => {
