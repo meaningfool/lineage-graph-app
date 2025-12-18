@@ -38,8 +38,8 @@ export function WelcomeDialog({
 						Welcome to DataLineage
 					</DialogTitle>
 					<DialogDescription className="pt-2 text-base">
-						Visualize and validate your data dependencies with ease. Import your
-						CSV files to generate an interactive lineage graph.
+						Visualize and validate your data dependencies. Import your nodes and
+						edges files to generate an interactive lineage graph.
 					</DialogDescription>
 				</DialogHeader>
 				<div className="py-2">
@@ -48,13 +48,6 @@ export function WelcomeDialog({
 						alt="How it works"
 						className="h-auto w-full rounded-lg border shadow-sm"
 					/>
-				</div>
-				<div className="py-4">
-					<ul className="list-inside list-disc space-y-2 text-muted-foreground text-sm">
-						<li>Import Nodes and Edges via CSV</li>
-						<li>Automatic cycle detection and validation</li>
-						<li>Interactive graph exploration</li>
-					</ul>
 				</div>
 				<DialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
 					<Button
