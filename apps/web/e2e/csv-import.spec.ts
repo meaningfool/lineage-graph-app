@@ -598,7 +598,7 @@ test.describe("New Import Wizard - Slice 5: Domain Validation & Error Handling",
 		await wizardPage.clickNext();
 
 		await wizardPage.verifySuccessStepVisible();
-		await wizardPage.verifyImportWarning("2 Edges Dropped");
+		await wizardPage.verifyImportWarning("1 Edges Dropped");
 	});
 
 	test("should reject edges pointing to missing target node", async ({

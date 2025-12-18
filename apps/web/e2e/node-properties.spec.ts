@@ -32,11 +32,7 @@ test.describe("Node Properties (Regression)", () => {
 
 		// Import with 'description' property selected
 		const wizardPage = new NewWizardPage(page);
-		await lineagePage.importGraph(nodesPath, edgesPath, {
-			onNodeMapping: async () => {
-				await wizardPage.selectProperty("description");
-			},
-		});
+		await lineagePage.importGraph(nodesPath, edgesPath);
 
 		// 7. Verify Side Panel Interaction (Slice 2)
 		await lineagePage.clickNode("User Table");
@@ -77,12 +73,7 @@ test.describe("Node Properties (Regression)", () => {
 
 		// Import with 'description' and 'prop1' properties selected
 		const wizardPage = new NewWizardPage(page);
-		await lineagePage.importGraph(nodesPath, edgesPath, {
-			onNodeMapping: async () => {
-				await wizardPage.selectProperty("description");
-				await wizardPage.selectProperty("prop1");
-			},
-		});
+		await lineagePage.importGraph(nodesPath, edgesPath);
 
 		// 2. Verify Hover Cursor
 		const nodeA = lineagePage.getGraphNode("Node A");
@@ -137,12 +128,13 @@ test.describe("Node Properties (Regression)", () => {
 			"edges_long_content.csv",
 		);
 
-		// Import with ONLY 'description' selected
+		// Import with ONLY 'description' selected (prop1 unselected)
 		const wizardPage = new NewWizardPage(page);
 		await lineagePage.importGraph(nodesPath, edgesPath, {
 			onNodeMapping: async () => {
-				await wizardPage.selectProperty("description");
-				// Leave prop1 unselected
+				// Toggling prop1 makes it UNSELECTED because it is selected by default
+				await wizardPage.selectProperty("prop1");
+				// description remains selected by default
 			},
 		});
 
