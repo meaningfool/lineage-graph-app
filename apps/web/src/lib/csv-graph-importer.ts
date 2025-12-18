@@ -71,6 +71,23 @@ export const sanitizeId = (id: string) => id.trim();
 export const isGraphNode = (n: GraphNode | null): n is GraphNode => n !== null;
 export const isGraphEdge = (e: GraphEdge | null): e is GraphEdge => e !== null;
 
+// [NEW] Narrow interface for fragile Zod Enum/Literal issue properties
+// Helps avoid 'any' casts when probing for allowed values in different Zod versions
+interface ZodEnumIssueNarrow {
+	values?: string[];
+}
+
+/**
+ * Resiliently extracts allowed values from a Zod issue.
+ * Specifically handles Zod 4.x pattern where enum/literal failures
+ * use the 'values' property.
+ */
+function getAllowedValues(issue: unknown): string[] | undefined {
+	const narrow = issue as ZodEnumIssueNarrow;
+	const list = narrow.values;
+	return Array.isArray(list) ? list : undefined;
+}
+
 // Validates that the user has mapped all required fields.
 // Returns null if anything is missing.
 export const parseMapping = (raw: {
@@ -174,12 +191,11 @@ export const buildGraphFromCsv = (
 					const issue = validation.error.issues[0];
 					let errorMsg = issue.message;
 
-					// Clarify enum/value errors with allowed values (Handle different Zod versions)
+					// Clarify validation errors with allowed values (Zod 4.x pattern)
 					const code = issue.code as string;
-					if (code === "invalid_enum_value" || code === "invalid_value") {
-						// biome-ignore lint/suspicious/noExplicitAny: Resilient access to environment-specific Zod issue properties
-						const options = (issue as any).options || (issue as any).values;
-						if (Array.isArray(options)) {
+					if (code === "invalid_value") {
+						const options = getAllowedValues(issue);
+						if (options) {
 							errorMsg = `Invalid value. Must be one of: ${options.join(", ")}`;
 						}
 					}
