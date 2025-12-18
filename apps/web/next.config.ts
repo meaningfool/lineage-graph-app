@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
 				? { properties: ["^data-testid$"] }
 				: false,
 	},
+	output: "export",
+	trailingSlash: true,
 };
 
 export default nextConfig;
