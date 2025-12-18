@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import type { Edge, Node } from "reactflow";
 import {
 	buildGraphFromCsv,
+	type ImportReport,
 	parseFileFull,
 	parseFileHeaders,
 	parseMapping,
@@ -18,7 +19,6 @@ type Step = "UPLOAD" | "MAP_NODES" | "MAP_EDGES" | "SUCCESS";
 
 export const useNewImportWizard = ({
 	onImport,
-	onClose,
 }: UseNewImportWizardProps = {}) => {
 	const [currentStep, setCurrentStep] = useState<Step>("UPLOAD");
 	const [files, setFiles] = useState<{
@@ -62,7 +62,12 @@ export const useNewImportWizard = ({
 		setSelectedProperties((prev) => prev.filter((p) => p !== value));
 	}, []);
 
-	const [warnings, setWarnings] = useState<string[]>([]);
+	// [NEW] Structured Warning Report
+	const [report, setReport] = useState<ImportReport>({
+		nodes: { droppedCount: 0, errors: [] },
+		edges: { droppedCount: 0, errors: [] },
+		general: [],
+	});
 
 	// [NEW] Slice 6: Properties Mapping state
 	const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
@@ -96,7 +101,7 @@ export const useNewImportWizard = ({
 		const newFiles = { ...files };
 
 		try {
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+			// biome-ignore lint/suspicious/noExplicitAny: PapaParse expects File but types can be strict
 			nCols = await parseFileHeaders(files.nodes as any);
 		} catch (_err) {
 			failedFiles.push(files.nodes?.name || "nodes.csv");
@@ -104,7 +109,7 @@ export const useNewImportWizard = ({
 		}
 
 		try {
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+			// biome-ignore lint/suspicious/noExplicitAny: PapaParse expects File but types can be strict
 			eCols = await parseFileHeaders(files.edges as any);
 		} catch (_err) {
 			failedFiles.push(files.edges?.name || "edges.csv");
@@ -147,7 +152,11 @@ export const useNewImportWizard = ({
 		setMapping({});
 		setSelectedProperties([]);
 		setError(null);
-		setWarnings([]);
+		setReport({
+			nodes: { droppedCount: 0, errors: [] },
+			edges: { droppedCount: 0, errors: [] },
+			general: [],
+		});
 	}, []);
 
 	const handleGenerateGraph = async () => {
@@ -156,9 +165,9 @@ export const useNewImportWizard = ({
 		try {
 			// 1. Parse Files (Parallel)
 			const [nodesResult, edgesResult] = await Promise.all([
-				// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+				// biome-ignore lint/suspicious/noExplicitAny: PapaParse expects File but types can be strict
 				parseFileFull(files.nodes as any),
-				// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+				// biome-ignore lint/suspicious/noExplicitAny: PapaParse expects File but types can be strict
 				parseFileFull(files.edges as any),
 			]);
 
@@ -198,7 +207,7 @@ export const useNewImportWizard = ({
 				onImport(reactFlowNodes, reactFlowEdges);
 			}
 
-			setWarnings(result.warnings);
+			setReport(result.report);
 			setCurrentStep("SUCCESS");
 			setError(null);
 		} catch (err) {
@@ -214,7 +223,7 @@ export const useNewImportWizard = ({
 		setNodesFile,
 		setEdgesFile,
 		error,
-		warnings,
+		report,
 		mapping,
 		selectedProperties,
 		updateMapping: setMappingValue,
