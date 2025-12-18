@@ -42,6 +42,13 @@ export function WelcomeDialog({
 						CSV files to generate an interactive lineage graph.
 					</DialogDescription>
 				</DialogHeader>
+				<div className="py-2">
+					<img
+						src="/images/how-it-works.png"
+						alt="How it works"
+						className="h-auto w-full rounded-lg border shadow-sm"
+					/>
+				</div>
 				<div className="py-4">
 					<ul className="list-inside list-disc space-y-2 text-muted-foreground text-sm">
 						<li>Import Nodes and Edges via CSV</li>
