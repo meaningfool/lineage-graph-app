@@ -51,6 +51,7 @@ export function CustomNode({
 		// biome-ignore lint/a11y/noStaticElementInteractions: Tooltip trigger
 		<div
 			data-testid="custom-node-content"
+			data-node-id={id}
 			className={`min-w-[150px] max-w-[200px] rounded-sm border ${borderColor} ${selectionClasses} ${opacityClass} group relative cursor-pointer bg-white px-3 py-2 shadow-sm`}
 			style={{
 				borderColor: hasErrors ? "#ef4444" : undefined,

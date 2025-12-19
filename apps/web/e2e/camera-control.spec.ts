@@ -53,7 +53,7 @@ test.describe("Camera Control", () => {
 			"fixtures/shared/edges_valid_basic.csv",
 		);
 		await lineagePage.importGraph(nodesSmall, edgesSmall);
-		await expect(lineagePage.getGraphNode("First Node")).toBeInViewport();
+		await expect(lineagePage.getGraphNode("node-1")).toBeInViewport();
 
 		// 2. Pan/Zoom manually? (Hard to robustly test without specific helpers)
 		// Instead, Import DIFFERENT graph (Outliers)
@@ -122,9 +122,9 @@ test.describe("Camera Control", () => {
 		await page.waitForTimeout(1000);
 
 		// Verify all cycle nodes are in viewport
-		await expect(lineagePage.getGraphNode("Node A")).toBeInViewport();
-		await expect(lineagePage.getGraphNode("Node B")).toBeInViewport();
-		await expect(lineagePage.getGraphNode("Node C")).toBeInViewport();
+		await expect(lineagePage.getGraphNode("A")).toBeInViewport();
+		await expect(lineagePage.getGraphNode("B")).toBeInViewport();
+		await expect(lineagePage.getGraphNode("C")).toBeInViewport();
 	});
 
 	test("click_cycle_error_flashes_edges (Slice 6 Spec 10)", async ({
