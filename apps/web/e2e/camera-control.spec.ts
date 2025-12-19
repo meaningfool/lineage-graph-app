@@ -26,7 +26,7 @@ test.describe("Camera Control", () => {
 		await lineagePage.importGraph(nodesPath, edgesPath);
 
 		// Verify outlier is visible immediately (implies Fit View worked)
-		const outlier = lineagePage.getGraphNode("OutlierNode");
+		const outlier = lineagePage.getGraphNodeById("OutlierNode");
 		await expect(outlier).toBeVisible();
 
 		// Check scale is < 1 (zoomed out to fit)
@@ -37,7 +37,7 @@ test.describe("Camera Control", () => {
 		});
 		// Crude check for scale < 1 or just check existence
 		// Better: check that both MainCluster and Outlier are in viewport
-		const main = lineagePage.getGraphNode("MainCluster");
+		const main = lineagePage.getGraphNodeById("MainCluster");
 		await expect(main).toBeInViewport();
 		await expect(outlier).toBeInViewport();
 	});
@@ -53,7 +53,7 @@ test.describe("Camera Control", () => {
 			"fixtures/shared/edges_valid_basic.csv",
 		);
 		await lineagePage.importGraph(nodesSmall, edgesSmall);
-		await expect(lineagePage.getGraphNode("First Node")).toBeInViewport();
+		await expect(lineagePage.getGraphNodeById("node-1")).toBeInViewport();
 
 		// 2. Pan/Zoom manually? (Hard to robustly test without specific helpers)
 		// Instead, Import DIFFERENT graph (Outliers)
@@ -70,7 +70,7 @@ test.describe("Camera Control", () => {
 
 		// 3. Verify View Reset (Outlier visible)
 		// If view wasn't reset, we might be zoomed in on old coords
-		await expect(lineagePage.getGraphNode("OutlierNode")).toBeInViewport();
+		await expect(lineagePage.getGraphNodeById("OutlierNode")).toBeInViewport();
 	});
 
 	test("click_error_centers_node (Slice 3)", async ({ page }) => {
@@ -95,7 +95,7 @@ test.describe("Camera Control", () => {
 
 		// Verify Node Centered (roughly)
 		// We can check if it is in viewport and maybe check transform if we want precision
-		const node = lineagePage.getGraphNode("IsolatedNode");
+		const node = lineagePage.getGraphNodeById("IsolatedNode");
 		await expect(node).toBeInViewport();
 
 		// Check selected state (Slice 3 req)
@@ -122,9 +122,9 @@ test.describe("Camera Control", () => {
 		await page.waitForTimeout(1000);
 
 		// Verify all cycle nodes are in viewport
-		await expect(lineagePage.getGraphNode("Node A")).toBeInViewport();
-		await expect(lineagePage.getGraphNode("Node B")).toBeInViewport();
-		await expect(lineagePage.getGraphNode("Node C")).toBeInViewport();
+		await expect(lineagePage.getGraphNodeById("A")).toBeInViewport();
+		await expect(lineagePage.getGraphNodeById("B")).toBeInViewport();
+		await expect(lineagePage.getGraphNodeById("C")).toBeInViewport();
 	});
 
 	test("click_cycle_error_flashes_edges (Slice 6 Spec 10)", async ({

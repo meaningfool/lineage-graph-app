@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { expect, type Page } from "@playwright/test";
+import { NewWizardPage } from "./NewWizardPage";
 
 export class LineagePage {
 	readonly page: Page;
@@ -27,8 +28,6 @@ export class LineagePage {
 			edges?: { source?: string; target?: string };
 		},
 	) {
-		// Import locally to avoid circular dependencies if any, though regular import is fine here.
-		const { NewWizardPage } = await import("./NewWizardPage");
 		const wizard = new NewWizardPage(this.page);
 
 		await wizard.openImportModal();
@@ -76,6 +75,10 @@ export class LineagePage {
 
 	getGraphNode(text: string) {
 		return this.page.locator(".react-flow__node").filter({ hasText: text });
+	}
+
+	getGraphNodeById(id: string) {
+		return this.page.locator(`.react-flow__node[data-id="${id}"]`);
 	}
 
 	async getGraphNodePosition(text: string) {

@@ -37,7 +37,7 @@ export function LineageGraph(props: LineageGraphProps) {
 }
 
 function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
-	const { fitView } = useReactFlow();
+	const { fitView, getNodes } = useReactFlow();
 	const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(
 		null,
 	);
@@ -191,6 +191,43 @@ function LineageGraphContent({ nodes, edges }: LineageGraphProps) {
 
 		return relatedIds;
 	}, [focusedNodeId, edges, nodes]);
+
+	// Slice 3: Camera Refocus on Focus Toggle
+	const focusRefFirstRun = React.useRef(true);
+
+	React.useEffect(() => {
+		// Skip initial mount to avoid conflicting with the Load Auto-Fit
+		if (focusRefFirstRun.current) {
+			focusRefFirstRun.current = false;
+			return;
+		}
+
+		// Small delay to ensure React Flow has processed any visual/layout changes
+		// and node dimensions are stabilized before fitting view.
+		const timer = setTimeout(() => {
+			if (focusedNodeId) {
+				// Focus mode: Fit to highlighted subtree
+				const targetNodes = getNodes().filter((n) =>
+					highlightedNodeIds.has(n.id),
+				);
+				if (targetNodes.length > 0) {
+					fitView({
+						nodes: targetNodes,
+						duration: 800,
+						padding: 0.2,
+					});
+				}
+			} else if (nodes.length > 0) {
+				// Clearing focus: Reset view to see entire graph
+				fitView({
+					duration: 800,
+					padding: 0.2,
+				});
+			}
+		}, 50);
+
+		return () => clearTimeout(timer);
+	}, [focusedNodeId, highlightedNodeIds, nodes.length, fitView, getNodes]);
 
 	// Memoize nodes conversion to prevent unnecessary re-renders
 	const customNodes = useMemo(

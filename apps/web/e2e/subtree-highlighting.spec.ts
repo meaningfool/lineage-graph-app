@@ -208,4 +208,106 @@ test.describe("Subtree Highlighting", () => {
 		await page.waitForTimeout(500);
 		await expect(nodeD).toHaveClass(/opacity-10\b/);
 	});
+
+	test("focus_refocuses_after_panning", async ({ page }) => {
+		const nodesPath = path.join(
+			__dirname,
+			"fixtures/subtree-highlighting/simple_dag/nodes.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"fixtures/subtree-highlighting/simple_dag/edges.csv",
+		);
+
+		await lineagePage.importGraph(nodesPath, edgesPath);
+
+		// 1. Focus Node B
+		await lineagePage.clickNode("B");
+		await page.getByTestId("focus-toggle").click();
+		await page.waitForTimeout(1000); // Wait for camera transition
+
+		// 2. Pan the camera significantly away from the graph
+		const pane = page.locator(".react-flow__pane");
+		const box = await pane.boundingBox();
+		if (box) {
+			// Drag from center to far top-left (panning graph to right-bottom)
+			await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+			await page.mouse.down();
+			await page.mouse.move(
+				box.x + box.width / 2 - 5000,
+				box.y + box.height / 2 - 5000,
+				{ steps: 40 },
+			);
+			await page.mouse.up();
+		}
+
+		// Verify Node B is NOT in viewport anymore
+		await expect(lineagePage.getGraphNodeById("B")).not.toBeInViewport();
+
+		// 3. Clear Focus (should trigger fitView to reset)
+		await page.getByTestId("focus-toggle").click();
+		await page.waitForTimeout(1000);
+		await expect(lineagePage.getGraphNodeById("B")).toBeInViewport();
+
+		// 4. Pan away again
+		if (box) {
+			await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+			await page.mouse.down();
+			await page.mouse.move(
+				box.x + box.width / 2 - 5000,
+				box.y + box.height / 2 - 5000,
+				{ steps: 40 },
+			);
+			await page.mouse.up();
+		}
+		await expect(lineagePage.getGraphNodeById("B")).not.toBeInViewport();
+
+		// 5. Re-activate Focus (should trigger fitView to selection)
+		await page.getByTestId("focus-toggle").click();
+		await page.waitForTimeout(1000);
+
+		// ASSERT: Nodes are back in view
+		await expect(lineagePage.getGraphNodeById("A")).toBeInViewport();
+		await expect(lineagePage.getGraphNodeById("B")).toBeInViewport();
+		await expect(lineagePage.getGraphNodeById("C")).toBeInViewport();
+	});
+
+	test("clear_focus_resets_view", async ({ page }) => {
+		const nodesPath = path.join(
+			__dirname,
+			"fixtures/subtree-highlighting/simple_dag/nodes.csv",
+		);
+		const edgesPath = path.join(
+			__dirname,
+			"fixtures/subtree-highlighting/simple_dag/edges.csv",
+		);
+
+		await lineagePage.importGraph(nodesPath, edgesPath);
+
+		// Focus B (centers on selection)
+		await lineagePage.clickNode("B");
+		await page.getByTestId("focus-toggle").click();
+		await page.waitForTimeout(1000);
+
+		// Get transform before clearing
+		const transformFocused = await page.evaluate(() => {
+			const el = document.querySelector(".react-flow__viewport");
+			return el ? (el as HTMLElement).style.transform : "";
+		});
+
+		// Clear Focus
+		await page.getByTestId("focus-toggle").click();
+		await page.waitForTimeout(1000);
+
+		// Get transform after clearing
+		const transformCleared = await page.evaluate(() => {
+			const el = document.querySelector(".react-flow__viewport");
+			return el ? (el as HTMLElement).style.transform : "";
+		});
+
+		// ASSERT: Viewport was reset (transform changed)
+		expect(transformCleared).not.toBe(transformFocused);
+		// All nodes should be in viewport
+		await expect(lineagePage.getGraphNodeById("D")).toBeInViewport();
+	});
 });
