@@ -281,6 +281,23 @@ def main():
     orphan.label = "Orphaned Material"
     nodes_csv_list = all_nodes + [orphan]
 
+    # 7. Inject Warnings (for Demo purposes)
+    # 7a. Edge to non-existent node (will be dropped with warning)
+    # We create a dummy source and target interaction where target is missing
+    missing_target_id = "MISSING-ID-999"
+    warning_src = random.choice(all_nodes)
+    edges.append((warning_src, type('obj', (object,), {'id': missing_target_id})))
+    print(f"Warning Injection: Edge from {warning_src.label} -> {missing_target_id} (Target Missing)")
+
+    # 7b. Duplicate Node ID (will be dropped with warning)
+    # We duplicate an existing node but give it different props/label to show it's a conflict
+    duplicate_victim = random.choice(all_nodes)
+    duplicate_node = Node(duplicate_victim.depth, duplicate_victim.type)
+    duplicate_node.id = duplicate_victim.id # SAME ID
+    duplicate_node.label = f"{duplicate_victim.label} (Duplicate)"
+    nodes_csv_list.append(duplicate_node)
+    print(f"Warning Injection: Duplicate Node ID {duplicate_node.id} ({duplicate_node.label})")
+
     # 6. Write CSV
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     
