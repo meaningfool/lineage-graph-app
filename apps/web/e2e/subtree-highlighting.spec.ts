@@ -242,12 +242,12 @@ test.describe("Subtree Highlighting", () => {
 		}
 
 		// Verify Node B is NOT in viewport anymore
-		await expect(lineagePage.getGraphNode("B")).not.toBeInViewport();
+		await expect(lineagePage.getGraphNodeById("B")).not.toBeInViewport();
 
 		// 3. Clear Focus (should trigger fitView to reset)
 		await page.getByTestId("focus-toggle").click();
 		await page.waitForTimeout(1000);
-		await expect(lineagePage.getGraphNode("B")).toBeInViewport();
+		await expect(lineagePage.getGraphNodeById("B")).toBeInViewport();
 
 		// 4. Pan away again
 		if (box) {
@@ -260,16 +260,16 @@ test.describe("Subtree Highlighting", () => {
 			);
 			await page.mouse.up();
 		}
-		await expect(lineagePage.getGraphNode("B")).not.toBeInViewport();
+		await expect(lineagePage.getGraphNodeById("B")).not.toBeInViewport();
 
 		// 5. Re-activate Focus (should trigger fitView to selection)
 		await page.getByTestId("focus-toggle").click();
 		await page.waitForTimeout(1000);
 
 		// ASSERT: Nodes are back in view
-		await expect(lineagePage.getGraphNode("A")).toBeInViewport();
-		await expect(lineagePage.getGraphNode("B")).toBeInViewport();
-		await expect(lineagePage.getGraphNode("C")).toBeInViewport();
+		await expect(lineagePage.getGraphNodeById("A")).toBeInViewport();
+		await expect(lineagePage.getGraphNodeById("B")).toBeInViewport();
+		await expect(lineagePage.getGraphNodeById("C")).toBeInViewport();
 	});
 
 	test("clear_focus_resets_view", async ({ page }) => {
@@ -308,6 +308,6 @@ test.describe("Subtree Highlighting", () => {
 		// ASSERT: Viewport was reset (transform changed)
 		expect(transformCleared).not.toBe(transformFocused);
 		// All nodes should be in viewport
-		await expect(lineagePage.getGraphNode("D")).toBeInViewport();
+		await expect(lineagePage.getGraphNodeById("D")).toBeInViewport();
 	});
 });

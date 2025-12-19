@@ -73,7 +73,11 @@ export class LineagePage {
 		await expect(this.getGraphNode(text)).toBeVisible();
 	}
 
-	getGraphNode(id: string) {
+	getGraphNode(text: string) {
+		return this.page.locator(".react-flow__node").filter({ hasText: text });
+	}
+
+	getGraphNodeById(id: string) {
 		return this.page.locator(`.react-flow__node[data-id="${id}"]`);
 	}
 
