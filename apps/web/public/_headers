@@ -1,0 +1,18 @@
+# Cloudflare Workers reads this file from out/; it isn't served.
+# Cloudflare Pages, which hosted this site before, sent these by default.
+/*
+  Access-Control-Allow-Origin: *
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+# Pages cached files other than HTML and Next's .txt payloads for 4 hours.
+# List any new file or folder in public/ here.
+/_next/static/*
+  Cache-Control: public, max-age=14400, must-revalidate
+/demo/*
+  Cache-Control: public, max-age=14400, must-revalidate
+/images/*
+  Cache-Control: public, max-age=14400, must-revalidate
+/icon.png
+  Cache-Control: public, max-age=14400, must-revalidate
+/nano-banana.png
+  Cache-Control: public, max-age=14400, must-revalidate

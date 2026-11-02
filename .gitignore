@@ -107,4 +107,5 @@ Thumbs.db
 apps/web/playwright-report/
 apps/web/test-results/
 
-
+# Cloudflare Wrangler local state
+.wrangler/
