@@ -1,0 +1,15 @@
+// Cloudflare Workers serves the static export in apps/web/out. There is no Worker code.
+// These settings keep the behaviour of the Cloudflare Pages project it replaces.
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "data-lineage-app",
+	"compatibility_date": "2026-10-19",
+	"assets": {
+		"directory": "./apps/web/out",
+		// Unknown URLs get apps/web/out/404.html with a 404 status, as on Pages.
+		"not_found_handling": "404-page",
+		// Pages live at /page/ (out/page/index.html). out/_redirects, written by
+		// apps/web/scripts/write-redirects.mjs, makes the redirects permanent (308), as on Pages.
+		"html_handling": "auto-trailing-slash"
+	}
+}
